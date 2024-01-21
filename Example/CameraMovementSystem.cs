@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Input;
 using MoonTools.ECS;
 using Praxis.Core;
 
+[ExecuteBefore(typeof(CalculateTransformSystem))]
 public class CameraMovementSystem : PraxisSystem
 {
     Filter _cameraFilter;
