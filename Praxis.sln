@@ -1,0 +1,66 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Praxis.Core", "Core\Praxis.Core.csproj", "{C827F428-1ADC-4D89-A0CF-65729C104B5F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deps", "deps", "{09F7B2B6-560E-4D1E-8FA9-5A7A6610B9F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FNA.Core", "deps\FNA\FNA.Core.csproj", "{8527AB53-F539-4E34-8E06-F1CBFED1F14F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MoonTools.ECS", "deps\MoonTools.ECS\MoonTools.ECS.csproj", "{2DB64FAA-4A43-45C9-A8B8-D748EBDC43D4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "Example\Example.csproj", "{8FA0C8F4-5E7C-42B5-BDCE-37EC3ED7C6BA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ResourceCache", "ResourceCache", "{2A993CAB-E4D2-4893-A229-666AC01BA15A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{AE714C92-F3DD-4BA5-8670-EE4F1143DE76}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceCache.Core", "deps\ResourceCache\src\ResourceCache.Core\ResourceCache.Core.csproj", "{E4C5B8E8-B1DF-481D-9F3D-490240BDBF9C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ResourceCache.FNA.Core", "deps\ResourceCache\src\ResourceCache.FNA.Core\ResourceCache.FNA.Core.csproj", "{FBC009C7-0158-4985-8E56-650F0BFA2952}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C827F428-1ADC-4D89-A0CF-65729C104B5F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C827F428-1ADC-4D89-A0CF-65729C104B5F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C827F428-1ADC-4D89-A0CF-65729C104B5F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C827F428-1ADC-4D89-A0CF-65729C104B5F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8527AB53-F539-4E34-8E06-F1CBFED1F14F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8527AB53-F539-4E34-8E06-F1CBFED1F14F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8527AB53-F539-4E34-8E06-F1CBFED1F14F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8527AB53-F539-4E34-8E06-F1CBFED1F14F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2DB64FAA-4A43-45C9-A8B8-D748EBDC43D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2DB64FAA-4A43-45C9-A8B8-D748EBDC43D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2DB64FAA-4A43-45C9-A8B8-D748EBDC43D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2DB64FAA-4A43-45C9-A8B8-D748EBDC43D4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FA0C8F4-5E7C-42B5-BDCE-37EC3ED7C6BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FA0C8F4-5E7C-42B5-BDCE-37EC3ED7C6BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FA0C8F4-5E7C-42B5-BDCE-37EC3ED7C6BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FA0C8F4-5E7C-42B5-BDCE-37EC3ED7C6BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4C5B8E8-B1DF-481D-9F3D-490240BDBF9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4C5B8E8-B1DF-481D-9F3D-490240BDBF9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4C5B8E8-B1DF-481D-9F3D-490240BDBF9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4C5B8E8-B1DF-481D-9F3D-490240BDBF9C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBC009C7-0158-4985-8E56-650F0BFA2952}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FBC009C7-0158-4985-8E56-650F0BFA2952}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBC009C7-0158-4985-8E56-650F0BFA2952}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FBC009C7-0158-4985-8E56-650F0BFA2952}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8527AB53-F539-4E34-8E06-F1CBFED1F14F} = {09F7B2B6-560E-4D1E-8FA9-5A7A6610B9F9}
+		{2DB64FAA-4A43-45C9-A8B8-D748EBDC43D4} = {09F7B2B6-560E-4D1E-8FA9-5A7A6610B9F9}
+		{2A993CAB-E4D2-4893-A229-666AC01BA15A} = {09F7B2B6-560E-4D1E-8FA9-5A7A6610B9F9}
+		{AE714C92-F3DD-4BA5-8670-EE4F1143DE76} = {2A993CAB-E4D2-4893-A229-666AC01BA15A}
+		{E4C5B8E8-B1DF-481D-9F3D-490240BDBF9C} = {AE714C92-F3DD-4BA5-8670-EE4F1143DE76}
+		{FBC009C7-0158-4985-8E56-650F0BFA2952} = {AE714C92-F3DD-4BA5-8670-EE4F1143DE76}
+	EndGlobalSection
+EndGlobal
