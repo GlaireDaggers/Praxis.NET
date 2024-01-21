@@ -7,3 +7,6 @@
 [submodule "deps/ResourceCache"]
 	path = deps/ResourceCache
 	url = https://github.com/GlaireDaggers/ResourceCache
+[submodule "deps/ContentPipe"]
+	path = deps/ContentPipe
+	url = git@github.com:GlaireDaggers/ContentPipe.git

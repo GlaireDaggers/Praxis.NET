@@ -9,12 +9,26 @@ using GltfMesh = SharpGLTF.Schema2.Mesh;
 using GltfTexture = SharpGLTF.Schema2.Texture;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using SharpGLTF.Schema2;
+
+using PrimitiveType = Microsoft.Xna.Framework.Graphics.PrimitiveType;
 
 /// <summary>
 /// Helper class for loading GLB models
 /// </summary>
 internal class GLBLoader
 {
+    public class ModelData
+    {
+        [JsonPropertyName("mesh")]
+        public string? Mesh { get; set; }
+        
+        [JsonPropertyName("materials")]
+        public Dictionary<string, string>? Materials { get; set; }
+    }
+
     // 80 bytes total
     private struct MeshVert
     {
@@ -48,18 +62,15 @@ internal class GLBLoader
         new VertexElement(76, VertexElementFormat.Color, VertexElementUsage.TextureCoordinate, 3)
     );
 
-    public static Model ConvertGlb(PraxisGame game, Stream stream)
+    public static Model LoadModel(PraxisGame game, Stream stream)
     {
-        var modelRoot = GltfModelRoot.ReadGLB(stream);
+        ModelData modelData = JsonSerializer.Deserialize<ModelData>(stream)!;
+        var modelStream = game.Resources.Open(modelData.Mesh!);
+
+        var modelRoot = GltfModelRoot.ReadGLB(modelStream);
         var model = new Model();
 
-        var fx = new BasicEffect(game.GraphicsDevice);
-        fx.LightingEnabled = true;
-        fx.DirectionalLight0.Enabled = true;
-        fx.DirectionalLight0.Direction = new Vector3(0f, -1f, 0f);
-        fx.DirectionalLight0.DiffuseColor = new Vector3(1f, 1f, 1f);
-
-        var mat = new Material(fx);
+        var defaultShader = game.Resources.Load<Effect>("content/shaders/BasicLit.fxo");
 
         // convert logical meshes into Praxis runtime meshes
         Dictionary<GltfMesh, List<Primitive>> meshMap = new Dictionary<GltfMesh, List<Primitive>>();
@@ -78,8 +89,60 @@ internal class GLBLoader
             texmap.Add(tex, Texture2D.FromStream(game.GraphicsDevice, texStream));
         }
 
+        // convert GLTF materials
+        Dictionary<GltfMaterial, RuntimeResource<Material>> matmap = new Dictionary<GltfMaterial, RuntimeResource<Material>>();
+        foreach (var mat in modelRoot.LogicalMaterials)
+        {
+            // if the model data has an override, load that
+            // otherwise, construct a default material
+            if (modelData.Materials!.ContainsKey(mat.Name))
+            {
+                // TODO: implement material loading
+                throw new NotImplementedException();
+
+                // matmap.Add(mat, game.Resources.Load<Material>(modelData.Materials[mat.Name]));
+            }
+            else
+            {
+                // TODO: set params
+                Material defaultMat = new Material(defaultShader);
+                defaultMat.SetParameter("AlphaCutoff", mat.AlphaCutoff);
+
+                if (mat.Alpha == AlphaMode.BLEND)
+                {
+                    defaultMat.type = MaterialType.Transparent;
+                    defaultMat.blendState = BlendState.NonPremultiplied;
+                    defaultMat.dsState = DepthStencilState.DepthRead;
+                }
+
+                if (mat.FindChannel("BaseColor") is MaterialChannel baseColor)
+                {
+                    defaultMat.SetParameter("DiffuseColor", new Vector4(baseColor.Color.X, baseColor.Color.Y, baseColor.Color.Z, baseColor.Color.W));
+                    if (baseColor.Texture != null)
+                    {
+                        var tex = texmap[baseColor.Texture];
+                        defaultMat.SetParameter("DiffuseTexture", tex);
+
+                        if (mat.Alpha == AlphaMode.MASK)
+                        {
+                            defaultMat.technique = 2;
+                        }
+                        else
+                        {
+                            defaultMat.technique = 1;
+                        }
+                    }
+                }
+                else
+                {
+                    defaultMat.SetParameter("DiffuseColor", Vector4.One);
+                }
+
+                matmap.Add(mat, defaultMat);
+            }
+        }
+
         // convert into flat mesh parts array
-        // TODO: convert materials
         foreach (var node in modelRoot.LogicalNodes)
         {
             if (node.Mesh != null)
@@ -88,6 +151,8 @@ internal class GLBLoader
 
                 foreach (var prim in primList)
                 {
+                    var mat = matmap[prim.material];
+
                     model.parts.Add(new ModelPart(prim.mesh, mat)
                     {
                         localTransform = ToFNA(node.WorldMatrix)

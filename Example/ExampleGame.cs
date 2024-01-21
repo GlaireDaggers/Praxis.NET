@@ -21,10 +21,10 @@ public class ExampleGame : PraxisGame
 
         new CameraMovementSystem(DefaultContext);
 
-        Resources.Mount("content", new FolderFS("content"));
+        Resources.Mount("content", new FolderFS("content/bin"));
 
-        var lanternModel = Resources.Load<Model>("content/models/Lantern.glb");
-        var lanternModelHandle = new ObjectHandle<ResourceHandle<Model>>(lanternModel);
+        var lanternModel = Resources.Load<Model>("content/models/LanternModel.json");
+        var lanternModelHandle = new ObjectHandle<RuntimeResource<Model>>(lanternModel);
 
         Entity camera = DefaultContext.World.CreateEntity("camera");
         DefaultContext.World.Set(camera, new TransformComponent(new Vector3(0f, 10f, 20f), Quaternion.Identity, Vector3.One));
@@ -44,9 +44,9 @@ public class ExampleGame : PraxisGame
 
         Entity lantern = DefaultContext.World.CreateEntity("lantern");
         DefaultContext.World.Set(lantern, new TransformComponent(new Vector3(0f, 0f, 0f), Quaternion.Identity, Vector3.One));
-        DefaultContext.World.Set(lantern, new ModelResourceComponent
+        DefaultContext.World.Set(lantern, new ModelComponent
         {
-            modelResourceHandle = lanternModelHandle
+            modelHandle = lanternModelHandle
         });
     }
 }

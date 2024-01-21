@@ -117,7 +117,7 @@ public class PraxisGame : Game
 
         // GLB model loader
         Resources.RegisterFactory((stream) => {
-            return GLBLoader.ConvertGlb(this, stream);
+            return GLBLoader.LoadModel(this, stream);
         }, false);
 
         // let subclasses perform initialization

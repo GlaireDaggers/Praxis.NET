@@ -19,9 +19,11 @@ public class BasicForwardRenderer : PraxisSystem
     List<RenderMesh> _cachedOpaqueMeshes = new List<RenderMesh>();
     List<RenderMesh> _cachedTransparentMeshes = new List<RenderMesh>();
 
+    Vector3[] _directionalLightFwd = new Vector3[4];
+    Vector3[] _directionalLightCol = new Vector3[4];
+
     Filter _cameraFilter;
     Filter _modelFilter;
-    Filter _modelResourceFilter;
 
     Comparison<RenderMesh> _frontToBack;
     Comparison<RenderMesh> _backToFront;
@@ -38,12 +40,6 @@ public class BasicForwardRenderer : PraxisSystem
             .Include<TransformComponent>()
             .Include<CachedMatrixComponent>()
             .Include<ModelComponent>()
-            .Build();
-
-        _modelResourceFilter = World.FilterBuilder
-            .Include<TransformComponent>()
-            .Include<CachedMatrixComponent>()
-            .Include<ModelResourceComponent>()
             .Build();
 
         _frontToBack = (a, b) => {
@@ -104,9 +100,11 @@ public class BasicForwardRenderer : PraxisSystem
             foreach (var modelEntity in _modelFilter.Entities)
             {
                 var modelComponent = World.Get<ModelComponent>(modelEntity);
-                var model = modelComponent.modelHandle.Resolve();
+                var modelHandle = modelComponent.modelHandle.Resolve();
  
-                if (model == null) continue;
+                if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
+
+                var model = modelHandle.Value;
 
                 var meshCachedMatrix = World.Get<CachedMatrixComponent>(modelEntity).transform;
 
@@ -118,54 +116,18 @@ public class BasicForwardRenderer : PraxisSystem
                     for (int i = 0; i < model.parts.Count; i++)
                     {
                         var part = model.parts[i];
+                        if (part.material.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
+
+                        var mat = part.material.Value;
 
                         var renderMesh = new RenderMesh
                         {
                             transform = part.localTransform * meshCachedMatrix,
                             mesh = part.mesh,
-                            material = part.material
+                            material = mat
                         };
 
-                        if (part.material.type == MaterialType.Opaque)
-                        {
-                            _cachedOpaqueMeshes.Add(renderMesh);
-                        }
-                        else
-                        {
-                            _cachedTransparentMeshes.Add(renderMesh);
-                        }
-                    }
-                }
-            }
-
-            foreach (var modelEntity in _modelResourceFilter.Entities)
-            {
-                var modelComponent = World.Get<ModelResourceComponent>(modelEntity);
-                var modelResource = modelComponent.modelResourceHandle.Resolve();
-
-                if (modelResource.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
- 
-                var model = modelResource.Value;
-
-                var meshCachedMatrix = World.Get<CachedMatrixComponent>(modelEntity).transform;
-
-                BoundingSphere bounds = model.bounds;
-                bounds.Center = Vector3.Transform(bounds.Center, meshCachedMatrix);
-
-                if (_cachedFrustum.Intersects(bounds))
-                {
-                    for (int i = 0; i < model.parts.Count; i++)
-                    {
-                        var part = model.parts[i];
-
-                        var renderMesh = new RenderMesh
-                        {
-                            transform = part.localTransform * meshCachedMatrix,
-                            mesh = part.mesh,
-                            material = part.material
-                        };
-
-                        if (part.material.type == MaterialType.Opaque)
+                        if (mat.type == MaterialType.Opaque)
                         {
                             _cachedOpaqueMeshes.Add(renderMesh);
                         }
@@ -195,15 +157,27 @@ public class BasicForwardRenderer : PraxisSystem
         for (int i = 0; i < queue.Count; i++)
         {
             var material = queue[i].material;
-            material.effect.CurrentTechnique = material.effect.Techniques[material.technique];
+            var fx = material.effect.Value;
+
+            fx.CurrentTechnique = fx.Techniques[material.technique];
+
+            material.ApplyParameters();
 
             var mesh = queue[i].mesh;
 
-            material.effect.Parameters["WorldViewProj"].SetValue(queue[i].transform * vp);
+            _directionalLightFwd[0] = new Vector3(0f, -1f, 0f);
+            _directionalLightCol[0] = new Vector3(1f, 1f, 1f);
 
-            for (int pass = 0; pass < material.effect.CurrentTechnique.Passes.Count; pass++)
+            fx.Parameters["ViewProjection"].SetValue(vp);
+            fx.Parameters["World"].SetValue(queue[i].transform);
+
+            fx.Parameters["DirectionalLightCount"].SetValue(1);
+            fx.Parameters["DirectionalLightFwd"].SetValue(_directionalLightFwd);
+            fx.Parameters["DirectionalLightCol"].SetValue(_directionalLightCol);
+
+            for (int pass = 0; pass < fx.CurrentTechnique.Passes.Count; pass++)
             {
-                material.effect.CurrentTechnique.Passes[pass].Apply();
+                fx.CurrentTechnique.Passes[pass].Apply();
 
                 Game.GraphicsDevice.BlendState = material.blendState;
                 Game.GraphicsDevice.DepthStencilState = material.dsState;

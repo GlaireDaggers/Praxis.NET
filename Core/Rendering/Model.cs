@@ -48,9 +48,9 @@ public class ModelPart
 
     public Matrix localTransform = Matrix.Identity;
     public Mesh mesh;
-    public Material material;
+    public RuntimeResource<Material> material;
 
-    public ModelPart(Mesh mesh, Material material)
+    public ModelPart(Mesh mesh, RuntimeResource<Material> material)
     {
         this.mesh = mesh;
         this.material = material;
