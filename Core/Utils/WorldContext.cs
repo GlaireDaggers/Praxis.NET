@@ -14,6 +14,7 @@ public class WorldContext : IDisposable
     public readonly World World;
 
     private List<PraxisSystem> _systems = new List<PraxisSystem>();
+    private Dictionary<Type, PraxisSystem> _systemTypeMap = new Dictionary<Type, PraxisSystem>();
     private DependencyResolver<PraxisSystem> _sysGraph = new DependencyResolver<PraxisSystem>();
     private Dictionary<Type, DependencyResolver<PraxisSystem>.Node> _sysCache = new Dictionary<Type, DependencyResolver<PraxisSystem>.Node>();
     private bool _systemsDirty = false;
@@ -57,6 +58,19 @@ public class WorldContext : IDisposable
         {
             _systems[i].Draw();
         }
+    }
+
+    /// <summary>
+    /// Get a system of the given type, or null if no system of the given type has been registered
+    /// </summary>
+    public T? GetSystem<T>() where T : PraxisSystem
+    {
+        if (_systemTypeMap.ContainsKey(typeof(T)))
+        {
+            return _systemTypeMap[typeof(T)] as T;
+        }
+
+        return null;
     }
     
     public void Dispose()
@@ -109,13 +123,6 @@ public class WorldContext : IDisposable
         _systems.AddRange(_sysGraph.Resolve());
 
         _systemsDirty = false;
-
-        Console.WriteLine($"{Tag} resolved execution order:");
-
-        foreach (var sys in _systems)
-        {
-            Console.WriteLine($"\t{sys.GetType().Name}");
-        }
     }
 
     // register a system to be installed
@@ -125,6 +132,8 @@ public class WorldContext : IDisposable
 
         var node = _sysGraph.AddNode(system);
         _sysCache.Add(system.GetType(), node);
+
+        _systemTypeMap.Add(system.GetType(), system);
 
         _systemsDirty = true;
     }

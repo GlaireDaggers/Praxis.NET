@@ -25,6 +25,9 @@ public class ExampleGame : PraxisGame
         var lanternModel = Resources.Load<Model>("content/models/LanternModel.json");
         var lanternModelHandle = new ObjectHandle<RuntimeResource<Model>>(lanternModel);
 
+        var filterStack = new ScreenFilterStack(this);
+        filterStack.filters.Add(new TestFilter(this));
+
         Entity camera = DefaultContext.World.CreateEntity("camera");
         DefaultContext.World.Set(camera, new TransformComponent(new Vector3(0f, 10f, 20f), Quaternion.Identity, Vector3.One));
         DefaultContext.World.Set(camera, new CameraComponent()
@@ -34,7 +37,8 @@ public class ExampleGame : PraxisGame
             near = 0.1f,
             far = 1000.0f,
             clearColor = Color.CornflowerBlue,
-            renderTarget = ObjectHandle<RenderTarget2D>.NULL
+            renderTarget = ObjectHandle<RenderTarget2D>.NULL,
+            filterStack = new ObjectHandle<ScreenFilterStack>(filterStack)
         });
         DefaultContext.World.Set(camera, new CameraMovementComponent
         {

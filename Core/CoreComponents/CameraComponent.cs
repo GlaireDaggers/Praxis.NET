@@ -11,4 +11,5 @@ public struct CameraComponent
     public float far;
     public Color clearColor;
     public ObjectHandle<RenderTarget2D> renderTarget;
+    public ObjectHandle<ScreenFilterStack> filterStack;
 }

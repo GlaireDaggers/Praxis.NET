@@ -181,6 +181,7 @@ public class BasicForwardRenderer : PraxisSystem
             var camera = World.Get<CameraComponent>(cameraEntity);
 
             RenderTarget2D? renderTarget = camera.renderTarget.Resolve();
+            ScreenFilterStack? screenFilter = camera.filterStack.Resolve();
 
             int targetWidth = renderTarget?.Width ?? Game.GraphicsDevice.Viewport.Width;
             int targetHeight = renderTarget?.Height ?? Game.GraphicsDevice.Viewport.Height;
@@ -253,11 +254,15 @@ public class BasicForwardRenderer : PraxisSystem
             _cachedOpaqueMeshes.Sort(_frontToBack);
             _cachedTransparentMeshes.Sort(_backToFront);
 
-            Game.GraphicsDevice.SetRenderTarget(renderTarget);
+            RenderTarget2D? tempTarget = screenFilter?.GetTarget(renderTarget) ?? renderTarget;
+
+            Game.GraphicsDevice.SetRenderTarget(tempTarget);
             Game.GraphicsDevice.Clear(camera.clearColor);
 
             DrawQueue(vp, _cachedOpaqueMeshes);
             DrawQueue(vp, _cachedTransparentMeshes);
+
+            screenFilter?.OnRender(tempTarget!, renderTarget);
         }
 
         Game.GraphicsDevice.SetRenderTarget(null);
