@@ -14,19 +14,35 @@ public class BasicForwardRenderer : PraxisSystem
         public Material material;
     }
 
+    private struct RenderPointLight
+    {
+        public float radius;
+        public Vector3 pos;
+        public Vector3 color;
+    }
+
     Matrix _cachedView;
     BoundingFrustum _cachedFrustum = new BoundingFrustum(Matrix.Identity);
     List<RenderMesh> _cachedOpaqueMeshes = new List<RenderMesh>();
     List<RenderMesh> _cachedTransparentMeshes = new List<RenderMesh>();
+    List<RenderPointLight> _cachedPointLights = new List<RenderPointLight>();
 
+    int _directionalLightCount = 0;
     Vector3[] _directionalLightFwd = new Vector3[4];
     Vector3[] _directionalLightCol = new Vector3[4];
 
     Filter _cameraFilter;
     Filter _modelFilter;
+    Filter _ambientLightFilter;
+    Filter _directionalLightFilter;
+    Filter _pointLightFilter;
 
     Comparison<RenderMesh> _frontToBack;
     Comparison<RenderMesh> _backToFront;
+    Comparison<RenderPointLight> _sortPointLight;
+
+    Vector3 _ambientLightColor = Vector3.Zero;
+    Vector3 _cachedModelPos = Vector3.Zero;
 
     public BasicForwardRenderer(WorldContext context) : base(context)
     {
@@ -37,9 +53,22 @@ public class BasicForwardRenderer : PraxisSystem
             .Build();
 
         _modelFilter = World.FilterBuilder
-            .Include<TransformComponent>()
             .Include<CachedMatrixComponent>()
             .Include<ModelComponent>()
+            .Build();
+
+        _ambientLightFilter = World.FilterBuilder
+            .Include<AmbientLightComponent>()
+            .Build();
+
+        _directionalLightFilter = World.FilterBuilder
+            .Include<CachedMatrixComponent>()
+            .Include<DirectionalLightComponent>()
+            .Build();
+
+        _pointLightFilter = World.FilterBuilder
+            .Include<TransformComponent>()
+            .Include<PointLightComponent>()
             .Build();
 
         _frontToBack = (a, b) => {
@@ -57,11 +86,54 @@ public class BasicForwardRenderer : PraxisSystem
             posB = Vector3.Transform(posA, _cachedView);
             return posA.Z.CompareTo(posB.Z);
         };
+
+        _sortPointLight = (a, b) => {
+            float distA = Vector3.DistanceSquared(a.pos, _cachedModelPos);
+            float distB = Vector3.DistanceSquared(b.pos, _cachedModelPos);
+            return distA.CompareTo(distB);
+        };
     }
 
     public override void Draw()
     {
         base.Draw();
+
+        if (_ambientLightFilter.Count > 0)
+        {
+            _ambientLightColor = World.GetSingleton<AmbientLightComponent>().color;
+        }
+        else
+        {
+            _ambientLightColor = Vector3.Zero;
+        }
+
+        _directionalLightCount = 0;
+        foreach (var lightEntity in _directionalLightFilter.Entities)
+        {
+            var cachedMatrix = World.Get<CachedMatrixComponent>(lightEntity);
+            var lightComp = World.Get<DirectionalLightComponent>(lightEntity);
+
+            _directionalLightCol[_directionalLightCount] = lightComp.color;
+            _directionalLightFwd[_directionalLightCount] = Vector3.TransformNormal(-Vector3.UnitZ, cachedMatrix.transform);
+
+            _directionalLightCount++;
+
+            if (_directionalLightCount == 4) break;
+        }
+
+        _cachedPointLights.Clear();
+        foreach (var lightEntity in _pointLightFilter.Entities)
+        {
+            var transform = World.Get<TransformComponent>(lightEntity);
+            var lightComp = World.Get<PointLightComponent>(lightEntity);
+
+            _cachedPointLights.Add(new RenderPointLight
+            {
+                pos = transform.position,
+                radius = lightComp.radius,
+                color = lightComp.color
+            });
+        }
 
         foreach (var cameraEntity in _cameraFilter.Entities)
         {
@@ -165,16 +237,30 @@ public class BasicForwardRenderer : PraxisSystem
 
             var mesh = queue[i].mesh;
 
-            _directionalLightFwd[0] = new Vector3(0f, -1f, 0f);
-            _directionalLightCol[0] = new Vector3(1f, 1f, 1f);
+            // sort point lights
+            _cachedModelPos = queue[i].transform.Translation;
+            _cachedPointLights.Sort(_sortPointLight);
 
             fx.Parameters["ViewProjection"].SetValue(vp);
             fx.Parameters["World"].SetValue(queue[i].transform);
 
-            fx.Parameters["DirectionalLightCount"].SetValue(1);
+            fx.Parameters["AmbientLightColor"].SetValue(_ambientLightColor);
+
+            fx.Parameters["DirectionalLightCount"].SetValue(_directionalLightCount);
             fx.Parameters["DirectionalLightFwd"].SetValue(_directionalLightFwd);
             fx.Parameters["DirectionalLightCol"].SetValue(_directionalLightCol);
 
+            // grab up to 16 closest point lights
+            int pointLightCount = _cachedPointLights.Count;
+            if (pointLightCount > 16) pointLightCount = 16;
+
+            fx.Parameters["PointLightCount"].SetValue(pointLightCount);
+            for (int pt = 0; pt < pointLightCount; pt++)
+            {
+                fx.Parameters["PointLightPosRadius"].SetValue(new Vector4(_cachedPointLights[pt].pos, _cachedPointLights[pt].radius));
+                fx.Parameters["PointLightCol"].SetValue(_cachedPointLights[pt].color);
+            }
+            
             for (int pass = 0; pass < fx.CurrentTechnique.Passes.Count; pass++)
             {
                 fx.CurrentTechnique.Passes[pass].Apply();

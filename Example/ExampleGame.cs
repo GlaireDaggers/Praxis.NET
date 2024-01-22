@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework.Graphics;
 using MoonTools.ECS;
 using Praxis.Core;
-using ResourceCache.Core;
 using ResourceCache.Core.FS;
 
 using Model = Praxis.Core.Model;
@@ -11,7 +10,7 @@ namespace Example;
 
 public class ExampleGame : PraxisGame
 {
-    public ExampleGame() : base("Example Game")
+    public ExampleGame() : base("Example Game", 800, 600)
     {
     }
 
@@ -47,6 +46,35 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(lantern, new ModelComponent
         {
             modelHandle = lanternModelHandle
+        });
+
+        Entity ambientLight = DefaultContext.World.CreateEntity("ambientLight");
+        DefaultContext.World.Set(ambientLight, new AmbientLightComponent
+        {
+            color = new Vector3(0.1f, 0.1f, 0.2f)
+        });
+
+        Entity directionalLight = DefaultContext.World.CreateEntity("directionalLight");
+        DefaultContext.World.Set(directionalLight, new TransformComponent(
+            Vector3.Zero,
+            Quaternion.CreateFromYawPitchRoll(MathHelper.ToRadians(45f), MathHelper.ToRadians(-45f), 0f),
+            Vector3.One
+        ));
+        DefaultContext.World.Set(directionalLight, new DirectionalLightComponent
+        {
+            color = new Vector3(1f, 1f, 1f)
+        });
+
+        Entity pointLight = DefaultContext.World.CreateEntity("pointLight");
+        DefaultContext.World.Set(pointLight, new TransformComponent(
+            new Vector3(5f, 10f, 0f),
+            Quaternion.Identity,
+            Vector3.One
+        ));
+        DefaultContext.World.Set(pointLight, new PointLightComponent
+        {
+            radius = 20f,
+            color = new Vector3(1f, 0f, 1f)
         });
     }
 }

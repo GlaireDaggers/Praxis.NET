@@ -1,0 +1,10 @@
+{
+	"effect": "content/shaders/BasicLit.fxo",
+	"effectTechnique": 1,
+	"tex2DParams": {
+		"DiffuseTexture": "content/models/brick_wall_02_diff_1k.jpg"
+	},
+	"vec4Params": {
+		"DiffuseColor": "1.0, 1.0, 1.0, 1.0"
+	}
+}
