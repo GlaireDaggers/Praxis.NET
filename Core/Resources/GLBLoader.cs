@@ -97,10 +97,7 @@ internal class GLBLoader
             // otherwise, construct a default material
             if (modelData.Materials!.ContainsKey(mat.Name))
             {
-                // TODO: implement material loading
-                throw new NotImplementedException();
-
-                // matmap.Add(mat, game.Resources.Load<Material>(modelData.Materials[mat.Name]));
+                matmap.Add(mat, game.Resources.Load<Material>(modelData.Materials[mat.Name]));
             }
             else
             {

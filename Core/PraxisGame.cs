@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
-using MoonTools.ECS;
 using ResourceCache.Core;
 using ResourceCache.FNA;
 
@@ -11,11 +10,6 @@ using ResourceCache.FNA;
 /// </summary>
 public class PraxisGame : Game
 {
-    /// <summary>
-    /// The currently active PraxisGame
-    /// </summary>
-    public static PraxisGame? Instance { get; private set; }
-
     /// <summary>
     /// A default world context constructed on game startup
     /// </summary>
@@ -26,15 +20,10 @@ public class PraxisGame : Game
     /// </summary>
     public readonly ResourceManager Resources;
 
-    private uint _nextId = 0;
-    private Dictionary<uint, object> _idContainer = new Dictionary<uint, object>();
-
     private List<WorldContext> _worlds = new List<WorldContext>();
 
     public PraxisGame(string title, int width = 1280, int height = 720, bool vsync = true) : base()
     {
-        Debug.Assert(Instance == null);
-
         Window.Title = title;
 
         new GraphicsDeviceManager(this)
@@ -51,8 +40,6 @@ public class PraxisGame : Game
         Resources = new ResourceManager();
 
         RegisterContext(DefaultContext);
-
-        Instance = this;
     }
 
     /// <summary>
@@ -73,36 +60,6 @@ public class PraxisGame : Game
         _worlds.Remove(context);
     }
 
-    /// <summary>
-    /// Create an integer handle for the given object
-    /// </summary>
-    public uint RegisterObject<T>(T value)
-    {
-        uint id = ++_nextId;
-        Debug.Assert(id != 0);
-
-        _idContainer[id] = value!;
-
-        return id;
-    }
-
-    /// <summary>
-    /// Get the object associated with the given integer handle
-    /// </summary>
-    public T? GetObject<T>(uint id)
-    {
-        if (id == 0) return default;
-        return (T)_idContainer[id];
-    }
-
-    /// <summary>
-    /// Unregister the object associated with the given integer handle
-    /// </summary>
-    public void UnregisterObject(uint id)
-    {
-        _idContainer.Remove(id);
-    }
-
     protected override void LoadContent()
     {
         base.LoadContent();
@@ -114,6 +71,11 @@ public class PraxisGame : Game
 
         // register default resource loaders
         Resources.InstallFNAResourceLoaders(this);
+
+        // material loader
+        Resources.RegisterFactory((stream) => {
+            return Material.Deserialize(this, stream);
+        }, false);
 
         // GLB model loader
         Resources.RegisterFactory((stream) => {
@@ -166,6 +128,5 @@ public class PraxisGame : Game
         Teardown();
         DefaultContext.Dispose();
         Resources.UnloadAll();
-        Instance = null;
     }
 }
