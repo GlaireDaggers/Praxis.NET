@@ -81,6 +81,23 @@ internal class GLBLoader
             meshMap[m] = list;
         }
 
+        // convert skeleton hierarchy
+        if (modelRoot.LogicalSkins.Count > 0)
+        {
+            var skin = modelRoot.LogicalSkins[0];
+            Dictionary<Node, Skeleton.SkeletonNode> nodemap = new Dictionary<Node, Skeleton.SkeletonNode>();
+            Dictionary<Node, int> jointmap = new Dictionary<Node, int>();
+
+            for (int i = 0; i < skin.JointsCount; i++)
+            {
+                var jointNode = skin.GetJoint(i).Joint;
+                jointmap[jointNode] = i;
+            }
+
+            var skeletonRoot = new Skeleton.SkeletonNode(null, skin.Skeleton, jointmap, nodemap);
+            model.skeleton = new Skeleton(skeletonRoot);
+        }
+
         Dictionary<GltfTexture, Texture2D> texmap = new Dictionary<GltfTexture, Texture2D>();
 
         // convert GLTF materials & load any textures as necessary
