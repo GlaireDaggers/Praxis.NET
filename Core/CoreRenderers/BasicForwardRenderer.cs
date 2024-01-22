@@ -21,21 +21,40 @@ public class BasicForwardRenderer : PraxisSystem
         public Vector3 color;
     }
 
+    private struct RenderSpotLight
+    {
+        public float radius;
+        public float innerConeAngle;
+        public float outerConeAngle;
+        public Vector3 pos;
+        public Vector3 fwd;
+        public Vector3 color;
+    }
+
     Matrix _cachedView;
     BoundingFrustum _cachedFrustum = new BoundingFrustum(Matrix.Identity);
     List<RenderMesh> _cachedOpaqueMeshes = new List<RenderMesh>();
     List<RenderMesh> _cachedTransparentMeshes = new List<RenderMesh>();
     List<RenderPointLight> _cachedPointLights = new List<RenderPointLight>();
+    List<RenderSpotLight> _cachedSpotLights = new List<RenderSpotLight>();
 
     int _directionalLightCount = 0;
     Vector3[] _directionalLightFwd = new Vector3[4];
     Vector3[] _directionalLightCol = new Vector3[4];
+    
+    Vector4[] _pointLightPosRadius = new Vector4[16];
+    Vector3[] _pointLightColor = new Vector3[16];
+
+    Vector4[] _spotLightPosRadius = new Vector4[8];
+    Vector4[] _spotLightFwdAngle1 = new Vector4[8];
+    Vector4[] _spotLightColAngle2 = new Vector4[8];
 
     Filter _cameraFilter;
     Filter _modelFilter;
     Filter _ambientLightFilter;
     Filter _directionalLightFilter;
     Filter _pointLightFilter;
+    Filter _spotLightFilter;
 
     Comparison<RenderMesh> _frontToBack;
     Comparison<RenderMesh> _backToFront;
@@ -47,7 +66,6 @@ public class BasicForwardRenderer : PraxisSystem
     public BasicForwardRenderer(WorldContext context) : base(context)
     {
         _cameraFilter = World.FilterBuilder
-            .Include<TransformComponent>()
             .Include<CachedMatrixComponent>()
             .Include<CameraComponent>()
             .Build();
@@ -67,8 +85,13 @@ public class BasicForwardRenderer : PraxisSystem
             .Build();
 
         _pointLightFilter = World.FilterBuilder
-            .Include<TransformComponent>()
+            .Include<CachedMatrixComponent>()
             .Include<PointLightComponent>()
+            .Build();
+
+        _spotLightFilter = World.FilterBuilder
+            .Include<CachedMatrixComponent>()
+            .Include<SpotLightComponent>()
             .Build();
 
         _frontToBack = (a, b) => {
@@ -124,12 +147,29 @@ public class BasicForwardRenderer : PraxisSystem
         _cachedPointLights.Clear();
         foreach (var lightEntity in _pointLightFilter.Entities)
         {
-            var transform = World.Get<TransformComponent>(lightEntity);
+            var cachedMatrix = World.Get<CachedMatrixComponent>(lightEntity);
             var lightComp = World.Get<PointLightComponent>(lightEntity);
 
             _cachedPointLights.Add(new RenderPointLight
             {
-                pos = transform.position,
+                pos = cachedMatrix.transform.Translation,
+                radius = lightComp.radius,
+                color = lightComp.color
+            });
+        }
+
+        _cachedSpotLights.Clear();
+        foreach (var lightEntity in _spotLightFilter.Entities)
+        {
+            var cachedMatrix = World.Get<CachedMatrixComponent>(lightEntity);
+            var lightComp = World.Get<SpotLightComponent>(lightEntity);
+
+            _cachedSpotLights.Add(new RenderSpotLight
+            {
+                pos = cachedMatrix.transform.Translation,
+                fwd = Vector3.TransformNormal(-Vector3.UnitZ, cachedMatrix.transform),
+                innerConeAngle = lightComp.innerConeAngle,
+                outerConeAngle = lightComp.outerConeAngle,
                 radius = lightComp.radius,
                 color = lightComp.color
             });
@@ -137,7 +177,6 @@ public class BasicForwardRenderer : PraxisSystem
 
         foreach (var cameraEntity in _cameraFilter.Entities)
         {
-            var transform = World.Get<TransformComponent>(cameraEntity);
             var cachedMatrix = World.Get<CachedMatrixComponent>(cameraEntity);
             var camera = World.Get<CameraComponent>(cameraEntity);
 
@@ -255,11 +294,35 @@ public class BasicForwardRenderer : PraxisSystem
             if (pointLightCount > 16) pointLightCount = 16;
 
             fx.Parameters["PointLightCount"].SetValue(pointLightCount);
+            
             for (int pt = 0; pt < pointLightCount; pt++)
             {
-                fx.Parameters["PointLightPosRadius"].SetValue(new Vector4(_cachedPointLights[pt].pos, _cachedPointLights[pt].radius));
-                fx.Parameters["PointLightCol"].SetValue(_cachedPointLights[pt].color);
+                _pointLightPosRadius[pt] = new Vector4(_cachedPointLights[pt].pos, _cachedPointLights[pt].radius);
+                _pointLightColor[pt] = _cachedPointLights[pt].color;
             }
+
+            fx.Parameters["PointLightPosRadius"].SetValue(_pointLightPosRadius);
+            fx.Parameters["PointLightCol"].SetValue(_pointLightColor);
+
+            // grab up to 8 closest spot lights
+            int spotLightCount = _cachedSpotLights.Count;
+            if (spotLightCount > 8) spotLightCount = 8;
+
+            fx.Parameters["SpotLightCount"].SetValue(spotLightCount);
+            
+            for (int pt = 0; pt < spotLightCount; pt++)
+            {
+                float angle1 = MathF.Cos(MathHelper.ToRadians(_cachedSpotLights[pt].innerConeAngle));
+                float angle2 = MathF.Cos(MathHelper.ToRadians(_cachedSpotLights[pt].outerConeAngle));
+
+                _spotLightPosRadius[pt] = new Vector4(_cachedSpotLights[pt].pos, _cachedSpotLights[pt].radius);
+                _spotLightFwdAngle1[pt] = new Vector4(_cachedSpotLights[pt].fwd, angle1);
+                _spotLightColAngle2[pt] = new Vector4(_cachedSpotLights[pt].color, angle2);
+            }
+
+            fx.Parameters["SpotLightPosRadius"].SetValue(_spotLightPosRadius);
+            fx.Parameters["SpotLightFwdAngle1"].SetValue(_spotLightFwdAngle1);
+            fx.Parameters["SpotLightColAngle2"].SetValue(_spotLightColAngle2);
             
             for (int pass = 0; pass < fx.CurrentTechnique.Passes.Count; pass++)
             {

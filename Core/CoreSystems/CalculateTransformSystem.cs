@@ -5,6 +5,8 @@ using MoonTools.ECS;
 
 public class CalculateTransformSystem : PraxisSystem
 {
+    HashSet<Entity> _seenCache = new HashSet<Entity>();
+
     Filter _transformFilter;
 
     public CalculateTransformSystem(WorldContext context) : base(context)
@@ -18,19 +20,21 @@ public class CalculateTransformSystem : PraxisSystem
     {
         base.Update(deltaTime);
 
+        _seenCache.Clear();
+
         foreach (var entity in _transformFilter.Entities)
         {
-            Matrix trs = CalculateTransform(entity);
-
-            World.Set(entity, new CachedMatrixComponent
-            {
-                transform = trs
-            });
+            CalculateTransform(entity);
         }
     }
 
-    private Matrix CalculateTransform(in Entity entity)
+    private void CalculateTransform(in Entity entity)
     {
+        if (_seenCache.Contains(entity))
+        {
+            return;
+        }
+
         var transform = World.Get<TransformComponent>(entity);
             
         Matrix trs = Matrix.CreateTranslation(transform.position)
@@ -40,9 +44,15 @@ public class CalculateTransformSystem : PraxisSystem
         if (World.HasOutRelation<ChildOf>(entity))
         {
             var parent = World.OutRelationSingleton<ChildOf>(entity);
-            trs = trs * CalculateTransform(parent);
+            CalculateTransform(parent);
+            trs *= World.Get<CachedMatrixComponent>(parent).transform;
         }
 
-        return trs;
+        World.Set(entity, new CachedMatrixComponent
+        {
+            transform = trs
+        });
+
+        _seenCache.Add(entity);
     }
 }

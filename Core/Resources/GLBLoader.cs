@@ -81,15 +81,9 @@ internal class GLBLoader
             meshMap[m] = list;
         }
 
-        // convert GLTF images into textures
         Dictionary<GltfTexture, Texture2D> texmap = new Dictionary<GltfTexture, Texture2D>();
-        foreach (var tex in modelRoot.LogicalTextures)
-        {
-            using var texStream = tex.PrimaryImage.Content.Open();
-            texmap.Add(tex, Texture2D.FromStream(game.GraphicsDevice, texStream));
-        }
 
-        // convert GLTF materials
+        // convert GLTF materials & load any textures as necessary
         Dictionary<GltfMaterial, RuntimeResource<Material>> matmap = new Dictionary<GltfMaterial, RuntimeResource<Material>>();
         foreach (var mat in modelRoot.LogicalMaterials)
         {
@@ -117,7 +111,20 @@ internal class GLBLoader
                     defaultMat.SetParameter("DiffuseColor", new Vector4(baseColor.Color.X, baseColor.Color.Y, baseColor.Color.Z, baseColor.Color.W));
                     if (baseColor.Texture != null)
                     {
-                        var tex = texmap[baseColor.Texture];
+                        Texture2D tex;
+
+                        if (!texmap.ContainsKey(baseColor.Texture))
+                        {
+                            // load texture
+                            using var texStream = baseColor.Texture.PrimaryImage.Content.Open();
+                            tex = Texture2D.FromStream(game.GraphicsDevice, texStream);
+                            texmap.Add(baseColor.Texture, tex);
+                        }
+                        else
+                        {
+                            tex = texmap[baseColor.Texture];
+                        }
+
                         defaultMat.SetParameter("DiffuseTexture", tex);
 
                         if (mat.Alpha == AlphaMode.MASK)

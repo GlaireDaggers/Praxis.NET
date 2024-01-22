@@ -76,5 +76,20 @@ public class ExampleGame : PraxisGame
             radius = 20f,
             color = new Vector3(1f, 0f, 1f)
         });
+
+        Entity spotLight = DefaultContext.World.CreateEntity("spotLight");
+        DefaultContext.World.Set(spotLight, new TransformComponent(
+            new Vector3(0f, 0f, 0f),
+            Quaternion.Identity,
+            Vector3.One
+        ));
+        DefaultContext.World.Set(spotLight, new SpotLightComponent
+        {
+            radius = 15f,
+            innerConeAngle = 30f,
+            outerConeAngle = 40f,
+            color = new Vector3(1f, 1f, 1f)
+        });
+        DefaultContext.World.Relate(spotLight, camera, new ChildOf());
     }
 }
