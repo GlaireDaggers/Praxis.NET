@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using ResourceCache.Core;
 using ResourceCache.FNA;
 
@@ -19,6 +20,21 @@ public class PraxisGame : Game
     /// The resource loader
     /// </summary>
     public readonly ResourceManager Resources;
+
+    /// <summary>
+    /// A blank white placeholder texture
+    /// </summary>
+    public Texture2D? DummyWhite { get; private set; }
+
+    /// <summary>
+    /// A blank black placeholder texture
+    /// </summary>
+    public Texture2D? DummyBlack { get; private set; }
+
+    /// <summary>
+    /// A flat normal map placeholder texture
+    /// </summary>
+    public Texture2D? DummyNormal { get; private set; }
 
     private List<WorldContext> _worlds = new List<WorldContext>();
 
@@ -63,6 +79,25 @@ public class PraxisGame : Game
     protected override void LoadContent()
     {
         base.LoadContent();
+
+        DummyWhite = new Texture2D(GraphicsDevice, 2, 2, false, SurfaceFormat.Color);
+        DummyWhite.SetData(new [] {
+            Color.White, Color.White,
+            Color.White, Color.White
+        });
+
+        DummyBlack = new Texture2D(GraphicsDevice, 2, 2, false, SurfaceFormat.Color);
+        DummyBlack.SetData(new [] {
+            Color.Black, Color.Black,
+            Color.Black, Color.Black
+        });
+
+        Color flatNormal = new Color(128, 128, 255);
+        DummyNormal = new Texture2D(GraphicsDevice, 2, 2, false, SurfaceFormat.Color);
+        DummyNormal.SetData(new [] {
+            flatNormal, flatNormal,
+            flatNormal, flatNormal
+        });
 
         // register default systems
         new CalculateTransformSystem(DefaultContext);

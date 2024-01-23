@@ -1,6 +1,8 @@
 float4x4 ViewProjection;
 float4x4 World;
 
+float4x4 BoneTransforms[128];
+
 float4 DiffuseColor;
 
 texture DiffuseTexture;
@@ -32,6 +34,8 @@ struct VertexInput {
     float3 normal: NORMAL0;
     float4 color: COLOR0;
     float2 texcoord: TEXCOORD0;
+    float4 boneJoints : TEXCOORD2;
+    float4 boneWeights : TEXCOORD3;
 };
 
 struct PixelInput {
@@ -49,6 +53,30 @@ PixelInput BasicLitVS(VertexInput v) {
     o.wpos = mul(float4(v.position, 1.0), World).xyz;
     o.color = v.color * DiffuseColor;
     o.normal = normalize(mul(float4(v.normal, 0.0), World).xyz);
+    o.texcoord = v.texcoord;
+
+    return o;
+}
+
+PixelInput BasicLitSkinnedVS(VertexInput v) {
+    PixelInput o;
+    
+    float4x4 transform0 = BoneTransforms[(int)v.boneJoints.x];
+    float4x4 transform1 = BoneTransforms[(int)v.boneJoints.y];
+    float4x4 transform2 = BoneTransforms[(int)v.boneJoints.z];
+    float4x4 transform3 = BoneTransforms[(int)v.boneJoints.w];
+    
+    float4x4 transform = (transform0 * v.boneWeights.x)
+    	+ (transform1 * v.boneWeights.y)
+    	+ (transform2 * v.boneWeights.z)
+    	+ (transform3 * v.boneWeights.w);
+    	
+    transform = mul(transform, World);
+
+    o.position = mul(mul(float4(v.position, 1.0), transform), ViewProjection);
+    o.wpos = mul(float4(v.position, 1.0), World).xyz;
+    o.color = v.color * DiffuseColor;
+    o.normal = normalize(mul(float4(v.normal, 0.0), transform).xyz);
     o.texcoord = v.texcoord;
 
     return o;
@@ -119,19 +147,14 @@ float3 BasicLitPS_Core(float3 diffuse, float3 wpos, float3 normal) {
     return col;
 }
 
-float4 BasicLitPS_NoTexture(PixelInput p) : SV_TARGET {
-    float3 col = BasicLitPS_Core(p.color.xyz, p.wpos, p.normal);
-    return float4(col, p.color.w);
-}
-
-float4 BasicLitPS_Texture(PixelInput p) : SV_TARGET {
+float4 BasicLitPS(PixelInput p) : SV_TARGET {
     float4 tex = tex2D(DiffuseSampler, p.texcoord);
     float4 diffuseCol = tex * p.color;
     float3 col = BasicLitPS_Core(diffuseCol.xyz, p.wpos, p.normal);
     return float4(col, diffuseCol.w);
 }
 
-float4 BasicLitPS_Texture_Mask(PixelInput p) : SV_TARGET {
+float4 BasicLitPS_Mask(PixelInput p) : SV_TARGET {
     float4 tex = tex2D(DiffuseSampler, p.texcoord);
 
     if (tex.a < AlphaCutoff) {
@@ -143,23 +166,30 @@ float4 BasicLitPS_Texture_Mask(PixelInput p) : SV_TARGET {
     return float4(col, diffuseCol.w);
 }
 
-technique NoTexture {
+technique Default {
     pass {
         VertexShader = compile vs_3_0 BasicLitVS();
-        PixelShader = compile ps_3_0 BasicLitPS_NoTexture();
+        PixelShader = compile ps_3_0 BasicLitPS();
     }
 }
 
-technique Texture {
+technique Default_Mask {
     pass {
         VertexShader = compile vs_3_0 BasicLitVS();
-        PixelShader = compile ps_3_0 BasicLitPS_Texture();
+        PixelShader = compile ps_3_0 BasicLitPS_Mask();
     }
 }
 
-technique Texture_Mask {
+technique Skinned {
     pass {
-        VertexShader = compile vs_3_0 BasicLitVS();
-        PixelShader = compile ps_3_0 BasicLitPS_Texture_Mask();
+        VertexShader = compile vs_3_0 BasicLitSkinnedVS();
+        PixelShader = compile ps_3_0 BasicLitPS();
+    }
+}
+
+technique Skinned_Mask {
+    pass {
+        VertexShader = compile vs_3_0 BasicLitSkinnedVS();
+        PixelShader = compile ps_3_0 BasicLitPS_Mask();
     }
 }

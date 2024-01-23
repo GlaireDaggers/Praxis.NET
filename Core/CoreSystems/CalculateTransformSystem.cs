@@ -36,10 +36,10 @@ public class CalculateTransformSystem : PraxisSystem
         }
 
         var transform = World.Get<TransformComponent>(entity);
-            
-        Matrix trs = Matrix.CreateTranslation(transform.position)
+        
+        Matrix trs = Matrix.CreateScale(transform.scale)
             * Matrix.CreateFromQuaternion(transform.rotation)
-            * Matrix.CreateScale(transform.scale);
+            * Matrix.CreateTranslation(transform.position);
 
         if (World.HasOutRelation<ChildOf>(entity))
         {

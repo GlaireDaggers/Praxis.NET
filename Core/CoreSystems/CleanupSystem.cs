@@ -41,6 +41,11 @@ public class CleanupSystem : PraxisSystem
             }
         }
 
+        if (World.Has<CachedPoseComponent>(entity))
+        {
+            World.Get<CachedPoseComponent>(entity).Pose.Dispose();
+        }
+
         World.Destroy(entity);
     }
 }

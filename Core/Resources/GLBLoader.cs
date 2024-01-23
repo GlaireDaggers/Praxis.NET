@@ -46,7 +46,6 @@ internal class GLBLoader
     private struct Primitive
     {
         public Mesh mesh;
-        public BoundingSphere bounds;
         public GltfMaterial material;
     }
 
@@ -98,6 +97,8 @@ internal class GLBLoader
             model.skeleton = new Skeleton(skeletonRoot);
         }
 
+        // TODO: convert animations
+
         Dictionary<GltfTexture, Texture2D> texmap = new Dictionary<GltfTexture, Texture2D>();
 
         // convert GLTF materials & load any textures as necessary
@@ -112,7 +113,6 @@ internal class GLBLoader
             }
             else
             {
-                // TODO: set params
                 Material defaultMat = new Material(defaultShader);
                 defaultMat.SetParameter("AlphaCutoff", mat.AlphaCutoff);
 
@@ -143,20 +143,27 @@ internal class GLBLoader
                         }
 
                         defaultMat.SetParameter("DiffuseTexture", tex);
-
-                        if (mat.Alpha == AlphaMode.MASK)
-                        {
-                            defaultMat.technique = 2;
-                        }
-                        else
-                        {
-                            defaultMat.technique = 1;
-                        }
+                    }
+                    else
+                    {
+                        defaultMat.SetParameter("DiffuseTexture", game.DummyWhite!);
                     }
                 }
                 else
                 {
                     defaultMat.SetParameter("DiffuseColor", Vector4.One);
+                    defaultMat.SetParameter("DiffuseTexture", game.DummyWhite!);
+                }
+
+                if (mat.Alpha == AlphaMode.MASK)
+                {
+                    defaultMat.technique = "Default_Mask";
+                    defaultMat.techniqueSkinned = "Skinned_Mask";
+                }
+                else
+                {
+                    defaultMat.technique = "Default";
+                    defaultMat.techniqueSkinned = "Skinned";
                 }
 
                 matmap.Add(mat, defaultMat);
@@ -248,6 +255,21 @@ internal class GLBLoader
                 indices[i * 3] = (ushort)tris[i].A;
                 indices[(i * 3) + 1] = (ushort)tris[i].B;
                 indices[(i * 3) + 2] = (ushort)tris[i].C;
+
+                if (vnorm == null)
+                {
+                    // oh... model doesn't have normals. I guess just generate something.
+                    var a = vpos[tris[i].A];
+                    var b = vpos[tris[i].B];
+                    var c = vpos[tris[i].C];
+
+                    var n = System.Numerics.Vector3.Cross(b - a, c - b);
+                    Vector4 normal = new Vector4(n.X, n.Y, n.Z, 0f);
+
+                    vertices[tris[i].A].normal = normal;
+                    vertices[tris[i].B].normal = normal;
+                    vertices[tris[i].C].normal = normal;
+                }
             }
 
             vb.SetData(vertices);
@@ -255,8 +277,10 @@ internal class GLBLoader
             
             outMeshList.Add(new Primitive
             {
-                mesh = new Mesh(vb, ib, PrimitiveType.TriangleList, tris.Length),
-                bounds = new BoundingSphere(Vector3.Zero, radius),
+                mesh = new Mesh(vb, ib, PrimitiveType.TriangleList, tris.Length)
+                {
+                    bounds = new BoundingSphere(Vector3.Zero, radius)
+                },
                 material = prim.Material
             });
         }

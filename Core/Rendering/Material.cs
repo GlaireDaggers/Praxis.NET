@@ -27,7 +27,10 @@ public class Material
         public string? Effect { get; set; }
 
         [JsonPropertyName("effectTechnique")]
-        public int EffectTechnique { get; set; }
+        public string? EffectTechnique { get; set; }
+
+        [JsonPropertyName("effectTechniqueSkinned")]
+        public string? EffectTechniqueSkinned { get; set; }
 
         [JsonPropertyName("colorBlendFunc")]
         public BlendFunction ColorBlendFunction { get; set; } = BlendFunction.Add;
@@ -155,7 +158,8 @@ public class Material
     public DepthStencilState dsState;
     public RasterizerState rasterState;
     public RuntimeResource<Effect> effect;
-    public int technique;
+    public string? technique;
+    public string? techniqueSkinned;
 
     private Dictionary<string, int> _intParams = new Dictionary<string, int>();
     private Dictionary<string, float> _floatParams = new Dictionary<string, float>();
@@ -203,6 +207,7 @@ public class Material
             _vec4Params = materialData.Vec4Params,
             type = materialData.Type,
             technique = materialData.EffectTechnique,
+            techniqueSkinned = materialData.EffectTechniqueSkinned,
             blendState = new BlendState
             {
                 ColorBlendFunction = materialData.ColorBlendFunction,
@@ -267,7 +272,6 @@ public class Material
         this.rasterState = RasterizerState.CullClockwise;
         this.type = MaterialType.Opaque;
         this.effect = effect;
-        this.technique = 0;
     }
 
     public void SetParameter(string name, int value)

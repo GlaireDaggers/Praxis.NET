@@ -69,7 +69,7 @@ public class Skeleton
             LocalRestPosition = new Vector3(srcNode.LocalTransform.Translation.X, srcNode.LocalTransform.Translation.Y, srcNode.LocalTransform.Translation.Z);
             LocalRestRotation = new Quaternion(srcNode.LocalTransform.Rotation.X, srcNode.LocalTransform.Rotation.Y, srcNode.LocalTransform.Rotation.Z, srcNode.LocalTransform.Rotation.W);
             LocalRestScale = new Vector3(srcNode.LocalTransform.Scale.X, srcNode.LocalTransform.Scale.Y, srcNode.LocalTransform.Scale.Z);
-            LocalRestPose = Matrix.CreateTranslation(LocalRestPosition) * Matrix.CreateFromQuaternion(LocalRestRotation) * Matrix.CreateScale(LocalRestScale);
+            LocalRestPose = Matrix.CreateScale(LocalRestScale) * Matrix.CreateFromQuaternion(LocalRestRotation) * Matrix.CreateTranslation(LocalRestPosition);
             InverseBindPose = Matrix.Invert(ToFNA(srcNode.WorldMatrix));
 
             if (!jointmap.TryGetValue(srcNode, out BoneIndex))
@@ -101,17 +101,44 @@ public class Skeleton
 }
 
 /// <summary>
-/// A model in Praxis, acting as a container of ModelParts
+/// An animation which operates on a particular skeleton's hierarchy
+/// </summary>
+public class SkeletonAnimation
+{
+    public struct SkeletonAnimationChannel
+    {
+        public Vector3AnimationCurve? translationCurve;
+        public QuaternionAnimationCurve? rotationCurve;
+        public Vector3AnimationCurve? scaleCurve;
+
+        public (Vector3?, Quaternion?, Vector3?) Sample(float time)
+        {
+            return (translationCurve?.Sample(time), rotationCurve?.Sample(time), scaleCurve?.Sample(time));
+        }
+    }
+
+    public readonly Dictionary<Skeleton.SkeletonNode, SkeletonAnimationChannel> AnimationChannels = new Dictionary<Skeleton.SkeletonNode, SkeletonAnimationChannel>();
+    public readonly float Length;
+
+    public SkeletonAnimation(float length)
+    {
+        Length = length;
+    }
+}
+
+/// <summary>
+/// A model in Praxis, acting as a container of ModelParts, an optional skeleton, and an optional set of named animations
 /// </summary>
 public class Model
 {
     public List<ModelPart> parts = new List<ModelPart>();
     public BoundingSphere bounds;
     public Skeleton? skeleton = null;
+    public Dictionary<string, SkeletonAnimation> animations = new Dictionary<string, SkeletonAnimation>();
 
     public void RecalcBounds()
     {
-        if (parts.Count > 1)
+        if (parts.Count > 0)
         {
             bounds = parts[0].Bounds;
             
@@ -137,10 +164,7 @@ public class ModelPart
     {
         get
         {
-            var b = mesh.bounds;
-            b.Center = Vector3.Transform(b.Center, localTransform);
-
-            return b;
+            return mesh.bounds.Transform(localTransform);
         }
     }
 

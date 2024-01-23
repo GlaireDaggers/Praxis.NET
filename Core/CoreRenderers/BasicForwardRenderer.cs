@@ -12,6 +12,7 @@ public class BasicForwardRenderer : PraxisSystem
         public Matrix transform;
         public Mesh mesh;
         public Material material;
+        public Matrix[]? pose;
     }
 
     private struct RenderPointLight
@@ -59,6 +60,7 @@ public class BasicForwardRenderer : PraxisSystem
     Comparison<RenderMesh> _frontToBack;
     Comparison<RenderMesh> _backToFront;
     Comparison<RenderPointLight> _sortPointLight;
+    Comparison<RenderSpotLight> _sortSpotLight;
 
     Vector3 _ambientLightColor = Vector3.Zero;
     Vector3 _cachedModelPos = Vector3.Zero;
@@ -111,6 +113,12 @@ public class BasicForwardRenderer : PraxisSystem
         };
 
         _sortPointLight = (a, b) => {
+            float distA = Vector3.DistanceSquared(a.pos, _cachedModelPos);
+            float distB = Vector3.DistanceSquared(b.pos, _cachedModelPos);
+            return distA.CompareTo(distB);
+        };
+
+        _sortSpotLight = (a, b) => {
             float distA = Vector3.DistanceSquared(a.pos, _cachedModelPos);
             float distB = Vector3.DistanceSquared(b.pos, _cachedModelPos);
             return distA.CompareTo(distB);
@@ -220,8 +228,14 @@ public class BasicForwardRenderer : PraxisSystem
 
                 var meshCachedMatrix = World.Get<CachedMatrixComponent>(modelEntity).transform;
 
-                BoundingSphere bounds = model.bounds;
-                bounds.Center = Vector3.Transform(bounds.Center, meshCachedMatrix);
+                BoundingSphere bounds = model.bounds.Transform(meshCachedMatrix);
+
+                Matrix[]? pose = null;
+
+                if (World.Has<CachedPoseComponent>(modelEntity))
+                {
+                    pose = World.Get<CachedPoseComponent>(modelEntity).Pose.Resolve();
+                }
 
                 if (_cachedFrustum.Intersects(bounds))
                 {
@@ -236,7 +250,8 @@ public class BasicForwardRenderer : PraxisSystem
                         {
                             transform = part.localTransform * meshCachedMatrix,
                             mesh = part.mesh,
-                            material = mat
+                            material = mat,
+                            pose = pose
                         };
 
                         if (mat.type == MaterialType.Opaque)
@@ -275,30 +290,41 @@ public class BasicForwardRenderer : PraxisSystem
             var material = queue[i].material;
             var fx = material.effect.Value;
 
-            fx.CurrentTechnique = fx.Techniques[material.technique];
+            string? technique = material.technique;
+
+            if (queue[i].pose != null)
+            {
+                technique = material.techniqueSkinned ?? technique;
+            }
+
+            if (technique != null)
+            {
+                fx.CurrentTechnique = fx.Techniques[technique];
+            }
 
             material.ApplyParameters();
 
             var mesh = queue[i].mesh;
 
-            // sort point lights
+            // sort point & spot lights
             _cachedModelPos = queue[i].transform.Translation;
             _cachedPointLights.Sort(_sortPointLight);
+            _cachedSpotLights.Sort(_sortSpotLight);
 
-            fx.Parameters["ViewProjection"].SetValue(vp);
-            fx.Parameters["World"].SetValue(queue[i].transform);
+            fx.Parameters["ViewProjection"]?.SetValue(vp);
+            fx.Parameters["World"]?.SetValue(queue[i].transform);
 
-            fx.Parameters["AmbientLightColor"].SetValue(_ambientLightColor);
+            fx.Parameters["AmbientLightColor"]?.SetValue(_ambientLightColor);
 
-            fx.Parameters["DirectionalLightCount"].SetValue(_directionalLightCount);
-            fx.Parameters["DirectionalLightFwd"].SetValue(_directionalLightFwd);
-            fx.Parameters["DirectionalLightCol"].SetValue(_directionalLightCol);
+            fx.Parameters["DirectionalLightCount"]?.SetValue(_directionalLightCount);
+            fx.Parameters["DirectionalLightFwd"]?.SetValue(_directionalLightFwd);
+            fx.Parameters["DirectionalLightCol"]?.SetValue(_directionalLightCol);
 
             // grab up to 16 closest point lights
             int pointLightCount = _cachedPointLights.Count;
             if (pointLightCount > 16) pointLightCount = 16;
 
-            fx.Parameters["PointLightCount"].SetValue(pointLightCount);
+            fx.Parameters["PointLightCount"]?.SetValue(pointLightCount);
             
             for (int pt = 0; pt < pointLightCount; pt++)
             {
@@ -306,14 +332,14 @@ public class BasicForwardRenderer : PraxisSystem
                 _pointLightColor[pt] = _cachedPointLights[pt].color;
             }
 
-            fx.Parameters["PointLightPosRadius"].SetValue(_pointLightPosRadius);
-            fx.Parameters["PointLightCol"].SetValue(_pointLightColor);
+            fx.Parameters["PointLightPosRadius"]?.SetValue(_pointLightPosRadius);
+            fx.Parameters["PointLightCol"]?.SetValue(_pointLightColor);
 
             // grab up to 8 closest spot lights
             int spotLightCount = _cachedSpotLights.Count;
             if (spotLightCount > 8) spotLightCount = 8;
 
-            fx.Parameters["SpotLightCount"].SetValue(spotLightCount);
+            fx.Parameters["SpotLightCount"]?.SetValue(spotLightCount);
             
             for (int pt = 0; pt < spotLightCount; pt++)
             {
@@ -325,9 +351,15 @@ public class BasicForwardRenderer : PraxisSystem
                 _spotLightColAngle2[pt] = new Vector4(_cachedSpotLights[pt].color, angle2);
             }
 
-            fx.Parameters["SpotLightPosRadius"].SetValue(_spotLightPosRadius);
-            fx.Parameters["SpotLightFwdAngle1"].SetValue(_spotLightFwdAngle1);
-            fx.Parameters["SpotLightColAngle2"].SetValue(_spotLightColAngle2);
+            fx.Parameters["SpotLightPosRadius"]?.SetValue(_spotLightPosRadius);
+            fx.Parameters["SpotLightFwdAngle1"]?.SetValue(_spotLightFwdAngle1);
+            fx.Parameters["SpotLightColAngle2"]?.SetValue(_spotLightColAngle2);
+
+            // set bone transforms if applicable
+            if (queue[i].pose is Matrix[] pose)
+            {
+                fx.Parameters["BoneTransforms"]?.SetValue(pose);
+            }
             
             for (int pass = 0; pass < fx.CurrentTechnique.Passes.Count; pass++)
             {

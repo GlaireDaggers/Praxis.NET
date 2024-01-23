@@ -25,6 +25,9 @@ public class ExampleGame : PraxisGame
         var lanternModel = Resources.Load<Model>("content/models/LanternModel.json");
         var lanternModelHandle = new ObjectHandle<RuntimeResource<Model>>(lanternModel);
 
+        var foxModel = Resources.Load<Model>("content/models/FoxModel.json");
+        var foxModelHandle = new ObjectHandle<RuntimeResource<Model>>(foxModel);
+
         var filterStack = new ScreenFilterStack(this);
         filterStack.filters.Add(new TestFilter(this));
 
@@ -51,6 +54,14 @@ public class ExampleGame : PraxisGame
         {
             modelHandle = lanternModelHandle
         });
+
+        Entity fox = DefaultContext.World.CreateEntity("fox");
+        DefaultContext.World.Set(fox, new TransformComponent(new Vector3(10f, 0f, 0f), Quaternion.Identity, Vector3.One * 0.1f));
+        DefaultContext.World.Set(fox, new ModelComponent
+        {
+            modelHandle = foxModelHandle
+        });
+        DefaultContext.World.Set(fox, new CachedPoseComponent());
 
         Entity ambientLight = DefaultContext.World.CreateEntity("ambientLight");
         DefaultContext.World.Set(ambientLight, new AmbientLightComponent

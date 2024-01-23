@@ -1,6 +1,7 @@
 {
 	"effect": "content/shaders/BasicLit.fxo",
-	"effectTechnique": 1,
+	"effectTechnique": "Default",
+	"effectTechniqueSkinned": "Skinned",
 	"tex2DParams": {
 		"DiffuseTexture": "content/models/brick_wall_02_diff_1k.jpg"
 	},

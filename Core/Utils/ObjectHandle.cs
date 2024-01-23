@@ -9,6 +9,7 @@ public struct ObjectHandle<T> : IDisposable
 {
     private static uint _nextId = 0;
     private static Dictionary<uint, T> _idContainer = new Dictionary<uint, T>();
+    private static Stack<uint> _idPool = new Stack<uint>();
 
     public readonly static ObjectHandle<T> NULL = new ObjectHandle<T>(default);
 
@@ -42,11 +43,19 @@ public struct ObjectHandle<T> : IDisposable
 
     private static uint RegisterObject(T value)
     {
-        uint id = ++_nextId;
-        Debug.Assert(id != 0);
+        uint id;
 
+        if (_idPool.Count > 0)
+        {
+            id = _idPool.Pop();
+        }
+        else
+        {
+            id = ++_nextId;
+            Debug.Assert(id != 0);
+        }
+        
         _idContainer[id] = value!;
-
         return id;
     }
 
@@ -59,5 +68,6 @@ public struct ObjectHandle<T> : IDisposable
     private static void UnregisterObject(uint id)
     {
         _idContainer.Remove(id);
+        _idPool.Push(id);
     }
 }
