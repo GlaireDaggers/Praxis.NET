@@ -95,9 +95,31 @@ internal class GLBLoader
 
             var skeletonRoot = new Skeleton.SkeletonNode(null, skin.Skeleton, jointmap, nodemap);
             model.skeleton = new Skeleton(skeletonRoot);
-        }
 
-        // TODO: convert animations
+            foreach (var anim in modelRoot.LogicalAnimations)
+            {
+                var dstAnimation = new SkeletonAnimation(anim.Duration);
+
+                foreach (var channel in anim.Channels)
+                {
+                    if (nodemap.TryGetValue(channel.TargetNode, out var targetNode))
+                    {
+                        var translation = channel.GetTranslationSampler();
+                        var rotation = channel.GetRotationSampler();
+                        var scale = channel.GetScaleSampler();
+
+                        dstAnimation.AnimationChannels[targetNode] = new SkeletonAnimation.SkeletonAnimationChannel()
+                        {
+                            translationCurve = Convert(anim.Duration, translation),
+                            rotationCurve = Convert(anim.Duration, rotation),
+                            scaleCurve = Convert(anim.Duration, scale),
+                        };
+                    }
+                }
+
+                model.animations.Add(anim.Name, dstAnimation);
+            }
+        }
 
         Dictionary<GltfTexture, Texture2D> texmap = new Dictionary<GltfTexture, Texture2D>();
 
@@ -284,5 +306,115 @@ internal class GLBLoader
                 material = prim.Material
             });
         }
+    }
+
+    private static Vector3AnimationCurve? Convert(float duration, IAnimationSampler<System.Numerics.Vector3>? v)
+    {
+        if (v == null)
+        {
+            return null;
+        }
+
+        if (v.InterpolationMode == AnimationInterpolationMode.CUBICSPLINE)
+        {
+            var keys = v.GetCubicKeys().ToArray();
+
+            Vector3AnimationCurve.CurvePoint[] points = new Vector3AnimationCurve.CurvePoint[keys.Length];
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = new AnimationCurve<Vector3>.CurvePoint
+                {
+                    time = keys[i].Key,
+                    tangentIn = ToFNA(keys[i].Value.TangentIn),
+                    value = ToFNA(keys[i].Value.Value),
+                    tangentOut = ToFNA(keys[i].Value.TangentOut),
+                };
+            }
+
+            return new Vector3AnimationCurve(CurveInterpolationMode.Cubic, points);
+        }
+        else
+        {
+            var keys = v.GetLinearKeys().ToArray();
+
+            Vector3AnimationCurve.CurvePoint[] points = new Vector3AnimationCurve.CurvePoint[keys.Length];
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = new Vector3AnimationCurve.CurvePoint
+                {
+                    time = keys[i].Key,
+                    value = ToFNA(keys[i].Value),
+                };
+            }
+
+            if (v.InterpolationMode == AnimationInterpolationMode.STEP)
+            {
+                return new Vector3AnimationCurve(CurveInterpolationMode.Step, points);
+            }
+
+            return new Vector3AnimationCurve(CurveInterpolationMode.Linear, points);
+        }
+    }
+
+    private static QuaternionAnimationCurve? Convert(float duration, IAnimationSampler<System.Numerics.Quaternion>? v)
+    {
+        if (v == null)
+        {
+            return null;
+        }
+
+        if (v.InterpolationMode == AnimationInterpolationMode.CUBICSPLINE)
+        {
+            var keys = v.GetCubicKeys().ToArray();
+
+            QuaternionAnimationCurve.CurvePoint[] points = new QuaternionAnimationCurve.CurvePoint[keys.Length];
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = new AnimationCurve<Quaternion>.CurvePoint
+                {
+                    time = keys[i].Key,
+                    tangentIn = ToFNA(keys[i].Value.TangentIn),
+                    value = ToFNA(keys[i].Value.Value),
+                    tangentOut = ToFNA(keys[i].Value.TangentOut),
+                };
+            }
+
+            return new QuaternionAnimationCurve(CurveInterpolationMode.Cubic, points);
+        }
+        else
+        {
+            var keys = v.GetLinearKeys().ToArray();
+
+            QuaternionAnimationCurve.CurvePoint[] points = new QuaternionAnimationCurve.CurvePoint[keys.Length];
+
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i] = new QuaternionAnimationCurve.CurvePoint
+                {
+                    time = keys[i].Key,
+                    value = ToFNA(keys[i].Value),
+                };
+            }
+
+            if (v.InterpolationMode == AnimationInterpolationMode.STEP)
+            {
+                return new QuaternionAnimationCurve(CurveInterpolationMode.Step, points);
+            }
+
+            return new QuaternionAnimationCurve(CurveInterpolationMode.Linear, points);
+        }
+    }
+
+    private static Vector3 ToFNA(System.Numerics.Vector3 v)
+    {
+        return new Vector3(v.X, v.Y, v.Z);
+    }
+
+    private static Quaternion ToFNA(System.Numerics.Quaternion v)
+    {
+        return new Quaternion(v.X, v.Y, v.Z, v.W);
     }
 }

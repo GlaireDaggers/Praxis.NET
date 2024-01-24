@@ -46,6 +46,11 @@ public class CleanupSystem : PraxisSystem
             World.Get<CachedPoseComponent>(entity).Pose.Dispose();
         }
 
+        if (World.Has<SimpleAnimationComponent>(entity))
+        {
+            World.Get<SimpleAnimationComponent>(entity).Animation.Dispose();
+        }
+
         World.Destroy(entity);
     }
 }

@@ -56,12 +56,14 @@ public class ExampleGame : PraxisGame
         });
 
         Entity fox = DefaultContext.World.CreateEntity("fox");
+        SimpleAnimationComponent foxAnim = new SimpleAnimationComponent();
+        foxAnim.SetAnimation("Survey");
         DefaultContext.World.Set(fox, new TransformComponent(new Vector3(10f, 0f, 0f), Quaternion.Identity, Vector3.One * 0.1f));
         DefaultContext.World.Set(fox, new ModelComponent
         {
             modelHandle = foxModelHandle
         });
-        DefaultContext.World.Set(fox, new CachedPoseComponent());
+        DefaultContext.World.Set(fox, foxAnim);
 
         Entity ambientLight = DefaultContext.World.CreateEntity("ambientLight");
         DefaultContext.World.Set(ambientLight, new AmbientLightComponent

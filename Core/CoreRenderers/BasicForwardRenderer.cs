@@ -188,8 +188,8 @@ public class BasicForwardRenderer : PraxisSystem
             var cachedMatrix = World.Get<CachedMatrixComponent>(cameraEntity);
             var camera = World.Get<CameraComponent>(cameraEntity);
 
-            RenderTarget2D? renderTarget = camera.renderTarget.Resolve();
-            ScreenFilterStack? screenFilter = camera.filterStack.Resolve();
+            RenderTarget2D? renderTarget = camera.renderTarget.Value;
+            ScreenFilterStack? screenFilter = camera.filterStack.Value;
 
             int targetWidth = renderTarget?.Width ?? Game.GraphicsDevice.Viewport.Width;
             int targetHeight = renderTarget?.Height ?? Game.GraphicsDevice.Viewport.Height;
@@ -220,7 +220,7 @@ public class BasicForwardRenderer : PraxisSystem
             foreach (var modelEntity in _modelFilter.Entities)
             {
                 var modelComponent = World.Get<ModelComponent>(modelEntity);
-                var modelHandle = modelComponent.modelHandle.Resolve();
+                var modelHandle = modelComponent.modelHandle.Value;
  
                 if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
 
@@ -234,7 +234,7 @@ public class BasicForwardRenderer : PraxisSystem
 
                 if (World.Has<CachedPoseComponent>(modelEntity))
                 {
-                    pose = World.Get<CachedPoseComponent>(modelEntity).Pose.Resolve();
+                    pose = World.Get<CachedPoseComponent>(modelEntity).Pose.Value;
                 }
 
                 if (_cachedFrustum.Intersects(bounds))
