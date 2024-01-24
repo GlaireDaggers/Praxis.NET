@@ -117,11 +117,13 @@ public class SkeletonAnimation
         }
     }
 
+    public readonly string Name;
     public readonly Dictionary<Skeleton.SkeletonNode, SkeletonAnimationChannel> AnimationChannels = new Dictionary<Skeleton.SkeletonNode, SkeletonAnimationChannel>();
     public readonly float Length;
 
-    public SkeletonAnimation(float length)
+    public SkeletonAnimation(string name, float length)
     {
+        Name = name;
         Length = length;
     }
 }
@@ -134,7 +136,7 @@ public class Model
     public List<ModelPart> parts = new List<ModelPart>();
     public BoundingSphere bounds;
     public Skeleton? skeleton = null;
-    public Dictionary<string, SkeletonAnimation> animations = new Dictionary<string, SkeletonAnimation>();
+    public List<SkeletonAnimation> animations = new List<SkeletonAnimation>();
 
     public void RecalcBounds()
     {
@@ -152,6 +154,22 @@ public class Model
         {
             bounds = new BoundingSphere(Vector3.Zero, 0f);
         }
+    }
+
+    /// <summary>
+    /// Find the index of an animation by name, or -1 if the animation does not exist
+    /// </summary>
+    public int GetAnimationId(string name)
+    {
+        for (int i = 0; i < animations.Count; i++)
+        {
+            if (animations[i].Name == name)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }
 

@@ -98,7 +98,7 @@ internal class GLBLoader
 
             foreach (var anim in modelRoot.LogicalAnimations)
             {
-                var dstAnimation = new SkeletonAnimation(anim.Duration);
+                var dstAnimation = new SkeletonAnimation(anim.Name, anim.Duration);
 
                 foreach (var channel in anim.Channels)
                 {
@@ -117,7 +117,7 @@ internal class GLBLoader
                     }
                 }
 
-                model.animations.Add(anim.Name, dstAnimation);
+                model.animations.Add(dstAnimation);
             }
         }
 

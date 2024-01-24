@@ -91,7 +91,7 @@ public class SkinnedAnimationSystem : PraxisSystem
     /// <param name="outBoneTransforms">The bone transforms array to write to</param>
     /// <param name="blendOp">How to blend the pose into th bone transforms array</param>
     /// <param name="blendA">Alpha value to use for pose blending</param>
-    protected void BlendAnimationResult(string animationId, float time, Model model, Matrix[] outBoneTransforms,
+    protected void BlendAnimationResult(int animationId, float time, Model model, Matrix[] outBoneTransforms,
         AnimationBlendOp blendOp = AnimationBlendOp.Mix, float blendA = 1f)
     {
         if (model.skeleton == null)
@@ -99,11 +99,15 @@ public class SkinnedAnimationSystem : PraxisSystem
             return;
         }
 
-        model.animations.TryGetValue(animationId, out var animation);
+        SkeletonAnimation? anim = null;
+        if (animationId != -1)
+        {
+            anim = model.animations[animationId];
+        }
 
         // compute skeleton hierarchy positions
         _nodeTransformCache.Clear();
-        UpdateAnimationNode(time, animation, model.skeleton.Root, outBoneTransforms, blendOp, blendA);
+        UpdateAnimationNode(time, anim, model.skeleton.Root, outBoneTransforms, blendOp, blendA);
     }
 
     private void UpdateAnimationNode(float time, SkeletonAnimation? animation, Skeleton.SkeletonNode node, Matrix[] outBoneTransforms,
@@ -192,15 +196,14 @@ public class SimpleAnimationSystem : SkinnedAnimationSystem
         var modelComp = World.Get<ModelComponent>(entity);
 
         var model = modelComp.modelHandle.Value;
-        string? anim = animComp.Animation.Value;
 
-        if (anim == null)
+        if (animComp.animationId == -1)
         {
             ClearBoneTransforms(model.Value, pose);
         }
         else
         {
-            BlendAnimationResult(anim, animComp.time, model.Value, pose, AnimationBlendOp.Replace);
+            BlendAnimationResult(animComp.animationId, animComp.time, model.Value, pose, AnimationBlendOp.Replace);
         }
 
         animComp.time += deltaTime;

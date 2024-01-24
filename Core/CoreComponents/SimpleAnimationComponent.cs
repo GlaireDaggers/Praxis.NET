@@ -5,24 +5,23 @@
 /// </summary>
 public struct SimpleAnimationComponent
 {
-    public ObjectHandle<string> Animation { get; private set; }
+    public int animationId;
 
     public float time;
 
     public SimpleAnimationComponent()
     {
-        Animation = ObjectHandle<string>.NULL;
+        animationId = -1;
         time = 0f;
     }
 
     /// <summary>
     /// Play new animation
     /// </summary>
-    /// <param name="anim">The animation ID</param>
-    public void PlayAnimation(string? anim)
+    /// <param name="animId">The animation ID</param>
+    public void PlayAnimation(int animId)
     {
-        Animation.Dispose();
-        Animation = new ObjectHandle<string>(anim);
+        animationId = animId;
         time = 0f;
     }
 
@@ -30,11 +29,11 @@ public struct SimpleAnimationComponent
     /// Play a new animation, if it isn't already playing
     /// </summary>
     /// <param name="anim">The animation ID</param>
-    public void SetAnimation(string? anim)
+    public void SetAnimation(int animId)
     {
-        if (Animation.Value != anim)
+        if (animationId != animId)
         {
-            PlayAnimation(anim);
+            PlayAnimation(animId);
         }
     }
 }

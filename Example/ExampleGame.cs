@@ -57,7 +57,7 @@ public class ExampleGame : PraxisGame
 
         Entity fox = DefaultContext.World.CreateEntity("fox");
         SimpleAnimationComponent foxAnim = new SimpleAnimationComponent();
-        foxAnim.SetAnimation("Survey");
+        foxAnim.SetAnimation(foxModel.Value.GetAnimationId("Survey"));
         DefaultContext.World.Set(fox, new TransformComponent(new Vector3(10f, 0f, 0f), Quaternion.Identity, Vector3.One * 0.1f));
         DefaultContext.World.Set(fox, new ModelComponent
         {
