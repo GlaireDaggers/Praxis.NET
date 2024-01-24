@@ -29,6 +29,7 @@ public class ExampleGame : PraxisGame
         var foxModelHandle = new ObjectHandle<RuntimeResource<Model>>(foxModel);
 
         var filterStack = new ScreenFilterStack(this);
+        filterStack.filters.Add(new BloomFilter(this));
         filterStack.filters.Add(new TestFilter(this));
 
         Entity camera = DefaultContext.World.CreateEntity("camera");
@@ -57,7 +58,7 @@ public class ExampleGame : PraxisGame
 
         Entity fox = DefaultContext.World.CreateEntity("fox");
         SimpleAnimationComponent foxAnim = new SimpleAnimationComponent();
-        foxAnim.SetAnimation(foxModel.Value.GetAnimationId("Survey"));
+        foxAnim.SetAnimation(foxModel.Value.GetAnimationId("Run"));
         DefaultContext.World.Set(fox, new TransformComponent(new Vector3(10f, 0f, 0f), Quaternion.Identity, Vector3.One * 0.1f));
         DefaultContext.World.Set(fox, new ModelComponent
         {

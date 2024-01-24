@@ -120,6 +120,8 @@ public class PraxisGame : Game
 
         // let subclasses perform initialization
         Init();
+
+        GC.Collect();
     }
 
     /// <summary>

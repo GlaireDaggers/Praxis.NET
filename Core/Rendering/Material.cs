@@ -276,47 +276,47 @@ public class Material
 
     public void SetParameter(string name, int value)
     {
-        _intParams.Add(name, value);
+        _intParams[name] = value;
     }
 
     public void SetParameter(string name, float value)
     {
-        _floatParams.Add(name, value);
+        _floatParams[name] = value;
     }
 
     public void SetParameter(string name, Vector2 value)
     {
-        _vec2Params.Add(name, value);
+        _vec2Params[name] = value;
     }
 
     public void SetParameter(string name, Vector3 value)
     {
-        _vec3Params.Add(name, value);
+        _vec3Params[name] = value;
     }
     
     public void SetParameter(string name, Vector4 value)
     {
-        _vec4Params.Add(name, value);
+        _vec4Params[name] = value;
     }
 
     public void SetParameter(string name, Matrix value)
     {
-        _matrixParams.Add(name, value);
+        _matrixParams[name] = value;
     }
 
     public void SetParameter(string name, RuntimeResource<Texture2D> value)
     {
-        _tex2DParams.Add(name, value);
+        _tex2DParams[name] = value;
     }
 
     public void SetParameter(string name, RuntimeResource<Texture3D> value)
     {
-        _tex3DParams.Add(name, value);
+        _tex3DParams[name] = value;
     }
 
     public void SetParameter(string name, RuntimeResource<TextureCube> value)
     {
-        _texCubeParams.Add(name, value);
+        _texCubeParams[name] = value;
     }
 
     internal void ApplyParameters()

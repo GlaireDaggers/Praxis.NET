@@ -2,6 +2,7 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ResourceCache.Core;
 
 /// <summary>
 /// Parent class for filters which can apply post-processing shaders to the screen
@@ -28,18 +29,23 @@ public class ScreenFilter : IDisposable
         Blit(source, dest);
     }
 
-    protected void Blit(RenderTarget2D source, RenderTarget2D? dest, Material? material = null)
+    protected void Blit(RenderTarget2D source, RenderTarget2D? dest, Material? material = null, string? technique = null)
     {
         Effect? effect = null;
 
         if (material != null)
         {
             effect = material.effect.Value;
+            technique = technique ?? material.technique;
+            if (technique != null)
+            {
+                effect.CurrentTechnique = effect.Techniques[technique];
+            }
             material.ApplyParameters();
         }
 
         int targetWidth = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferWidth;
-        int targetHeight = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
+        int targetHeight = dest?.Height ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
 
         effect?.Parameters["TargetSize"]?.SetValue(new Vector4(
             targetWidth,
@@ -77,15 +83,15 @@ public class ScreenFilterStack : ScreenFilter
     internal RenderTarget2D GetTarget(RenderTarget2D? dest)
     {
         int targetWidth = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferWidth;
-        int targetHeight = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
+        int targetHeight = dest?.Height ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
         SurfaceFormat targetFormat = dest?.Format ?? Game.GraphicsDevice.PresentationParameters.BackBufferFormat;
-        DepthFormat targetDepthFormat = dest?.DepthStencilFormat ?? Game.GraphicsDevice.PresentationParameters.DepthStencilFormat;
+        DepthFormat targetDepth = dest?.DepthStencilFormat ?? Game.GraphicsDevice.PresentationParameters.DepthStencilFormat;
 
         if (_temp2 == null || _temp2.Width != targetWidth || _temp2.Height != targetHeight ||
-            _temp2.Format != targetFormat || _temp2.DepthStencilFormat != targetDepthFormat)
+            _temp2.Format != targetFormat)
         {
             _temp2?.Dispose();
-            _temp2 = new RenderTarget2D(Game.GraphicsDevice, targetWidth, targetHeight, false, targetFormat, targetDepthFormat, 1, RenderTargetUsage.PreserveContents);
+            _temp2 = new RenderTarget2D(Game.GraphicsDevice, targetWidth, targetHeight, false, targetFormat, targetDepth, 1, RenderTargetUsage.PreserveContents);
         }
 
         return _temp2;
@@ -94,15 +100,14 @@ public class ScreenFilterStack : ScreenFilter
     public override void OnRender(RenderTarget2D source, RenderTarget2D? dest)
     {
         int targetWidth = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferWidth;
-        int targetHeight = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
+        int targetHeight = dest?.Height ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
         SurfaceFormat targetFormat = dest?.Format ?? Game.GraphicsDevice.PresentationParameters.BackBufferFormat;
-        DepthFormat targetDepthFormat = dest?.DepthStencilFormat ?? Game.GraphicsDevice.PresentationParameters.DepthStencilFormat;
 
         if (_temp == null || _temp.Width != targetWidth || _temp.Height != targetHeight ||
-            _temp.Format != targetFormat || _temp.DepthStencilFormat != targetDepthFormat)
+            _temp.Format != targetFormat)
         {
             _temp?.Dispose();
-            _temp = new RenderTarget2D(Game.GraphicsDevice, targetWidth, targetHeight, false, targetFormat, targetDepthFormat, 1, RenderTargetUsage.PreserveContents);
+            _temp = new RenderTarget2D(Game.GraphicsDevice, targetWidth, targetHeight, false, targetFormat, DepthFormat.None, 1, RenderTargetUsage.PreserveContents);
         }
 
         if (filters.Count == 0)
@@ -132,5 +137,77 @@ public class ScreenFilterStack : ScreenFilter
         base.Dispose();
         _temp?.Dispose();
         _temp2?.Dispose();
+    }
+}
+
+/// <summary>
+/// Built in filter to perform simple bloom pass
+/// </summary>
+public class BloomFilter : ScreenFilter
+{
+    private ResourceHandle<Effect> _effect;
+    private Material _mat;
+
+    private RenderTarget2D? _temp0;
+    private RenderTarget2D[] _temp;
+
+    public BloomFilter(PraxisGame game,
+        int iterations = 3,
+        float filterRadius = 2f,
+        float thresholdMin = 0.5f,
+        float thresholdMax = 0.75f,
+        float brightness = 0.5f) : base(game)
+    {
+        _effect = game.Resources.Load<Effect>("content/shaders/Bloom.fxo");
+        _mat = new Material(_effect);
+        _temp = new RenderTarget2D[iterations];
+
+        _mat.SetParameter("FilterRadius", filterRadius);
+        _mat.SetParameter("ThresholdMin", thresholdMin);
+        _mat.SetParameter("ThresholdMax", thresholdMax);
+        _mat.SetParameter("Brightness", brightness);
+    }
+
+    public override void OnRender(RenderTarget2D source, RenderTarget2D? dest)
+    {
+        int targetWidth = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferWidth;
+        int targetHeight = dest?.Height ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
+
+        RenderTarget2D prev = source;
+
+        if (_temp0 == null || _temp0.Width != targetWidth || _temp0.Height != targetHeight)
+        {
+            _temp0?.Dispose();
+            _temp0 = new RenderTarget2D(Game.GraphicsDevice, targetWidth, targetHeight, false, SurfaceFormat.Color, DepthFormat.None);
+        }
+
+        Blit(prev, _temp0, _mat, "Threshold");
+        prev = _temp0;
+
+        // iterative downscale
+        for (int i = 0; i < _temp.Length; i++)
+        {
+            int w = targetWidth / (i + 2);
+            int h = targetHeight / (i + 2);
+
+            if (_temp[i] == null || _temp[i].Width != w || _temp[i].Height != h)
+            {
+                _temp[i]?.Dispose();
+                _temp[i] = new RenderTarget2D(Game.GraphicsDevice, w, h, false, SurfaceFormat.Color, DepthFormat.None);
+            }
+
+            Blit(prev, _temp[i], _mat, "Downsample");
+            prev = _temp[i];
+        }
+
+        // iterative upscale & blur
+        for (int i = _temp.Length - 1; i >= 1; i--)
+        {
+            Blit(_temp[i], _temp[i - 1], _mat, "Upsample");
+        }
+
+        // composite
+        _mat.SetParameter("BloomTexture", _temp[0]);
+        Blit(source, dest, _mat, "Composite");
     }
 }
