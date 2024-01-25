@@ -8,6 +8,11 @@ namespace Praxis.Core;
 public struct DestroyEntity
 {
     public Entity entity;
+
+    public DestroyEntity(Entity entity)
+    {
+        this.entity = entity;
+    }
 }
 
 /// <summary>

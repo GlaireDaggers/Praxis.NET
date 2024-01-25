@@ -198,7 +198,7 @@ public class Material
         if (materialData.WriteB) writeChannels |= ColorWriteChannels.Blue;
         if (materialData.WriteA) writeChannels |= ColorWriteChannels.Alpha;
 
-        var material = new Material(effect)
+        var material = new Material(game, effect)
         {
             _intParams = materialData.IntParams,
             _floatParams = materialData.FloatParams,
@@ -265,13 +265,40 @@ public class Material
         return material;
     }
 
-    public Material(RuntimeResource<Effect> effect)
+    public Material(PraxisGame game, RuntimeResource<Effect> effect)
     {
         this.blendState = BlendState.Opaque;
         this.dsState = DepthStencilState.Default;
         this.rasterState = RasterizerState.CullClockwise;
         this.type = MaterialType.Opaque;
         this.effect = effect;
+
+        // iterate any texture params and set up default values
+        foreach(var param in effect.Value.Parameters)
+        {
+            if (param.ParameterType == EffectParameterType.Texture)
+            {
+                foreach (var annotation in param.Annotations)
+                {
+                    if (annotation.Name == "defaultTex")
+                    {
+                        switch (annotation.GetValueString())
+                        {
+                            case "white":
+                                SetParameter(param.Name, game.DummyWhite!);
+                                break;
+                            case "black":
+                                SetParameter(param.Name, game.DummyBlack!);
+                                break;
+                            case "normal":
+                                SetParameter(param.Name, game.DummyNormal!);
+                                break;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     public void SetParameter(string name, int value)

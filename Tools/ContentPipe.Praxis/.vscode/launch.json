@@ -1,0 +1,16 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "C#: ContentPipe.Praxis Debug",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/bin/Debug/net8.0/linux-x64/ContentPipe.Praxis.dll",
+            "args": ["/media/hazel/DATA[HDD]/Projects/dotnet/PraxisV2/Example/content/src", "/media/hazel/DATA[HDD]/Projects/dotnet/PraxisV2/Example/content/bin", "-threads", "1"]
+        }
+    ]
+}

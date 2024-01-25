@@ -4,11 +4,18 @@ float4x4 World;
 float4x4 BoneTransforms[128];
 
 float4 DiffuseColor;
+float4 EmissiveColor;
 
-texture DiffuseTexture;
+texture DiffuseTexture <string defaultTex="white";>;
 sampler DiffuseSampler = sampler_state
 {
 	Texture = DiffuseTexture;
+};
+
+texture EmissiveTexture <string defaultTex="black";>;
+sampler EmissiveSampler = sampler_state
+{
+	Texture = EmissiveTexture;
 };
 
 float AlphaCutoff;
@@ -151,6 +158,7 @@ float4 BasicLitPS(PixelInput p) : SV_TARGET {
     float4 tex = tex2D(DiffuseSampler, p.texcoord);
     float4 diffuseCol = tex * p.color;
     float3 col = BasicLitPS_Core(diffuseCol.xyz, p.wpos, p.normal);
+    col += tex2D(EmissiveSampler, p.texcoord).rgb * EmissiveColor.rgb;
     return float4(col, diffuseCol.w);
 }
 
@@ -163,6 +171,7 @@ float4 BasicLitPS_Mask(PixelInput p) : SV_TARGET {
 
     float4 diffuseCol = tex * p.color;
     float3 col = BasicLitPS_Core(diffuseCol.xyz, p.wpos, p.normal);
+    col += tex2D(EmissiveSampler, p.texcoord).rgb * EmissiveColor.rgb;
     return float4(col, diffuseCol.w);
 }
 

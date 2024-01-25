@@ -18,6 +18,15 @@ public class SkinnedAnimationSystem : PraxisSystem
         Replace,
     }
 
+    /// <summary>
+    /// Specifies how the animation should loop if the input sample time exceeds the animation duration
+    /// </summary>
+    public enum AnimationLoopMode
+    {
+        Wrap,
+        Clamp
+    }
+
     private Dictionary<Skeleton.SkeletonNode, Matrix> _nodeTransformCache = new Dictionary<Skeleton.SkeletonNode, Matrix>();
 
     private Filter? _animFilter = null;
@@ -90,9 +99,10 @@ public class SkinnedAnimationSystem : PraxisSystem
     /// <param name="model">The model to animate</param>
     /// <param name="outBoneTransforms">The bone transforms array to write to</param>
     /// <param name="blendOp">How to blend the pose into th bone transforms array</param>
+    /// <param name="loopMode">How the animation should loop if time exceeds anim duration</param>
     /// <param name="blendA">Alpha value to use for pose blending</param>
     protected void BlendAnimationResult(int animationId, float time, Model model, Matrix[] outBoneTransforms,
-        AnimationBlendOp blendOp = AnimationBlendOp.Mix, float blendA = 1f)
+        AnimationBlendOp blendOp = AnimationBlendOp.Mix, AnimationLoopMode loopMode = AnimationLoopMode.Wrap, float blendA = 1f)
     {
         if (model.skeleton == null)
         {
@@ -103,6 +113,16 @@ public class SkinnedAnimationSystem : PraxisSystem
         if (animationId != -1)
         {
             anim = model.animations[animationId];
+
+            switch (loopMode)
+            {
+                case AnimationLoopMode.Wrap:
+                    time %= anim.Length;
+                    break;
+                case AnimationLoopMode.Clamp:
+                    if (time > anim.Length) time = anim.Length;
+                    break;
+            }
         }
 
         // compute skeleton hierarchy positions
@@ -129,7 +149,7 @@ public class SkinnedAnimationSystem : PraxisSystem
         }
         else
         {
-            Matrix trs = node.LocalRestPose;
+            Matrix trs = node.LocalBindPose;
 
             if (node.Parent != null)
             {

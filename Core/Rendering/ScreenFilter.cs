@@ -153,13 +153,13 @@ public class BloomFilter : ScreenFilter
 
     public BloomFilter(PraxisGame game,
         int iterations = 3,
-        float filterRadius = 2f,
-        float thresholdMin = 0.5f,
-        float thresholdMax = 0.75f,
+        float filterRadius = 8f,
+        float thresholdMin = 0.6f,
+        float thresholdMax = 0.7f,
         float brightness = 0.5f) : base(game)
     {
         _effect = game.Resources.Load<Effect>("content/shaders/Bloom.fxo");
-        _mat = new Material(_effect);
+        _mat = new Material(game, _effect);
         _temp = new RenderTarget2D[iterations];
 
         _mat.SetParameter("FilterRadius", filterRadius);

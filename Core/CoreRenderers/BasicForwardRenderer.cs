@@ -248,7 +248,7 @@ public class BasicForwardRenderer : PraxisSystem
 
                         var renderMesh = new RenderMesh
                         {
-                            transform = part.localTransform * meshCachedMatrix,
+                            transform = meshCachedMatrix,
                             mesh = part.mesh,
                             material = mat,
                             pose = pose
@@ -303,6 +303,13 @@ public class BasicForwardRenderer : PraxisSystem
             }
 
             material.ApplyParameters();
+
+            foreach (var param in fx.Parameters)
+            {
+                if (param.ParameterType == EffectParameterType.Texture2D && param.GetValueTexture2D() == null)
+                {
+                }
+            }
 
             var mesh = queue[i].mesh;
 

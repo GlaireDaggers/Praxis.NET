@@ -10,7 +10,7 @@ namespace Example;
 
 public class ExampleGame : PraxisGame
 {
-    public ExampleGame() : base("Example Game", 800, 600)
+    public ExampleGame() : base("Example Game", 1280, 720)
     {
     }
 
@@ -22,10 +22,10 @@ public class ExampleGame : PraxisGame
 
         Resources.Mount("content", new FolderFS("content/bin"));
 
-        var lanternModel = Resources.Load<Model>("content/models/LanternModel.json");
+        var lanternModel = Resources.Load<Model>("content/models/Lantern.pmdl");
         var lanternModelHandle = new ObjectHandle<RuntimeResource<Model>>(lanternModel);
 
-        var foxModel = Resources.Load<Model>("content/models/FoxModel.json");
+        var foxModel = Resources.Load<Model>("content/models/Fox.pmdl");
         var foxModelHandle = new ObjectHandle<RuntimeResource<Model>>(foxModel);
 
         var filterStack = new ScreenFilterStack(this);

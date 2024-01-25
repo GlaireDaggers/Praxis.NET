@@ -20,47 +20,57 @@ public class Skeleton
         /// <summary>
         /// The name of this node
         /// </summary>
-        public readonly string Name;
+        public string Name;
 
         /// <summary>
         /// The index into the skinning matrix palette this bone corresponds to, if any
         /// </summary>
-        public readonly int BoneIndex;
+        public int BoneIndex;
 
         /// <summary>
         /// The default rest position of this node
         /// </summary>
-        public readonly Vector3 LocalRestPosition;
+        public Vector3 LocalRestPosition;
 
         /// <summary>
         /// The default rest rotation of this node
         /// </summary>
-        public readonly Quaternion LocalRestRotation;
+        public Quaternion LocalRestRotation;
 
         /// <summary>
         /// The default rest scale of this node
         /// </summary>
-        public readonly Vector3 LocalRestScale;
+        public Vector3 LocalRestScale;
 
         /// <summary>
-        /// This node's default rest transform
+        /// This node's default bind pose (in local space)
         /// </summary>
-        public readonly Matrix LocalRestPose;
+        public Matrix LocalBindPose;
 
         /// <summary>
-        /// The inverse of this node's default bind pose, relative to the root node
+        /// This node's default bind pose (relative to the model root)
         /// </summary>
-        public readonly Matrix InverseBindPose;
+        public Matrix BindPose;
+
+        /// <summary>
+        /// The inverse of this node's bind pose
+        /// </summary>
+        public Matrix InverseBindPose;
 
         /// <summary>
         /// This node's parent, if any
         /// </summary>
-        public readonly SkeletonNode? Parent = null;
+        public SkeletonNode? Parent = null;
 
         /// <summary>
         /// This node's children
         /// </summary>
-        public readonly List<SkeletonNode> Children = new List<SkeletonNode>();
+        public List<SkeletonNode> Children = new List<SkeletonNode>();
+
+        public SkeletonNode(string name)
+        {
+            Name = name;
+        }
 
         internal SkeletonNode(SkeletonNode? parent, Node srcNode, Dictionary<Node, int> jointmap, Dictionary<Node, SkeletonNode> nodemap)
         {
@@ -69,7 +79,7 @@ public class Skeleton
             LocalRestPosition = new Vector3(srcNode.LocalTransform.Translation.X, srcNode.LocalTransform.Translation.Y, srcNode.LocalTransform.Translation.Z);
             LocalRestRotation = new Quaternion(srcNode.LocalTransform.Rotation.X, srcNode.LocalTransform.Rotation.Y, srcNode.LocalTransform.Rotation.Z, srcNode.LocalTransform.Rotation.W);
             LocalRestScale = new Vector3(srcNode.LocalTransform.Scale.X, srcNode.LocalTransform.Scale.Y, srcNode.LocalTransform.Scale.Z);
-            LocalRestPose = Matrix.CreateScale(LocalRestScale) * Matrix.CreateFromQuaternion(LocalRestRotation) * Matrix.CreateTranslation(LocalRestPosition);
+            LocalBindPose = Matrix.CreateScale(LocalRestScale) * Matrix.CreateFromQuaternion(LocalRestRotation) * Matrix.CreateTranslation(LocalRestPosition);
             InverseBindPose = Matrix.Invert(ToFNA(srcNode.WorldMatrix));
 
             if (!jointmap.TryGetValue(srcNode, out BoneIndex))
@@ -138,24 +148,6 @@ public class Model
     public Skeleton? skeleton = null;
     public List<SkeletonAnimation> animations = new List<SkeletonAnimation>();
 
-    public void RecalcBounds()
-    {
-        if (parts.Count > 0)
-        {
-            bounds = parts[0].Bounds;
-            
-            for (int i = 1; i < parts.Count; i++)
-            {
-                BoundingSphere b = parts[i].Bounds;
-                BoundingSphere.CreateMerged(ref bounds, ref b, out bounds);
-            }
-        }
-        else
-        {
-            bounds = new BoundingSphere(Vector3.Zero, 0f);
-        }
-    }
-
     /// <summary>
     /// Find the index of an animation by name, or -1 if the animation does not exist
     /// </summary>
@@ -178,15 +170,6 @@ public class Model
 /// </summary>
 public class ModelPart
 {
-    public BoundingSphere Bounds
-    {
-        get
-        {
-            return mesh.bounds.Transform(localTransform);
-        }
-    }
-
-    public Matrix localTransform = Matrix.Identity;
     public Mesh mesh;
     public RuntimeResource<Material> material;
 
@@ -207,11 +190,9 @@ public class Mesh : IDisposable
     public PrimitiveType primitiveType;
     public int startIndex;
     public int primitiveCount;
-    public BoundingSphere bounds;
 
     public Mesh(VertexBuffer vertexBuffer, IndexBuffer indexBuffer, PrimitiveType primitiveType, int primitiveCount)
     {
-        this.bounds = new BoundingSphere(Vector3.Zero, 0f);
         this.vertexBuffer = vertexBuffer;
         this.indexBuffer = indexBuffer;
         this.primitiveType = primitiveType;

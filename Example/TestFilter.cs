@@ -12,7 +12,7 @@ public class TestFilter : ScreenFilter
     public TestFilter(PraxisGame game) : base(game)
     {
         _effect = game.Resources.Load<Effect>("content/shaders/TestPostEffect.fxo");
-        _mat = new Material(_effect);
+        _mat = new Material(game, _effect);
     }
 
     public override void OnRender(RenderTarget2D source, RenderTarget2D? dest)

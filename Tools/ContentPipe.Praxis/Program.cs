@@ -10,16 +10,19 @@ public static class Program
         var builder = new Builder();
 
         builder.AddRule("*.fx", new EFBShaderProcessor("../Tools/binaries/efb.exe", []));
-        builder.AddRule("*.png", new QoiProcessor());
-        builder.AddRule("*.gltf", new GlbProcessor());
+        builder.AddRule("*.gltf", new GltfProcessor());
+        builder.AddRule("*.glb", new GltfProcessor());
 
         builder.AddRule("*.dds", new CopyProcessor());
+        builder.AddRule("*.ktx", new CopyProcessor());
+        builder.AddRule("*.png", new CopyProcessor());
+        builder.AddRule("*.jpg", new CopyProcessor());
+        builder.AddRule("*.jpeg", new CopyProcessor());
         builder.AddRule("*.wav", new CopyProcessor());
         builder.AddRule("*.ogg", new CopyProcessor());
         builder.AddRule("*.ogv", new CopyProcessor());
         builder.AddRule("*.ogv", new CopyProcessor());
         builder.AddRule("*.av1", new CopyProcessor());
-        builder.AddRule("*.glb", new CopyProcessor());
         builder.AddRule("*.raw", new CopyProcessor());
         builder.AddRule("*.csv", new CopyProcessor());
         builder.AddRule("*.txt", new CopyProcessor());

@@ -1,6 +1,0 @@
-{
-	"mesh": "content/models/Lantern.glb",
-	"materials": {
-		"LanternPost_Mat": "content/models/TestMat.json"
-	}
-}

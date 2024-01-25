@@ -113,9 +113,9 @@ public class PraxisGame : Game
             return Material.Deserialize(this, stream);
         }, false);
 
-        // GLB model loader
+        // model loader
         Resources.RegisterFactory((stream) => {
-            return GLBLoader.LoadModel(this, stream);
+            return ModelLoader.Load(this, stream);
         }, false);
 
         // let subclasses perform initialization
