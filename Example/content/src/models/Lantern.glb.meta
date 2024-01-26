@@ -1,7 +1,6 @@
 {
 	"Default": {
 		"materials": {
-			"LanternPost_Mat": "content/models/TestMat.json"
 		}
 	}
 }

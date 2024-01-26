@@ -5,9 +5,17 @@ using MoonTools.ECS;
 using OWB;
 
 /// <summary>
+/// Interface for a handler that can unpack GenericEntityNode data into its target Entity
+/// </summary>
+public interface IGenericEntityHandler
+{
+    public void Unpack(GenericEntityNode node, World world, Entity target);
+}
+
+/// <summary>
 /// Represents a scene which can be unpacked into a World
 /// </summary>
-public class Scene
+public class Scene : IDisposable
 {
     public readonly PraxisGame Game;
     public readonly World World;
@@ -17,21 +25,26 @@ public class Scene
 
     private List<IDisposable> _resources = new List<IDisposable>();
 
+    private IGenericEntityHandler? _genericEntityHandler = null;
+
     /// <summary>
     /// Create a scene from a parsed OWB level and unpack it into the target World
     /// </summary>
-    public Scene(PraxisGame game, World world, string projectPath, Level level)
+    public Scene(PraxisGame game, World world, string projectPath, Level level, IGenericEntityHandler? genericEntityHandler = null)
     {
         Game = game;
         World = world;
         _projectPath = projectPath;
+        _genericEntityHandler = genericEntityHandler;
         _root = UnpackBase(level.Root!, null);
+
+        GC.Collect();
     }
 
     /// <summary>
-    /// Clean up all entities created by this scene
+    /// Clean up all entities & resources created by this scene
     /// </summary>
-    public void Unload()
+    public void Dispose()
     {
         World.Send(new DestroyEntity(_root));
 
@@ -40,6 +53,8 @@ public class Scene
             handle.Dispose();
         }
         _resources.Clear();
+
+        GC.Collect();
     }
 
     private Entity UnpackBase(Node node, Entity? parent)
@@ -85,6 +100,14 @@ public class Scene
             throw new NotImplementedException();
         }
 
+        if (node.Children != null)
+        {
+            foreach (var children in node.Children)
+            {
+                UnpackBase(children, entity);
+            }
+        }
+
         return entity;
     }
 
@@ -103,6 +126,7 @@ public class Scene
 
     private void Unpack(GenericEntityNode node, Entity target)
     {
+        _genericEntityHandler?.Unpack(node, World, target);
     }
 
     private void Unpack(LightNode node, Entity target)

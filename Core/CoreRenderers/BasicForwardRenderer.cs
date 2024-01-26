@@ -145,7 +145,7 @@ public class BasicForwardRenderer : PraxisSystem
             var lightComp = World.Get<DirectionalLightComponent>(lightEntity);
 
             _directionalLightCol[_directionalLightCount] = lightComp.color;
-            _directionalLightFwd[_directionalLightCount] = Vector3.TransformNormal(-Vector3.UnitZ, cachedMatrix.transform);
+            _directionalLightFwd[_directionalLightCount] = Vector3.TransformNormal(Vector3.UnitZ, cachedMatrix.transform);
 
             _directionalLightCount++;
 
@@ -175,7 +175,7 @@ public class BasicForwardRenderer : PraxisSystem
             _cachedSpotLights.Add(new RenderSpotLight
             {
                 pos = cachedMatrix.transform.Translation,
-                fwd = Vector3.TransformNormal(-Vector3.UnitZ, cachedMatrix.transform),
+                fwd = Vector3.TransformNormal(Vector3.UnitZ, cachedMatrix.transform),
                 innerConeAngle = lightComp.innerConeAngle,
                 outerConeAngle = lightComp.outerConeAngle,
                 radius = lightComp.radius,
@@ -303,13 +303,6 @@ public class BasicForwardRenderer : PraxisSystem
             }
 
             material.ApplyParameters();
-
-            foreach (var param in fx.Parameters)
-            {
-                if (param.ParameterType == EffectParameterType.Texture2D && param.GetValueTexture2D() == null)
-                {
-                }
-            }
 
             var mesh = queue[i].mesh;
 

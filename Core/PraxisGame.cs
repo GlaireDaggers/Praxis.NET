@@ -1,8 +1,12 @@
 ﻿namespace Praxis.Core;
 
 using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using MoonTools.ECS;
+using OWB;
 using ResourceCache.Core;
 using ResourceCache.FNA;
 
@@ -74,6 +78,27 @@ public class PraxisGame : Game
     {
         Debug.Assert(_worlds.Contains(context));
         _worlds.Remove(context);
+    }
+
+    /// <summary>
+    /// Load a new scene into the given world and return a reference to it
+    /// </summary>
+    public Scene LoadScene(string path, World world, IGenericEntityHandler? entityHandler = null)
+    {
+        JsonSerializerOptions options = new JsonSerializerOptions
+        {
+            Converters = {
+                new JsonVector2Converter(),
+                new JsonVector3Converter(),
+                new JsonVector4Converter(),
+                new JsonQuaternionConverter(),
+                new JsonColorConverter(),
+            }
+        };
+        using var stream = Resources.Open(path);
+        Level level = JsonSerializer.Deserialize<Level>(stream, options)!;
+
+        return new Scene(this, world, "content", level, entityHandler);
     }
 
     protected override void LoadContent()

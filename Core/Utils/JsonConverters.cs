@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
+using OWB;
 
 namespace Praxis.Core;
 
@@ -57,6 +58,26 @@ public class JsonVector4Converter : JsonConverter<Vector4>
     }
 
     public override void Write(Utf8JsonWriter writer, Vector4 value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class JsonQuaternionConverter : JsonConverter<Quaternion>
+{
+    public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        string data = reader.GetString()!;
+        string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
+        return new Quaternion(
+            float.Parse(v[0], CultureInfo.InvariantCulture),
+            float.Parse(v[1], CultureInfo.InvariantCulture),
+            float.Parse(v[2], CultureInfo.InvariantCulture),
+            float.Parse(v[3], CultureInfo.InvariantCulture)
+        );
+    }
+
+    public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }
