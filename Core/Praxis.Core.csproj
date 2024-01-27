@@ -4,6 +4,7 @@
     <ProjectReference Include="..\deps\FNA\FNA.Core.csproj" />
     <ProjectReference Include="..\deps\ResourceCache\src\ResourceCache.Core\ResourceCache.Core.csproj" />
     <ProjectReference Include="..\deps\ResourceCache\src\ResourceCache.FNA.Core\ResourceCache.FNA.Core.csproj" />
+    <ProjectReference Include="..\deps\bepuphysicsv2\BepuPhysics\BepuPhysics.csproj" />
   </ItemGroup>
 
   <ItemGroup>

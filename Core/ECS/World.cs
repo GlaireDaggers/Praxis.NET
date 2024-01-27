@@ -1,7 +1,13 @@
-﻿using System.Collections;
-using System.Runtime.InteropServices;
+﻿#if DEBUG
+// uncomment this to fall back to safe casts in debug mode
+// #define DEBUG_CAST
+#endif
 
 namespace Praxis.Core.ECS;
+
+using System.Collections;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 public class World
 {
@@ -207,8 +213,7 @@ public class World
             return false;
         }
 
-        IComponentStorage storage = _componentDepot[typeId];
-        return storage.Contains(entity);
+        return _componentDepot[typeId].Contains(entity);
     }
 
     private List<T> GetMessageStorage<T>()
@@ -222,7 +227,11 @@ public class World
             _messageDepotList.Add(storage);
         }
 
+        #if DEBUG_CAST
         return (List<T>)_messageDepot[typeId];
+        #else
+        return Unsafe.As<List<T>>(_messageDepot[typeId]);
+        #endif
     }
 
     private RelationStorage<T> GetRelationStorage<T>()
@@ -237,7 +246,11 @@ public class World
             _relationDepotList.Add(storage);
         }
 
+        #if DEBUG_CAST
         return (RelationStorage<T>)_relationDepot[typeId];
+        #else
+        return Unsafe.As<RelationStorage<T>>(_relationDepot[typeId]);
+        #endif
     }
 
     private ComponentStorage<T> GetComponentStorage<T>()
@@ -252,6 +265,10 @@ public class World
             _componentDepotList.Add(storage);
         }
 
+        #if DEBUG_CAST
         return (ComponentStorage<T>)_componentDepot[typeId];
+        #else
+        return Unsafe.As<ComponentStorage<T>>(_componentDepot[typeId]);
+        #endif
     }
 }

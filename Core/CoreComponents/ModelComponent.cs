@@ -2,5 +2,5 @@
 
 public struct ModelComponent
 {
-    public RuntimeResource<Model>? model;
+    public RuntimeResource<Model> model;
 }

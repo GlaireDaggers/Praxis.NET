@@ -216,7 +216,7 @@ public class BasicForwardRenderer : PraxisSystem
             foreach (var modelEntity in _modelFilter.Entities)
             {
                 var modelComponent = World.Get<ModelComponent>(modelEntity);
-                var modelHandle = modelComponent.model.Value;
+                var modelHandle = modelComponent.model;
  
                 if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
 

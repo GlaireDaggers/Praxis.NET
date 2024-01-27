@@ -215,18 +215,15 @@ public class SimpleAnimationSystem : SkinnedAnimationSystem
         var animComp = World.Get<SimpleAnimationComponent>(entity);
         var modelComp = World.Get<ModelComponent>(entity);
 
-        var model = modelComp.model?.Value;
+        var model = modelComp.model.Value;
 
-        if (model != null)
+        if (animComp.animationId == -1)
         {
-            if (animComp.animationId == -1)
-            {
-                ClearBoneTransforms(model, pose);
-            }
-            else
-            {
-                BlendAnimationResult(animComp.animationId, animComp.time, model, pose, AnimationBlendOp.Replace);
-            }
+            ClearBoneTransforms(model, pose);
+        }
+        else
+        {
+            BlendAnimationResult(animComp.animationId, animComp.time, model, pose, AnimationBlendOp.Replace);
         }
 
         animComp.time += deltaTime;

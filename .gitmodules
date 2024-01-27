@@ -7,3 +7,6 @@
 [submodule "deps/ContentPipe"]
 	path = deps/ContentPipe
 	url = git@github.com:GlaireDaggers/ContentPipe.git
+[submodule "deps/bepuphysicsv2"]
+	path = deps/bepuphysicsv2
+	url = https://github.com/bepu/bepuphysics2.git
