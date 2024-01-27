@@ -41,7 +41,7 @@ public class WorldContext
 
         for (int i = 0; i < _systems.Count; i++)
         {
-            _systems[i].LateUpdate(dt);
+            _systems[i].PostUpdate(dt);
         }
 
         World.PostUpdate();

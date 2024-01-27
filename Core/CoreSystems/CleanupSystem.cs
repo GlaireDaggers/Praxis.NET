@@ -24,9 +24,9 @@ public class CleanupSystem : PraxisSystem
     {
     }
 
-    public override void LateUpdate(float deltaTime)
+    public override void PostUpdate(float deltaTime)
     {
-        base.LateUpdate(deltaTime);
+        base.PostUpdate(deltaTime);
 
         foreach (var msg in World.GetMessages<DestroyEntity>())
         {

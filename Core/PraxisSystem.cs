@@ -5,6 +5,7 @@ using Praxis.Core.ECS;
 /// <summary>
 /// Attribute to indicate that this system must execute after another system
 /// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class ExecuteBeforeAttribute : Attribute
 {
     public readonly Type systemType;
@@ -18,6 +19,7 @@ public class ExecuteBeforeAttribute : Attribute
 /// <summary>
 /// Attribute to indicate that this system must execute after another system
 /// </summary>
+[AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
 public class ExecuteAfterAttribute : Attribute
 {
     public readonly Type systemType;
@@ -50,7 +52,7 @@ public class PraxisSystem
     {
     }
 
-    public virtual void LateUpdate(float deltaTime)
+    public virtual void PostUpdate(float deltaTime)
     {
     }
 

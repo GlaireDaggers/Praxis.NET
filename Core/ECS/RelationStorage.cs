@@ -41,6 +41,7 @@ internal class IndexableSet<T>
                 _set[_list[i]] = i;
             }
 
+            _list.RemoveAt(_list.Count - 1);
             _set.Remove(data);
 
             return true;

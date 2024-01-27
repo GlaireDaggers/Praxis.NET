@@ -126,6 +126,7 @@ public class PraxisGame : Game
 
         // register default systems
         new SimpleAnimationSystem(DefaultContext);
+        new PhysicsSystem(DefaultContext);
         new CalculateTransformSystem(DefaultContext);
         new BasicForwardRenderer(DefaultContext);
         new CleanupSystem(DefaultContext);

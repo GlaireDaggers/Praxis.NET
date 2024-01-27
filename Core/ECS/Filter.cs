@@ -2,6 +2,7 @@
 
 public class Filter
 {
+    public string? tag;
     public SpanEnumerator<Entity> Entities => new SpanEnumerator<Entity>(entitySet.AsSpan);
     public int Count => entitySet.Count;
 

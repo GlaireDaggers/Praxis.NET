@@ -56,5 +56,18 @@ public class ExampleGame : PraxisGame
             model = foxModel
         });
         DefaultContext.World.Set(fox, foxAnim);
+
+        Entity floor = DefaultContext.World.CreateEntity("floor");
+        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, 0f, 0f), Quaternion.Identity, Vector3.One));
+        DefaultContext.World.Set(floor, new BoxColliderComponent
+        {
+            weight = 1f,
+            extents = new Vector3(10f, 1f, 10f)
+        });
+        DefaultContext.World.Set(floor, new RigidbodyComponent
+        {
+            isStatic = true,
+            material = PhysicsMaterial.Default
+        });
     }
 }
