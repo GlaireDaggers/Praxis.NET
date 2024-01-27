@@ -3,7 +3,7 @@
 public class Filter
 {
     public string? tag;
-    public SpanEnumerator<Entity> Entities => new SpanEnumerator<Entity>(entitySet.AsSpan);
+    public ReverseSpanEnumerator<Entity> Entities => new ReverseSpanEnumerator<Entity>(entitySet.AsSpan);
     public int Count => entitySet.Count;
 
     internal FilterSignature signature;

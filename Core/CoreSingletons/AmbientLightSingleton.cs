@@ -2,7 +2,7 @@
 
 using Microsoft.Xna.Framework;
 
-public struct AmbientLightComponent
+public class AmbientLightSingleton
 {
     public Vector3 color;
 }

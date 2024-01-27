@@ -115,24 +115,24 @@ internal class RelationStorage<T> : IRelationStorage
         return _inRelationSets.ContainsKey(to) && _inRelationSets[to].Count > 0;
     }
 
-    public SpanEnumerator<Entity> GetOutRelations(in Entity from)
+    public ReverseSpanEnumerator<Entity> GetOutRelations(in Entity from)
     {
         if (_outRelationSets.TryGetValue(from, out var outRelations))
         {
-            return new SpanEnumerator<Entity>(outRelations.AsSpan);
+            return new ReverseSpanEnumerator<Entity>(outRelations.AsSpan);
         }
 
-        return new SpanEnumerator<Entity>();
+        return new ReverseSpanEnumerator<Entity>();
     }
 
-    public SpanEnumerator<Entity> GetInRelations(in Entity to)
+    public ReverseSpanEnumerator<Entity> GetInRelations(in Entity to)
     {
         if (_inRelationSets.TryGetValue(to, out var inRelations))
         {
-            return new SpanEnumerator<Entity>(inRelations.AsSpan);
+            return new ReverseSpanEnumerator<Entity>(inRelations.AsSpan);
         }
 
-        return new SpanEnumerator<Entity>();
+        return new ReverseSpanEnumerator<Entity>();
     }
 
     public Entity GetFirstOutRelation(in Entity from)

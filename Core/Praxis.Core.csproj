@@ -11,6 +11,10 @@
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0030" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="CoreSingletons/" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

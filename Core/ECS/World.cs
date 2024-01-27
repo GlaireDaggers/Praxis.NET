@@ -28,24 +28,29 @@ public class World
     private List<Filter> _filterList = new List<Filter>();
 
     public void SetSingleton<T>(in T data)
-        where T : notnull
+        where T : class
     {
         uint typeId = TypeId.GetTypeId<T>();
         _singletonComponentStorage[typeId] = data;
     }
 
     public bool HasSingleton<T>()
-        where T : notnull
+        where T : class
     {
         uint typeId = TypeId.GetTypeId<T>();
         return _singletonComponentStorage.ContainsKey(typeId);
     }
 
     public T GetSingleton<T>()
-        where T : notnull
+        where T : class
     {
         uint typeId = TypeId.GetTypeId<T>();
+
+        #if DEBUG_CAST
         return (T)_singletonComponentStorage[typeId];
+        #else
+        return Unsafe.As<T>(_singletonComponentStorage[typeId]);
+        #endif
     }
 
     public void Send<T>(in T message)
@@ -146,13 +151,13 @@ public class World
         return GetRelationStorage<T>().HasInRelations(to);
     }
 
-    public SpanEnumerator<Entity> GetOutRelations<T>(in Entity from)
+    public ReverseSpanEnumerator<Entity> GetOutRelations<T>(in Entity from)
         where T : struct
     {
         return GetRelationStorage<T>().GetOutRelations(from);
     }
 
-    public SpanEnumerator<Entity> GetInRelations<T>(in Entity from)
+    public ReverseSpanEnumerator<Entity> GetInRelations<T>(in Entity from)
         where T : struct
     {
         return GetRelationStorage<T>().GetInRelations(from);
@@ -170,10 +175,10 @@ public class World
         return GetRelationStorage<T>().GetFirstInRelation(from);
     }
 
-    public SpanEnumerator<T> GetMessages<T>()
+    public ReverseSpanEnumerator<T> GetMessages<T>()
     {
         var span = CollectionsMarshal.AsSpan(GetMessageStorage<T>());
-        return new SpanEnumerator<T>(span);
+        return new ReverseSpanEnumerator<T>(span);
     }
 
     public void PostUpdate()

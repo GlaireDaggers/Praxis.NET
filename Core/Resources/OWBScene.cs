@@ -116,7 +116,7 @@ public class Scene : IDisposable
     {
         Vector3 ambientColor = node.AmbientColor.ToVector3() * (float)node.AmbientIntensity;
 
-        World.SetSingleton(new AmbientLightComponent
+        World.SetSingleton(new AmbientLightSingleton
         {
             color = ambientColor
         });

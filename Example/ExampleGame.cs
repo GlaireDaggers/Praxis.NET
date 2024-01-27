@@ -62,12 +62,54 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(floor, new BoxColliderComponent
         {
             weight = 1f,
-            extents = new Vector3(10f, 1f, 10f)
+            extents = new Vector3(100f, 1f, 100f)
         });
         DefaultContext.World.Set(floor, new RigidbodyComponent
         {
             isStatic = true,
             material = PhysicsMaterial.Default
         });
+
+        Random rng = new Random();
+        for (int i = -4; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                float yaw = (float)rng.NextDouble() * MathHelper.Pi * 2f;
+                float pitch = (float)rng.NextDouble() * MathHelper.Pi * 2f;
+                float roll = (float)rng.NextDouble() * MathHelper.Pi * 2f;
+
+                Entity testRigidbody = DefaultContext.World.CreateEntity($"test rigidbody {i} {j}");
+                DefaultContext.World.Set(testRigidbody, new TransformComponent(
+                    new Vector3(i * 10f, 20f + (j * 20f), 0f),
+                    Quaternion.CreateFromYawPitchRoll(yaw, pitch, roll),
+                    Vector3.One));
+                DefaultContext.World.Set(testRigidbody, new BoxColliderComponent
+                {
+                    weight = 1f,
+                    center = new Vector3(0f, 2f, 0f),
+                    extents = new Vector3(1f, 2f, 2f)
+                });
+                DefaultContext.World.Set(testRigidbody, new RigidbodyComponent
+                {
+                    isStatic = false,
+                    material = new PhysicsMaterial
+                    {
+                        friction = 1f,
+                        maxRecoveryVelocity = float.MaxValue,
+                        bounceFrequency = 5f,
+                        bounceDamping = 0.1f
+                    }
+                });
+                
+                Entity testRigidbodyMesh = DefaultContext.World.CreateEntity();
+                DefaultContext.World.Set(testRigidbodyMesh, new TransformComponent(Vector3.Zero, Quaternion.Identity, Vector3.One * 0.1f));
+                DefaultContext.World.Set(testRigidbodyMesh, new ModelComponent
+                {
+                    model = foxModel
+                });
+                DefaultContext.World.Relate(testRigidbodyMesh, testRigidbody, new ChildOf());
+            }
+        }
     }
 }

@@ -12,14 +12,13 @@ using Praxis.Core.ECS;
 using Microsoft.Xna.Framework;
 using Matrix = Microsoft.Xna.Framework.Matrix;
 using System.Diagnostics;
-using System.Runtime.InteropServices.Marshalling;
 
 public struct PhysicsMaterial
 {
     public static readonly PhysicsMaterial Default = new PhysicsMaterial
     {
         friction = 1f,
-        maxRecoveryVelocity = 2f,
+        maxRecoveryVelocity = float.MaxValue,
         bounceFrequency = 30f,
         bounceDamping = 1f
     };
@@ -70,14 +69,15 @@ public class PhysicsSystem : PraxisSystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
         {
-            var matA = system._bodyMaterials[pair.A.BodyHandle];
-            var matB = system._bodyMaterials[pair.B.BodyHandle];
+            var matA = pair.A.Mobility == CollidableMobility.Static ? system._staticMaterials[pair.A.StaticHandle] : system._bodyMaterials[pair.A.BodyHandle];
+            var matB = pair.B.Mobility == CollidableMobility.Static ? system._staticMaterials[pair.B.StaticHandle] : system._bodyMaterials[pair.B.BodyHandle];
+
+            var freq = MathF.Max(matA.bounceFrequency, matB.bounceFrequency);
+            var damp = MathF.Min(matA.bounceDamping, matB.bounceDamping);
 
             pairMaterial.FrictionCoefficient = matA.friction * matB.friction;
             pairMaterial.MaximumRecoveryVelocity = MathF.Max(matA.maxRecoveryVelocity, matB.maxRecoveryVelocity);
-            pairMaterial.SpringSettings = pairMaterial.MaximumRecoveryVelocity == matA.maxRecoveryVelocity ?
-                new SpringSettings(matA.bounceFrequency, matA.bounceDamping) :
-                new SpringSettings(matB.bounceFrequency, matB.bounceDamping);
+            pairMaterial.SpringSettings = new SpringSettings(freq, damp);
             
             return true;
         }
@@ -162,7 +162,7 @@ public class PhysicsSystem : PraxisSystem
         _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks()
         {
             gravity = new System.Numerics.Vector3(0f, -10f, 0f)
-        }, new SolveDescription(8, 1));
+        }, new SolveDescription(8, 8));
 
         _shapeBuilder = new CompoundBuilder(_bufferPool, _sim.Shapes, 16);
     }
@@ -229,7 +229,8 @@ public class PhysicsSystem : PraxisSystem
     private void InitEntity(in Entity entity)
     {
         RigidbodyComponent rigidbody = World.Get<RigidbodyComponent>(entity);
-        GatherShapes(entity, Matrix.Identity, ref _shapeBuilder, false);
+        Matrix worldToLocal = Matrix.Invert(CalculateTransform(entity));
+        GatherShapes(entity, worldToLocal, Matrix.Identity, ref _shapeBuilder, false);
 
         Matrix trs = CalculateTransform(entity);
         Debug.Assert(trs.Decompose(out _, out var rot, out var pos));
@@ -270,7 +271,7 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
-    private void GatherShapes(in Entity entity, in Matrix parent, ref CompoundBuilder shapeBuilder, bool isChild)
+    private void GatherShapes(in Entity entity, in Matrix worldToLocal, in Matrix parent, ref CompoundBuilder shapeBuilder, bool isChild)
     {
         // if a child has its own rigidbody component, don't include its collision hierarchy (let it build its own)
         if (isChild && World.Has<RigidbodyComponent>(entity))
@@ -278,10 +279,10 @@ public class PhysicsSystem : PraxisSystem
             return;
         }
 
-        Matrix localTransform = CalculateLocalTransform(entity);
-        Matrix transform = localTransform * parent;
+        Matrix transform = CalculateLocalTransform(entity) * parent;
+        Matrix localTransform = transform * worldToLocal;
 
-        Debug.Assert(transform.Decompose(out var scale, out var rot, out var pos));
+        Debug.Assert(localTransform.Decompose(out var scale, out var rot, out var pos));
         var localPose = new RigidPose(Convert(pos), Convert(rot));
 
         if (World.Has<BoxColliderComponent>(entity))
@@ -297,7 +298,7 @@ public class PhysicsSystem : PraxisSystem
         {
             foreach (var child in World.GetInRelations<ChildOf>(entity))
             {
-                GatherShapes(child, transform, ref shapeBuilder, true);
+                GatherShapes(child, worldToLocal, transform, ref shapeBuilder, true);
             }
         }
     }

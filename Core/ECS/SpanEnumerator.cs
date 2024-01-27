@@ -1,25 +1,25 @@
 ﻿namespace Praxis.Core.ECS;
 
-public ref struct SpanEnumerator<T>
+public ref struct ReverseSpanEnumerator<T>
 {
     private Span<T> _span;
     private int _current;
 
-    public SpanEnumerator<T> GetEnumerator() => this;
+    public ReverseSpanEnumerator<T> GetEnumerator() => this;
 
     public T Current => _span[_current];
 
-    internal SpanEnumerator(Span<T> span)
+    internal ReverseSpanEnumerator(Span<T> span)
     {
         _span = span;
-        _current = -1;
+        _current = _span.Length;
     }
 
     public bool MoveNext()
     {
-        if (_current < _span.Length - 1)
+        if (_current > 0)
         {
-            _current++;
+            _current--;
             return true;
         }
 

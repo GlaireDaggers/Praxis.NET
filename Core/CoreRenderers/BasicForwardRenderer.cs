@@ -96,7 +96,7 @@ public class BasicForwardRenderer : PraxisSystem
             Vector3 posA = a.transform.Translation;
             Vector3 posB = b.transform.Translation;
             posA = Vector3.Transform(posA, _cachedView);
-            posB = Vector3.Transform(posA, _cachedView);
+            posB = Vector3.Transform(posB, _cachedView);
             return posB.Z.CompareTo(posA.Z);
         };
 
@@ -104,7 +104,7 @@ public class BasicForwardRenderer : PraxisSystem
             Vector3 posA = a.transform.Translation;
             Vector3 posB = b.transform.Translation;
             posA = Vector3.Transform(posA, _cachedView);
-            posB = Vector3.Transform(posA, _cachedView);
+            posB = Vector3.Transform(posB, _cachedView);
             return posA.Z.CompareTo(posB.Z);
         };
 
@@ -125,9 +125,9 @@ public class BasicForwardRenderer : PraxisSystem
     {
         base.Draw();
 
-        if (World.HasSingleton<AmbientLightComponent>())
+        if (World.HasSingleton<AmbientLightSingleton>())
         {
-            _ambientLightColor = World.GetSingleton<AmbientLightComponent>().color;
+            _ambientLightColor = World.GetSingleton<AmbientLightSingleton>().color;
         }
         else
         {
