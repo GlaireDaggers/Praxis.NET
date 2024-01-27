@@ -1,13 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
-using MoonTools.ECS;
+using Praxis.Core.ECS;
 
 namespace Praxis.Core;
 
 /// <summary>
 /// Wrapper around an ECS world and all of its associated systems
 /// </summary>
-public class WorldContext : IDisposable
+public class WorldContext
 {
     public readonly string Tag;
     public readonly PraxisGame Game;
@@ -44,7 +44,7 @@ public class WorldContext : IDisposable
             _systems[i].LateUpdate(dt);
         }
 
-        World.FinishUpdate();
+        World.PostUpdate();
     }
 
     public void Draw()
@@ -71,11 +71,6 @@ public class WorldContext : IDisposable
         }
 
         return null;
-    }
-    
-    public void Dispose()
-    {
-        World.Dispose();
     }
 
     // Installs pending systems that have been registered with this world context

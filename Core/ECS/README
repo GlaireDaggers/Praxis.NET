@@ -1,0 +1,12 @@
+This folder contains the underlying ECS implementation used by the Praxis game engine
+
+This implementation is HEAVILY based on MoonTools.ECS (https://gitea.moonside.games/MoonsideGames/MoonTools.ECS), both in terms of being a nearly drop-in
+replacement of it (since Praxis previously used it, I wanted to replace it with minimal changes), as well as heavily borrowing the structure & algorithms.
+
+There are a couple of key differences - the main one is that instead of using native memory to allocate structures, I'm using existing pure C# structures
+instead. The reason for this is because MoonTools.ECS's architecture requires that components, messages, relations, etc be unmanaged structs. Unfortunately,
+this poses significant challenges in terms of referring to managed objects. The recommended approach is to use some kind of object handle system where the
+component struct gets a lightweight integer handle and the actual object is stored elsewhere, but I quickly found this approach to be both unwieldy and
+error-prone.
+
+There's a couple of places I'm probably going to be paying a performance penalty for this, but it is what it is. I think I value the usability of simply being allowed to refer directly to managed objects over the slight speed increase of avoiding some casts.

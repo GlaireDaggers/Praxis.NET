@@ -6,17 +6,15 @@ public struct CachedPoseComponent
 {
     public const int MAX_BONES = 128;
 
-    public readonly ObjectHandle<Matrix[]> Pose;
+    public readonly Matrix[] Pose;
 
     public CachedPoseComponent()
     {
-        Matrix[] pose = new Matrix[MAX_BONES];
+        Pose = new Matrix[MAX_BONES];
 
-        for (int i = 0; i < pose.Length; i++)
+        for (int i = 0; i < Pose.Length; i++)
         {
-            pose[i] = Matrix.Identity;
+            Pose[i] = Matrix.Identity;
         }
-
-        Pose = new ObjectHandle<Matrix[]>(pose);
     }
 }

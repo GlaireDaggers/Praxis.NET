@@ -1,11 +1,11 @@
 ﻿namespace Praxis.Core;
 
+using Praxis.Core.ECS;
+
 using System.Diagnostics;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MoonTools.ECS;
 using OWB;
 using ResourceCache.Core;
 using ResourceCache.FNA;
@@ -189,7 +189,6 @@ public class PraxisGame : Game
     {
         base.UnloadContent();
         Teardown();
-        DefaultContext.Dispose();
         Resources.UnloadAll();
     }
 }

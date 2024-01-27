@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MoonTools.ECS;
 using Praxis.Core;
+using Praxis.Core.ECS;
 using ResourceCache.Core.FS;
 
 using Model = Praxis.Core.Model;
@@ -23,7 +23,6 @@ public class ExampleGame : PraxisGame
         Resources.Mount("content", new FolderFS("content/bin"));
 
         var foxModel = Resources.Load<Model>("content/models/Fox.pmdl");
-        var foxModelHandle = new ObjectHandle<RuntimeResource<Model>>(foxModel);
 
         var filterStack = new ScreenFilterStack(this);
         filterStack.filters.Add(new BloomFilter(this));
@@ -40,8 +39,8 @@ public class ExampleGame : PraxisGame
             near = 0.1f,
             far = 1000.0f,
             clearColor = Color.CornflowerBlue,
-            renderTarget = ObjectHandle<RenderTarget2D>.NULL,
-            filterStack = new ObjectHandle<ScreenFilterStack>(filterStack)
+            renderTarget = null,
+            filterStack = filterStack
         });
         DefaultContext.World.Set(camera, new CameraMovementComponent
         {
@@ -54,7 +53,7 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(fox, new TransformComponent(new Vector3(20f, 0f, 0f), Quaternion.Identity, Vector3.One * 0.1f));
         DefaultContext.World.Set(fox, new ModelComponent
         {
-            modelHandle = foxModelHandle
+            model = foxModel
         });
         DefaultContext.World.Set(fox, foxAnim);
     }

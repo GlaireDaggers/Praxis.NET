@@ -1,7 +1,8 @@
 ﻿namespace Praxis.Core;
 
+using Praxis.Core.ECS;
+
 using Microsoft.Xna.Framework;
-using MoonTools.ECS;
 using OWB;
 
 /// <summary>
@@ -69,7 +70,7 @@ public class Scene : IDisposable
 
         if (node is SceneRootNode)
         {
-            Unpack((SceneRootNode)node, entity);
+            Unpack((SceneRootNode)node);
         }
         else if (node is GenericEntityNode)
         {
@@ -111,17 +112,14 @@ public class Scene : IDisposable
         return entity;
     }
 
-    private void Unpack(SceneRootNode node, Entity target)
+    private void Unpack(SceneRootNode node)
     {
         Vector3 ambientColor = node.AmbientColor.ToVector3() * (float)node.AmbientIntensity;
 
-        Entity ambientLightNode = World.CreateEntity("ambientLight");
-        World.Set(ambientLightNode, new AmbientLightComponent
+        World.SetSingleton(new AmbientLightComponent
         {
             color = ambientColor
         });
-
-        World.Relate(ambientLightNode, target, new ChildOf());
     }
 
     private void Unpack(GenericEntityNode node, Entity target)
@@ -168,13 +166,10 @@ public class Scene : IDisposable
         string meshPath = Path.Combine(_projectPath, Path.ChangeExtension(node.MeshPath!, "pmdl"));
 
         var model = Game.Resources.Load<Model>(meshPath);
-        var modelHandle = new ObjectHandle<RuntimeResource<Model>>(model);
-
-        _resources.Add(modelHandle);
 
         World.Set(target, new ModelComponent
         {
-            modelHandle = modelHandle
+            model = model
         });
     }
 

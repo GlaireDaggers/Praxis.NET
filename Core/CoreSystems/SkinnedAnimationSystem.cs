@@ -1,7 +1,7 @@
-﻿using Microsoft.Xna.Framework;
-using MoonTools.ECS;
+﻿namespace Praxis.Core;
 
-namespace Praxis.Core;
+using Praxis.Core.ECS;
+using Microsoft.Xna.Framework;
 
 /// <summary>
 /// Base class for a system which performs skeletal animation
@@ -53,7 +53,7 @@ public class SkinnedAnimationSystem : PraxisSystem
                     pose = new CachedPoseComponent();
                 }
 
-                Update(entity, pose.Pose.Value!, deltaTime);
+                Update(entity, pose.Pose, deltaTime);
                 World.Set(entity, pose);
             }
         }
@@ -201,7 +201,7 @@ public class SimpleAnimationSystem : SkinnedAnimationSystem
 {
     public SimpleAnimationSystem(WorldContext context) : base(context)
     {
-        SetFilter(World.FilterBuilder
+        SetFilter(new FilterBuilder(World)
             .Include<SimpleAnimationComponent>()
             .Include<ModelComponent>()
             .Build()
@@ -215,15 +215,18 @@ public class SimpleAnimationSystem : SkinnedAnimationSystem
         var animComp = World.Get<SimpleAnimationComponent>(entity);
         var modelComp = World.Get<ModelComponent>(entity);
 
-        var model = modelComp.modelHandle.Value;
+        var model = modelComp.model?.Value;
 
-        if (animComp.animationId == -1)
+        if (model != null)
         {
-            ClearBoneTransforms(model.Value, pose);
-        }
-        else
-        {
-            BlendAnimationResult(animComp.animationId, animComp.time, model.Value, pose, AnimationBlendOp.Replace);
+            if (animComp.animationId == -1)
+            {
+                ClearBoneTransforms(model, pose);
+            }
+            else
+            {
+                BlendAnimationResult(animComp.animationId, animComp.time, model, pose, AnimationBlendOp.Replace);
+            }
         }
 
         animComp.time += deltaTime;

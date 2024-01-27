@@ -1,8 +1,9 @@
 ﻿namespace Praxis.Core;
 
+using Praxis.Core.ECS;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MoonTools.ECS;
 
 [ExecuteAfter(typeof(CalculateTransformSystem))]
 public class BasicForwardRenderer : PraxisSystem
@@ -52,7 +53,6 @@ public class BasicForwardRenderer : PraxisSystem
 
     Filter _cameraFilter;
     Filter _modelFilter;
-    Filter _ambientLightFilter;
     Filter _directionalLightFilter;
     Filter _pointLightFilter;
     Filter _spotLightFilter;
@@ -67,31 +67,27 @@ public class BasicForwardRenderer : PraxisSystem
 
     public BasicForwardRenderer(WorldContext context) : base(context)
     {
-        _cameraFilter = World.FilterBuilder
+        _cameraFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<CameraComponent>()
             .Build();
 
-        _modelFilter = World.FilterBuilder
+        _modelFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<ModelComponent>()
             .Build();
 
-        _ambientLightFilter = World.FilterBuilder
-            .Include<AmbientLightComponent>()
-            .Build();
-
-        _directionalLightFilter = World.FilterBuilder
+        _directionalLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<DirectionalLightComponent>()
             .Build();
 
-        _pointLightFilter = World.FilterBuilder
+        _pointLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<PointLightComponent>()
             .Build();
 
-        _spotLightFilter = World.FilterBuilder
+        _spotLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<SpotLightComponent>()
             .Build();
@@ -129,7 +125,7 @@ public class BasicForwardRenderer : PraxisSystem
     {
         base.Draw();
 
-        if (_ambientLightFilter.Count > 0)
+        if (World.HasSingleton<AmbientLightComponent>())
         {
             _ambientLightColor = World.GetSingleton<AmbientLightComponent>().color;
         }
@@ -188,8 +184,8 @@ public class BasicForwardRenderer : PraxisSystem
             var cachedMatrix = World.Get<CachedMatrixComponent>(cameraEntity);
             var camera = World.Get<CameraComponent>(cameraEntity);
 
-            RenderTarget2D? renderTarget = camera.renderTarget.Value;
-            ScreenFilterStack? screenFilter = camera.filterStack.Value;
+            RenderTarget2D? renderTarget = camera.renderTarget;
+            ScreenFilterStack? screenFilter = camera.filterStack;
 
             int targetWidth = renderTarget?.Width ?? Game.GraphicsDevice.Viewport.Width;
             int targetHeight = renderTarget?.Height ?? Game.GraphicsDevice.Viewport.Height;
@@ -220,7 +216,7 @@ public class BasicForwardRenderer : PraxisSystem
             foreach (var modelEntity in _modelFilter.Entities)
             {
                 var modelComponent = World.Get<ModelComponent>(modelEntity);
-                var modelHandle = modelComponent.modelHandle.Value;
+                var modelHandle = modelComponent.model.Value;
  
                 if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
 
@@ -234,7 +230,7 @@ public class BasicForwardRenderer : PraxisSystem
 
                 if (World.Has<CachedPoseComponent>(modelEntity))
                 {
-                    pose = World.Get<CachedPoseComponent>(modelEntity).Pose.Value;
+                    pose = World.Get<CachedPoseComponent>(modelEntity).Pose;
                 }
 
                 if (_cachedFrustum.Intersects(bounds))

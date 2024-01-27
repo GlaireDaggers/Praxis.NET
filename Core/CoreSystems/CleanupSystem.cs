@@ -1,6 +1,6 @@
-﻿using MoonTools.ECS;
+﻿namespace Praxis.Core;
 
-namespace Praxis.Core;
+using Praxis.Core.ECS;
 
 /// <summary>
 /// Message which can be posted to destroy an entity and all of its children
@@ -28,9 +28,7 @@ public class CleanupSystem : PraxisSystem
     {
         base.LateUpdate(deltaTime);
 
-        var destroyEntities = World.ReadMessages<DestroyEntity>();
-
-        foreach (var msg in destroyEntities)
+        foreach (var msg in World.GetMessages<DestroyEntity>())
         {
             DestroyEntity(msg.entity);
         }
@@ -38,19 +36,14 @@ public class CleanupSystem : PraxisSystem
 
     private void DestroyEntity(in Entity entity)
     {
-        if (World.HasInRelation<ChildOf>(entity))
+        if (World.HasInRelations<ChildOf>(entity))
         {
-            foreach (var child in World.InRelations<ChildOf>(entity))
+            foreach (var child in World.GetInRelations<ChildOf>(entity))
             {
                 DestroyEntity(child);
             }
         }
 
-        if (World.Has<CachedPoseComponent>(entity))
-        {
-            World.Get<CachedPoseComponent>(entity).Pose.Dispose();
-        }
-
-        World.Destroy(entity);
+        World.DestroyEntity(entity);
     }
 }

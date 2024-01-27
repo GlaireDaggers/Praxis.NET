@@ -1,6 +1,6 @@
 ﻿namespace Praxis.Core;
 
-using MoonTools.ECS;
+using Praxis.Core.ECS;
 
 /// <summary>
 /// Attribute to indicate that this system must execute after another system

@@ -1,7 +1,7 @@
 ﻿namespace Praxis.Core;
 
+using Praxis.Core.ECS;
 using Microsoft.Xna.Framework;
-using MoonTools.ECS;
 
 public class CalculateTransformSystem : PraxisSystem
 {
@@ -11,7 +11,7 @@ public class CalculateTransformSystem : PraxisSystem
 
     public CalculateTransformSystem(WorldContext context) : base(context)
     {
-        _transformFilter = World.FilterBuilder
+        _transformFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
             .Build();
     }
@@ -41,9 +41,9 @@ public class CalculateTransformSystem : PraxisSystem
             * Matrix.CreateFromQuaternion(transform.rotation)
             * Matrix.CreateTranslation(transform.position);
 
-        if (World.HasOutRelation<ChildOf>(entity))
+        if (World.HasOutRelations<ChildOf>(entity))
         {
-            var parent = World.OutRelationSingleton<ChildOf>(entity);
+            var parent = World.GetFirstOutRelation<ChildOf>(entity);
             CalculateTransform(parent);
             trs *= World.Get<CachedMatrixComponent>(parent).transform;
         }

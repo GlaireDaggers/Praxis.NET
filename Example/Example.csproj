@@ -2,7 +2,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\deps\FNA\FNA.Core.csproj" />
-    <ProjectReference Include="..\deps\MoonTools.ECS\MoonTools.ECS.csproj" />
     <ProjectReference Include="..\Core\Praxis.Core.csproj" />
   </ItemGroup>
 

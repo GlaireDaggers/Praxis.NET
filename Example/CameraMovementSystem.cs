@@ -2,8 +2,8 @@
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using MoonTools.ECS;
 using Praxis.Core;
+using Praxis.Core.ECS;
 
 [ExecuteBefore(typeof(CalculateTransformSystem))]
 public class CameraMovementSystem : PraxisSystem
@@ -12,7 +12,7 @@ public class CameraMovementSystem : PraxisSystem
 
     public CameraMovementSystem(WorldContext context) : base(context)
     {
-        _cameraFilter = World.FilterBuilder
+        _cameraFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
             .Include<CameraMovementComponent>()
             .Build();
