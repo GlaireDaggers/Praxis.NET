@@ -44,6 +44,12 @@ public class PhysicsSystem : PraxisSystem
         public StaticHandle body;
     }
 
+    struct ConstraintStateComponent
+    {
+        public BodyHandle other;
+        public ConstraintHandle constraint;
+    }
+
     struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
     {
         public PhysicsSystem system;
@@ -130,7 +136,7 @@ public class PhysicsSystem : PraxisSystem
 
         public void PrepareForIntegration(float dt)
         {
-            _gravityWideDt = Vector3Wide.Broadcast(Convert(system._gravity) * dt);
+            _gravityWideDt = Vector3Wide.Broadcast(NumericsConversion.Convert(system._gravity) * dt);
         }
     }
 
@@ -138,11 +144,11 @@ public class PhysicsSystem : PraxisSystem
 
     private BufferPool _bufferPool = new BufferPool();
     private IThreadDispatcher _threadDispatcher = new ThreadDispatcher(Environment.ProcessorCount);
-    private CompoundBuilder _shapeBuilder;
     private Simulation _sim;
 
     private Dictionary<BodyHandle, PhysicsMaterial> _bodyMaterials = new Dictionary<BodyHandle, PhysicsMaterial>();
     private Dictionary<BodyHandle, uint> _bodyMasks = new Dictionary<BodyHandle, uint>();
+    private Dictionary<BodyHandle, Entity> _incomingConstraints = new Dictionary<BodyHandle, Entity>();
 
     private float _accum;
     private float _timestep = 1f / 60f;
@@ -152,7 +158,9 @@ public class PhysicsSystem : PraxisSystem
 
     private Filter _initBodyFilter;
     private Filter _initStaticFilter;
-    private Filter _updateFilter;
+    private Filter _initConstraintFilter;
+    private Filter _updateBodyFilter;
+    private Filter _updateConstraintFilter;
 
     public PhysicsSystem(WorldContext context) : base(context)
     {
@@ -170,14 +178,22 @@ public class PhysicsSystem : PraxisSystem
             .Exclude<StaticRigidbodyStateComponent>()
             .Build();
 
-        _updateFilter = new FilterBuilder(World)
+        _initConstraintFilter = new FilterBuilder(World)
+            .Include<RigidbodyStateComponent>()
+            .Include<ConstraintComponent>()
+            .Exclude<ConstraintStateComponent>()
+            .Build();
+
+        _updateBodyFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
             .Include<RigidbodyStateComponent>()
             .Build();
 
-        _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks(this), new SolveDescription(8, 4));
+        _updateConstraintFilter = new FilterBuilder(World)
+            .Include<ConstraintStateComponent>()
+            .Build();
 
-        _shapeBuilder = new CompoundBuilder(_bufferPool, _sim.Shapes, 16);
+        _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks(this), new SolveDescription(8, 4));
     }
 
     public override void Update(float deltaTime)
@@ -194,7 +210,6 @@ public class PhysicsSystem : PraxisSystem
         }
 
         // init bodies & statics
-
         foreach (var entity in _initBodyFilter.Entities)
         {
             InitBody(entity);
@@ -203,6 +218,12 @@ public class PhysicsSystem : PraxisSystem
         foreach (var entity in _initStaticFilter.Entities)
         {
             InitStatic(entity);
+        }
+
+        // init constraints
+        foreach (var entity in _initConstraintFilter.Entities)
+        {
+            InitConstraint(entity);
         }
 
         _accum += deltaTime;
@@ -218,9 +239,15 @@ public class PhysicsSystem : PraxisSystem
         }
 
         // update bodies
-        foreach (var entity in _updateFilter.Entities)
+        foreach (var entity in _updateBodyFilter.Entities)
         {
-            UpdateEntity(entity);
+            UpdateBody(entity);
+        }
+
+        // update constraints
+        foreach (var entity in _updateConstraintFilter.Entities)
+        {
+            UpdateConstraint(entity);
         }
     }
 
@@ -265,12 +292,12 @@ public class PhysicsSystem : PraxisSystem
                     Quaternion rotOffset = Quaternion.Concatenate(Quaternion.Inverse(transform.rotation), childTransform.rotation);
                     Vector3 newPos = position + posOffset;
                     Quaternion newRot = Quaternion.Concatenate(rotation, rotOffset);
-                    _sim.Bodies[childState.body].Pose = new RigidPose(Convert(newPos), Convert(newRot));
+                    _sim.Bodies[childState.body].Pose = new RigidPose(NumericsConversion.Convert(newPos), NumericsConversion.Convert(newRot));
                 }
             }
         }
 
-        _sim.Bodies[state.body].Pose = new RigidPose(Convert(position), Convert(rotation));
+        _sim.Bodies[state.body].Pose = new RigidPose(NumericsConversion.Convert(position), NumericsConversion.Convert(rotation));
     }
 
     private void InitBody(in Entity entity)
@@ -283,8 +310,8 @@ public class PhysicsSystem : PraxisSystem
         TransformComponent transform = World.Get<TransformComponent>(entity);
 
         var pose = new RigidPose(
-            Convert(transform.position),
-            Convert(transform.rotation)  
+            NumericsConversion.Convert(transform.position),
+            NumericsConversion.Convert(transform.rotation)  
         );
 
         TypedIndex shape;
@@ -298,6 +325,27 @@ public class PhysicsSystem : PraxisSystem
         else
         {
             shape = collider.collider.ConstructDynamic(_sim, out var inertia);
+            
+            // https://forum.bepuentertainment.com/viewtopic.php?t=2722
+            if (rigidbody.lockRotationX)
+            {
+                inertia.InverseInertiaTensor.XX = 0f;
+                inertia.InverseInertiaTensor.YX = 0f;
+                inertia.InverseInertiaTensor.ZX = 0f;
+            }
+            if (rigidbody.lockRotationY)
+            {
+                inertia.InverseInertiaTensor.YX = 0f;
+                inertia.InverseInertiaTensor.YY = 0f;
+                inertia.InverseInertiaTensor.ZY = 0f;
+            }
+            if (rigidbody.lockRotationZ)
+            {
+                inertia.InverseInertiaTensor.ZX = 0f;
+                inertia.InverseInertiaTensor.ZY = 0f;
+                inertia.InverseInertiaTensor.ZZ = 0f;
+            }
+
             body = _sim.Bodies.Add(BodyDescription.CreateDynamic(pose, inertia, shape, _sleepThreshold));
         }
 
@@ -320,8 +368,8 @@ public class PhysicsSystem : PraxisSystem
         TransformComponent transform = World.Get<TransformComponent>(entity);
 
         var pose = new RigidPose(
-            Convert(transform.position),
-            Convert(transform.rotation)  
+            NumericsConversion.Convert(transform.position),
+            NumericsConversion.Convert(transform.rotation)  
         );
 
         var shape = collider.collider.ConstructKinematic(_sim);
@@ -334,7 +382,24 @@ public class PhysicsSystem : PraxisSystem
         });
     }
 
-    private void UpdateEntity(in Entity entity)
+    private void InitConstraint(in Entity entity)
+    {
+        RigidbodyStateComponent state = World.Get<RigidbodyStateComponent>(entity);
+        ConstraintComponent constraint = World.Get<ConstraintComponent>(entity);
+        RigidbodyStateComponent otherState = World.Get<RigidbodyStateComponent>(constraint.other);
+
+        var handle = constraint.constraint.Construct(_sim, state.body, otherState.body);
+
+        World.Set(entity, new ConstraintStateComponent
+        {
+            other = otherState.body,
+            constraint = handle
+        });
+
+        _incomingConstraints.Add(otherState.body, entity);
+    }
+
+    private void UpdateBody(in Entity entity)
     {
         TransformComponent transform = World.Get<TransformComponent>(entity);
         RigidbodyStateComponent state = World.Get<RigidbodyStateComponent>(entity);
@@ -342,11 +407,8 @@ public class PhysicsSystem : PraxisSystem
         if (!World.Has<RigidbodyComponent>(entity))
         {
             // if the rigidbody component gets removed, clean up & remove state
-            _bodyMaterials.Remove(state.body);
-            _bodyMasks.Remove(state.body);
             _sim.Shapes.Remove(state.shape);
-            _sim.Bodies.Remove(state.body);
-
+            RemoveBody(state.body);
             World.Remove<RigidbodyStateComponent>(entity);
         }
         else
@@ -368,15 +430,41 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
+    private void UpdateConstraint(in Entity entity)
+    {
+        ConstraintStateComponent state = World.Get<ConstraintStateComponent>(entity);
+
+        if (!World.Has<ConstraintComponent>(entity))
+        {
+            // if the constraint component gets removed, clean up & remove state
+            _sim.Solver.Remove(state.constraint);
+            if (_incomingConstraints.ContainsKey(state.other))
+            {
+                _incomingConstraints.Remove(state.other);
+            }
+            World.Remove<ConstraintStateComponent>(entity);
+        }
+        else
+        {
+            // TODO: should this be skipped if it hasn't changed?
+            ConstraintComponent constraint = World.Get<ConstraintComponent>(entity);
+            constraint.constraint.Update(_sim, state.constraint);
+        }
+    }
+
     private void OnDestroyEntity(in Entity entity)
     {
         if (World.Has<RigidbodyStateComponent>(entity))
         {
             RigidbodyStateComponent stateComp = World.Get<RigidbodyStateComponent>(entity);
-            _bodyMaterials.Remove(stateComp.body);
-            _bodyMasks.Remove(stateComp.body);
             _sim.Shapes.Remove(stateComp.shape);
-            _sim.Bodies.Remove(stateComp.body);
+            RemoveBody(stateComp.body);
+        }
+
+        if (World.Has<ConstraintStateComponent>(entity))
+        {
+            ConstraintStateComponent stateComp = World.Get<ConstraintStateComponent>(entity);
+            _sim.Solver.Remove(stateComp.constraint);
         }
 
         if (World.Has<StaticRigidbodyStateComponent>(entity))
@@ -387,13 +475,21 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
-    private static System.Numerics.Vector3 Convert(Vector3 value)
+    private void RemoveBody(BodyHandle body)
     {
-        return new System.Numerics.Vector3(value.X, value.Y, value.Z);
-    }
+        _bodyMaterials.Remove(body);
+        _bodyMasks.Remove(body);
 
-    private static System.Numerics.Quaternion Convert(Quaternion value)
-    {
-        return new System.Numerics.Quaternion(value.X, value.Y, value.Z, value.W);
+        // remove any constraints that linked other entities to this one
+        if (_incomingConstraints.ContainsKey(body))
+        {
+            var other = _incomingConstraints[body];
+            var constraintState = World.Get<ConstraintStateComponent>(other);
+            _sim.Solver.Remove(constraintState.constraint);
+            World.Remove<ConstraintStateComponent>(other);
+            _incomingConstraints.Remove(body);
+        }
+
+        _sim.Bodies.Remove(body);
     }
 }

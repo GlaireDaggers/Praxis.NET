@@ -65,7 +65,82 @@ public class ExampleGame : PraxisGame
             collider = new BoxColliderDefinition(new Vector3(100f, 1f, 100f))
         });
 
-        Random rng = new Random();
+        Entity testKinematic = DefaultContext.World.CreateEntity($"test kinematic rigidbody");
+        DefaultContext.World.Set(testKinematic, new TransformComponent(
+            new Vector3(5f, 20f, 0f),
+            Quaternion.Identity,
+            Vector3.One
+        ));
+        DefaultContext.World.Set(testKinematic, new ColliderComponent
+        {
+            collider = new BoxColliderDefinition(Vector3.One * 2f)
+        });
+        DefaultContext.World.Set(testKinematic, new RigidbodyComponent
+        {
+            isKinematic = true,
+            material = PhysicsMaterial.Default
+        });
+        AttachModel(testKinematic, boxModel, Vector3.Zero, Quaternion.Identity, Vector3.One * 2f);
+
+        Entity testRigidbody1 = DefaultContext.World.CreateEntity($"test rigidbody 1");
+        DefaultContext.World.Set(testRigidbody1, new TransformComponent(
+            new Vector3(8f, 17f, 0f),
+            Quaternion.Identity,
+            Vector3.One
+        ));
+        DefaultContext.World.Set(testRigidbody1, new ColliderComponent
+        {
+            collider = new BoxColliderDefinition(Vector3.One * 2f)
+            {
+                mass = 0.25f
+            }
+        });
+        DefaultContext.World.Set(testRigidbody1, new RigidbodyComponent
+        {
+            isKinematic = false,
+            material = PhysicsMaterial.Default
+        });
+        DefaultContext.World.Set(testRigidbody1, new ConstraintComponent
+        {
+            other = testKinematic,
+            constraint = new BallSocketDefinition
+            {
+                localOffsetA = new Vector3(-3f, 0f, 0f),
+                localOffsetB = new Vector3(0f, -3f, 0f)
+            }
+        });
+        AttachModel(testRigidbody1, boxModel, Vector3.Zero, Quaternion.Identity, Vector3.One * 2f);
+
+        Entity testRigidbody2 = DefaultContext.World.CreateEntity($"test rigidbody 1");
+        DefaultContext.World.Set(testRigidbody2, new TransformComponent(
+            new Vector3(11f, 17f, 0f),
+            Quaternion.Identity,
+            Vector3.One
+        ));
+        DefaultContext.World.Set(testRigidbody2, new ColliderComponent
+        {
+            collider = new BoxColliderDefinition(Vector3.One * 2f)
+            {
+                mass = 0.25f
+            }
+        });
+        DefaultContext.World.Set(testRigidbody2, new RigidbodyComponent
+        {
+            isKinematic = false,
+            material = PhysicsMaterial.Default
+        });
+        DefaultContext.World.Set(testRigidbody2, new ConstraintComponent
+        {
+            other = testRigidbody1,
+            constraint = new BallSocketDefinition
+            {
+                localOffsetA = new Vector3(-3f, 0f, 0f),
+                localOffsetB = new Vector3(3f, 0f, 0f)
+            }
+        });
+        AttachModel(testRigidbody2, boxModel, Vector3.Zero, Quaternion.Identity, Vector3.One * 2f);
+
+        /*Random rng = new Random();
         for (int i = -4; i < 4; i++)
         {
             for (int j = 0; j < 16; j++)
@@ -106,6 +181,17 @@ public class ExampleGame : PraxisGame
                 });
                 DefaultContext.World.Relate(testRigidbodyMesh, testRigidbody, new ChildOf());
             }
-        }
+        }*/
+    }
+
+    private void AttachModel(Entity entity, RuntimeResource<Model> model, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+    {
+        Entity mesh = DefaultContext.World.CreateEntity();
+        DefaultContext.World.Set(mesh, new TransformComponent(Vector3.Zero, Quaternion.Identity, Vector3.One * 2f));
+        DefaultContext.World.Set(mesh, new ModelComponent
+        {
+            model = model
+        });
+        DefaultContext.World.Relate(mesh, entity, new ChildOf());
     }
 }
