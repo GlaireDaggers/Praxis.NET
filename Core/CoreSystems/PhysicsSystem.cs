@@ -12,7 +12,7 @@ using Praxis.Core.ECS;
 using Microsoft.Xna.Framework;
 using Matrix = Microsoft.Xna.Framework.Matrix;
 using System.Diagnostics;
-using System.Runtime.InteropServices.Marshalling;
+using Microsoft.Xna.Framework.Input;
 
 public struct PhysicsMaterial
 {
@@ -58,7 +58,13 @@ public class PhysicsSystem : PraxisSystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
         {
-            return a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
+            if (a.Mobility != CollidableMobility.Dynamic && b.Mobility != CollidableMobility.Dynamic)
+                return false;
+
+            uint maskA = a.Mobility == CollidableMobility.Static ? uint.MaxValue : system._bodyMasks[a.BodyHandle];
+            uint maskB = b.Mobility == CollidableMobility.Static ? uint.MaxValue : system._bodyMasks[b.BodyHandle];
+
+            return (maskA & maskB) != 0;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -70,8 +76,8 @@ public class PhysicsSystem : PraxisSystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
         {
-            var matA = pair.A.Mobility == CollidableMobility.Static ? system._staticMaterials[pair.A.StaticHandle] : system._bodyMaterials[pair.A.BodyHandle];
-            var matB = pair.B.Mobility == CollidableMobility.Static ? system._staticMaterials[pair.B.StaticHandle] : system._bodyMaterials[pair.B.BodyHandle];
+            var matA = pair.A.Mobility == CollidableMobility.Static ? PhysicsMaterial.Default : system._bodyMaterials[pair.A.BodyHandle];
+            var matB = pair.B.Mobility == CollidableMobility.Static ? PhysicsMaterial.Default : system._bodyMaterials[pair.B.BodyHandle];
 
             var freq = MathF.Max(matA.bounceFrequency, matB.bounceFrequency);
             var damp = MathF.Min(matA.bounceDamping, matB.bounceDamping);
@@ -138,7 +144,7 @@ public class PhysicsSystem : PraxisSystem
     private Simulation _sim;
 
     private Dictionary<BodyHandle, PhysicsMaterial> _bodyMaterials = new Dictionary<BodyHandle, PhysicsMaterial>();
-    private Dictionary<StaticHandle, PhysicsMaterial> _staticMaterials = new Dictionary<StaticHandle, PhysicsMaterial>();
+    private Dictionary<BodyHandle, uint> _bodyMasks = new Dictionary<BodyHandle, uint>();
 
     private float _accum;
     private float _timestep = 1f / 60f;
@@ -146,19 +152,25 @@ public class PhysicsSystem : PraxisSystem
     private float _sleepThreshold = 0.01f;
     private Vector3 _gravity = new Vector3(0f, -9.8f, 0f);
 
-    private Filter _initFilter;
+    private Filter _initBodyFilter;
+    private Filter _initStaticFilter;
     private Filter _updateFilter;
 
     public PhysicsSystem(WorldContext context) : base(context)
     {
-        _initFilter = new FilterBuilder(World)
+        _initBodyFilter = new FilterBuilder(World)
             .Include<RigidbodyComponent>()
             .Include<TransformComponent>()
+            .Include<ColliderComponent>()
             .Exclude<RigidbodyStateComponent>()
-            .Exclude<StaticRigidbodyStateComponent>()
             .Build();
 
-        _initFilter.tag = "init rigidbody";
+        _initStaticFilter = new FilterBuilder(World)
+            .Include<TransformComponent>()
+            .Include<ColliderComponent>()
+            .Exclude<RigidbodyComponent>()
+            .Exclude<StaticRigidbodyStateComponent>()
+            .Build();
 
         _updateFilter = new FilterBuilder(World)
             .Include<RigidbodyComponent>()
@@ -184,10 +196,16 @@ public class PhysicsSystem : PraxisSystem
             _gravity = config.gravity;
         }
 
-        // init bodies
-        foreach (var entity in _initFilter.Entities)
+        // init bodies & statics
+
+        foreach (var entity in _initBodyFilter.Entities)
         {
-            InitEntity(entity);
+            InitBody(entity);
+        }
+
+        foreach (var entity in _initStaticFilter.Entities)
+        {
+            InitStatic(entity);
         }
 
         _accum += deltaTime;
@@ -219,160 +237,94 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
-    public void RegisterBody(in BodyHandle handle, in PhysicsMaterial material)
+    public void RegisterBody(in BodyHandle handle, uint collisionMask, in PhysicsMaterial material)
     {
-        _bodyMaterials.Add(handle, material);
-    }
-
-    public void RegisterStatic(in StaticHandle handle, in PhysicsMaterial material)
-    {
-        _staticMaterials.Add(handle, material);
+        _bodyMaterials[handle] = material;
+        _bodyMasks[handle] = collisionMask;
     }
 
     public void UnregisterBody(in BodyHandle handle)
     {
         _bodyMaterials.Remove(handle);
+        _bodyMasks.Remove(handle);
     }
 
-    public void UnregisterStatic(in StaticHandle handle)
+    private void InitBody(in Entity entity)
     {
-        _staticMaterials.Remove(handle);
-    }
+        // ChildOf relations are not supported for physics simulation
+        Debug.Assert(!World.HasOutRelations<ChildOf>(entity), "Physics entity has ChildOf relation, but this is unsupported. Consider using BelongsTo instead");
 
-    private void InitEntity(in Entity entity)
-    {
         RigidbodyComponent rigidbody = World.Get<RigidbodyComponent>(entity);
-        Matrix worldToLocal = Matrix.Invert(CalculateTransform(entity));
-        GatherShapes(entity, worldToLocal, Matrix.Identity, ref _shapeBuilder, false);
+        ColliderComponent collider = World.Get<ColliderComponent>(entity);
+        TransformComponent transform = World.Get<TransformComponent>(entity);
 
-        Matrix trs = CalculateTransform(entity);
+        var pose = new RigidPose(
+            Convert(transform.position),
+            Convert(transform.rotation)  
+        );
 
-        Vector3 pos = Vector3.Zero;
-        Quaternion rot = Quaternion.Identity;
-        Assert(trs.Decompose(out _, out rot, out pos));
+        TypedIndex shape;
+        BodyHandle body;
 
-        RigidPose pose = new RigidPose(Convert(pos), Convert(rot));
-
-        if (rigidbody.isStatic)
+        if (rigidbody.isKinematic)
         {
-            _shapeBuilder.BuildKinematicCompound(out var children);
-            _shapeBuilder.Reset();
-
-            var shape = _sim.Shapes.Add(new Compound(children));
-            var body = _sim.Statics.Add(new StaticDescription(pose, shape));
-
-            _staticMaterials.Add(body, rigidbody.material);
-
-            World.Set(entity, new StaticRigidbodyStateComponent
-            {
-                shape = shape,
-                body = body
-            });
+            shape = collider.collider.ConstructKinematic(_sim);
+            body = _sim.Bodies.Add(BodyDescription.CreateKinematic(pose, shape, _sleepThreshold));
         }
         else
         {
-            _shapeBuilder.BuildDynamicCompound(out var children, out var inertia);
-            _shapeBuilder.Reset();
-
-            var shape = _sim.Shapes.Add(new Compound(children));
-            var body = _sim.Bodies.Add(BodyDescription.CreateDynamic(pose, inertia, shape, _sleepThreshold));
-
-            _bodyMaterials.Add(body, rigidbody.material);
-
-            World.Set(entity, new RigidbodyStateComponent
-            {
-                shape = shape,
-                body = body
-            });
+            shape = collider.collider.ConstructDynamic(_sim, out var inertia);
+            body = _sim.Bodies.Add(BodyDescription.CreateDynamic(pose, inertia, shape, _sleepThreshold));
         }
+
+        _bodyMaterials.Add(body, rigidbody.material);
+        _bodyMasks.Add(body, rigidbody.collisionMask);
+
+        World.Set(entity, new RigidbodyStateComponent
+        {
+            body = body,
+            shape = shape
+        });
     }
 
-    private void GatherShapes(in Entity entity, in Matrix worldToLocal, in Matrix parent, ref CompoundBuilder shapeBuilder, bool isChild)
+    private void InitStatic(in Entity entity)
     {
-        // if a child has its own rigidbody component, don't include its collision hierarchy (let it build its own)
-        if (isChild && World.Has<RigidbodyComponent>(entity))
+        // ChildOf relations are not supported for physics simulation
+        Debug.Assert(!World.HasOutRelations<ChildOf>(entity), "Physics entity has ChildOf relation, but this is unsupported. Consider using BelongsTo instead");
+
+        ColliderComponent collider = World.Get<ColliderComponent>(entity);
+        TransformComponent transform = World.Get<TransformComponent>(entity);
+
+        var pose = new RigidPose(
+            Convert(transform.position),
+            Convert(transform.rotation)  
+        );
+
+        var shape = collider.collider.ConstructKinematic(_sim);
+        var body = _sim.Statics.Add(new StaticDescription(pose, shape));
+
+        World.Set(entity, new StaticRigidbodyStateComponent
         {
-            return;
-        }
-
-        Matrix transform = CalculateLocalTransform(entity) * parent;
-        Matrix localTransform = transform * worldToLocal;
-
-        Vector3 pos = Vector3.Zero;
-        Quaternion rot = Quaternion.Identity;
-        Vector3 scale = Vector3.One;
-        Assert(localTransform.Decompose(out scale, out rot, out pos));
-        var localPose = new RigidPose(Convert(pos), Convert(rot));
-
-        if (World.Has<BoxColliderComponent>(entity))
-        {
-            BoxColliderComponent comp = World.Get<BoxColliderComponent>(entity);
-            Vector3 size = comp.extents * 2f * scale;
-            var shape = new Box(size.X, size.Y, size.Z);
-
-            shapeBuilder.Add(shape, localPose, comp.weight);
-        }
-
-        if (World.HasInRelations<ChildOf>(entity))
-        {
-            foreach (var child in World.GetInRelations<ChildOf>(entity))
-            {
-                GatherShapes(child, worldToLocal, transform, ref shapeBuilder, true);
-            }
-        }
-    }
-
-    private Matrix CalculateLocalTransform(in Entity entity)
-    {
-        var transform = World.Get<TransformComponent>(entity);
-        
-        Matrix trs = Matrix.CreateScale(transform.scale)
-            * Matrix.CreateFromQuaternion(transform.rotation)
-            * Matrix.CreateTranslation(transform.position);
-
-        return trs;
-    }
-
-    private Matrix CalculateTransform(in Entity entity)
-    {
-        var transform = World.Get<TransformComponent>(entity);
-        
-        Matrix trs = Matrix.CreateScale(transform.scale)
-            * Matrix.CreateFromQuaternion(transform.rotation)
-            * Matrix.CreateTranslation(transform.position);
-
-        if (World.HasOutRelations<ChildOf>(entity))
-        {
-            var parent = World.GetFirstOutRelation<ChildOf>(entity);
-            trs *= CalculateTransform(parent);
-        }
-
-        return trs;
+            body = body,
+            shape = shape
+        });
     }
 
     private void UpdateEntity(in Entity entity)
     {
-        Matrix worldToLocal = Matrix.Identity;
-
-        if (World.HasOutRelations<ChildOf>(entity))
-        {
-            Entity parent = World.GetFirstOutRelation<ChildOf>(entity);
-            worldToLocal = Matrix.Invert(CalculateTransform(parent));
-        }
-
+        TransformComponent transform = World.Get<TransformComponent>(entity);
+        RigidbodyComponent rigidbody = World.Get<RigidbodyComponent>(entity);
         RigidbodyStateComponent state = World.Get<RigidbodyStateComponent>(entity);
+
         var body = _sim.Bodies[state.body];
 
-        if (_sim.Bodies[body].Awake)
+        _bodyMaterials[state.body] = rigidbody.material;
+        _bodyMasks[state.body] = rigidbody.collisionMask;
+
+        if (body.Awake)
         {
-            var worldPos = new Vector3(body.Pose.Position.X, body.Pose.Position.Y, body.Pose.Position.Z);
-            var worldRot = new Quaternion(body.Pose.Orientation.X, body.Pose.Orientation.Y, body.Pose.Orientation.Z, body.Pose.Orientation.W);
-
-            Matrix localTransform = Matrix.CreateFromQuaternion(worldRot) * Matrix.CreateTranslation(worldPos);
-            localTransform *= worldToLocal;
-
-            TransformComponent transform = World.Get<TransformComponent>(entity);
-            Assert(localTransform.Decompose(out _, out transform.rotation, out transform.position));
+            transform.position = new Vector3(body.Pose.Position.X, body.Pose.Position.Y, body.Pose.Position.Z);
+            transform.rotation = new Quaternion(body.Pose.Orientation.X, body.Pose.Orientation.Y, body.Pose.Orientation.Z, body.Pose.Orientation.W);
 
             World.Set(entity, transform);
         }
@@ -384,6 +336,7 @@ public class PhysicsSystem : PraxisSystem
         {
             RigidbodyStateComponent stateComp = World.Get<RigidbodyStateComponent>(entity);
             _bodyMaterials.Remove(stateComp.body);
+            _bodyMasks.Remove(stateComp.body);
             _sim.Shapes.Remove(stateComp.shape);
             _sim.Bodies.Remove(stateComp.body);
         }
@@ -391,23 +344,9 @@ public class PhysicsSystem : PraxisSystem
         if (World.Has<StaticRigidbodyStateComponent>(entity))
         {
             StaticRigidbodyStateComponent stateComp = World.Get<StaticRigidbodyStateComponent>(entity);
-            _staticMaterials.Remove(stateComp.body);
             _sim.Shapes.Remove(stateComp.shape);
             _sim.Statics.Remove(stateComp.body);
         }
-
-        if (World.HasInRelations<ChildOf>(entity))
-        {
-            foreach (var child in World.GetInRelations<ChildOf>(entity))
-            {
-                OnDestroyEntity(child);
-            }
-        }
-    }
-
-    private static void Assert(bool condition)
-    {
-        Debug.Assert(condition);
     }
 
     private static System.Numerics.Vector3 Convert(Vector3 value)

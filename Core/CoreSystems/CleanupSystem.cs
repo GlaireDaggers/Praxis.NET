@@ -44,6 +44,14 @@ public class CleanupSystem : PraxisSystem
             }
         }
 
+        if (World.HasInRelations<BelongsTo>(entity))
+        {
+            foreach (var child in World.GetInRelations<BelongsTo>(entity))
+            {
+                DestroyEntity(child);
+            }
+        }
+
         World.DestroyEntity(entity);
     }
 }

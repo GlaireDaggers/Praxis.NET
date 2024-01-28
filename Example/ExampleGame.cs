@@ -59,22 +59,16 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(fox, foxAnim);
 
         Entity floor = DefaultContext.World.CreateEntity("floor");
-        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, -1f, 0f), Quaternion.Identity, Vector3.One));
-        DefaultContext.World.Set(floor, new BoxColliderComponent
+        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, -0.5f, 0f), Quaternion.Identity, Vector3.One));
+        DefaultContext.World.Set(floor, new ColliderComponent
         {
-            weight = 1f,
-            extents = new Vector3(100f, 1f, 100f)
-        });
-        DefaultContext.World.Set(floor, new RigidbodyComponent
-        {
-            isStatic = true,
-            material = PhysicsMaterial.Default
+            collider = new BoxColliderDefinition(new Vector3(100f, 1f, 100f))
         });
 
         Random rng = new Random();
         for (int i = -4; i < 4; i++)
         {
-            for (int j = 0; j < 8; j++)
+            for (int j = 0; j < 16; j++)
             {
                 float yaw = (float)rng.NextDouble() * MathHelper.Pi * 2f;
                 float pitch = (float)rng.NextDouble() * MathHelper.Pi * 2f;
@@ -85,15 +79,16 @@ public class ExampleGame : PraxisGame
                     new Vector3(i * 5f, 5f + (j * 5f), 0f),
                     Quaternion.CreateFromYawPitchRoll(yaw, pitch, roll),
                     Vector3.One));
-                DefaultContext.World.Set(testRigidbody, new BoxColliderComponent
+                DefaultContext.World.Set(testRigidbody, new ColliderComponent
                 {
-                    weight = 1f,
-                    center = new Vector3(0f, 0f, 0f),
-                    extents = new Vector3(1f, 1f, 1f)
+                    collider = new BoxColliderDefinition(Vector3.One * 2f)
+                    {
+                        mass = 1f
+                    }
                 });
                 DefaultContext.World.Set(testRigidbody, new RigidbodyComponent
                 {
-                    isStatic = false,
+                    isKinematic = false,
                     material = new PhysicsMaterial
                     {
                         friction = 1f,
