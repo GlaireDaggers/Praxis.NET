@@ -23,6 +23,7 @@ public class ExampleGame : PraxisGame
         Resources.Mount("content", new FolderFS("content/bin"));
 
         var foxModel = Resources.Load<Model>("content/models/Fox.pmdl");
+        var boxModel = Resources.Load<Model>("content/models/Box.pmdl");
 
         var filterStack = new ScreenFilterStack(this);
         filterStack.filters.Add(new BloomFilter(this));
@@ -58,7 +59,7 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(fox, foxAnim);
 
         Entity floor = DefaultContext.World.CreateEntity("floor");
-        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, 0f, 0f), Quaternion.Identity, Vector3.One));
+        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, -1f, 0f), Quaternion.Identity, Vector3.One));
         DefaultContext.World.Set(floor, new BoxColliderComponent
         {
             weight = 1f,
@@ -73,7 +74,7 @@ public class ExampleGame : PraxisGame
         Random rng = new Random();
         for (int i = -4; i < 4; i++)
         {
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < 8; j++)
             {
                 float yaw = (float)rng.NextDouble() * MathHelper.Pi * 2f;
                 float pitch = (float)rng.NextDouble() * MathHelper.Pi * 2f;
@@ -81,14 +82,14 @@ public class ExampleGame : PraxisGame
 
                 Entity testRigidbody = DefaultContext.World.CreateEntity($"test rigidbody {i} {j}");
                 DefaultContext.World.Set(testRigidbody, new TransformComponent(
-                    new Vector3(i * 10f, 20f + (j * 20f), 0f),
+                    new Vector3(i * 5f, 5f + (j * 5f), 0f),
                     Quaternion.CreateFromYawPitchRoll(yaw, pitch, roll),
                     Vector3.One));
                 DefaultContext.World.Set(testRigidbody, new BoxColliderComponent
                 {
                     weight = 1f,
-                    center = new Vector3(0f, 2f, 0f),
-                    extents = new Vector3(1f, 2f, 2f)
+                    center = new Vector3(0f, 0f, 0f),
+                    extents = new Vector3(1f, 1f, 1f)
                 });
                 DefaultContext.World.Set(testRigidbody, new RigidbodyComponent
                 {
@@ -97,16 +98,16 @@ public class ExampleGame : PraxisGame
                     {
                         friction = 1f,
                         maxRecoveryVelocity = float.MaxValue,
-                        bounceFrequency = 5f,
+                        bounceFrequency = 30f,
                         bounceDamping = 0.1f
                     }
                 });
                 
                 Entity testRigidbodyMesh = DefaultContext.World.CreateEntity();
-                DefaultContext.World.Set(testRigidbodyMesh, new TransformComponent(Vector3.Zero, Quaternion.Identity, Vector3.One * 0.1f));
+                DefaultContext.World.Set(testRigidbodyMesh, new TransformComponent(Vector3.Zero, Quaternion.Identity, Vector3.One * 2f));
                 DefaultContext.World.Set(testRigidbodyMesh, new ModelComponent
                 {
-                    model = foxModel
+                    model = boxModel
                 });
                 DefaultContext.World.Relate(testRigidbodyMesh, testRigidbody, new ChildOf());
             }
