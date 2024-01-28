@@ -249,6 +249,33 @@ public class PhysicsSystem : PraxisSystem
         _bodyMasks.Remove(handle);
     }
 
+    public void SetPose(in Entity entity, in Vector3 position, in Quaternion rotation)
+    {
+        TransformComponent transform = World.Get<TransformComponent>(entity);
+        RigidbodyStateComponent state = World.Get<RigidbodyStateComponent>(entity);
+
+        // if any entities are attached via a BelongsTo relationship, make sure they move along with this entity
+        // (for example: if you move a Car entity and it has wheels attached to it via BelongsTo, they should move along with the car)
+        if (World.HasInRelations<BelongsTo>(entity))
+        {
+            foreach (var child in World.GetInRelations<BelongsTo>(entity))
+            {
+                if (World.Has<TransformComponent>(child) && World.Has<RigidbodyStateComponent>(child))
+                {
+                    var childTransform = World.Get<TransformComponent>(child);
+                    var childState = World.Get<RigidbodyStateComponent>(child);
+                    Vector3 posOffset = childTransform.position - transform.position;
+                    Quaternion rotOffset = Quaternion.Concatenate(Quaternion.Inverse(transform.rotation), childTransform.rotation);
+                    Vector3 newPos = position + posOffset;
+                    Quaternion newRot = Quaternion.Concatenate(rotation, rotOffset);
+                    _sim.Bodies[childState.body].Pose = new RigidPose(Convert(newPos), Convert(newRot));
+                }
+            }
+        }
+
+        _sim.Bodies[state.body].Pose = new RigidPose(Convert(position), Convert(rotation));
+    }
+
     private void InitBody(in Entity entity)
     {
         // ChildOf relations are not supported for physics simulation
