@@ -99,7 +99,7 @@ public class ExampleGame : PraxisGame
                         friction = 1f,
                         maxRecoveryVelocity = float.MaxValue,
                         bounceFrequency = 30f,
-                        bounceDamping = 0.1f
+                        bounceDamping = 1f
                     }
                 });
                 

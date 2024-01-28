@@ -12,6 +12,7 @@ using Praxis.Core.ECS;
 using Microsoft.Xna.Framework;
 using Matrix = Microsoft.Xna.Framework.Matrix;
 using System.Diagnostics;
+using System.Runtime.InteropServices.Marshalling;
 
 public struct PhysicsMaterial
 {
@@ -99,15 +100,20 @@ public class PhysicsSystem : PraxisSystem
 
     struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
     {
+        public PhysicsSystem system;
+
         public AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;
 
         public bool AllowSubstepsForUnconstrainedBodies => false;
 
         public bool IntegrateVelocityForKinematics => false;
 
-        public System.Numerics.Vector3 gravity;
-
         private Vector3Wide _gravityWideDt;
+
+        public PoseIntegratorCallbacks(PhysicsSystem system)
+        {
+            this.system = system;
+        }
 
         public void Initialize(Simulation simulation)
         {
@@ -120,7 +126,7 @@ public class PhysicsSystem : PraxisSystem
 
         public void PrepareForIntegration(float dt)
         {
-            _gravityWideDt = Vector3Wide.Broadcast(gravity * dt);
+            _gravityWideDt = Vector3Wide.Broadcast(Convert(system._gravity) * dt);
         }
     }
 
@@ -138,6 +144,7 @@ public class PhysicsSystem : PraxisSystem
     private float _timestep = 1f / 60f;
     private float _maxTimestep = 0.1f;
     private float _sleepThreshold = 0.01f;
+    private Vector3 _gravity = new Vector3(0f, -9.8f, 0f);
 
     private Filter _initFilter;
     private Filter _updateFilter;
@@ -159,10 +166,7 @@ public class PhysicsSystem : PraxisSystem
             .Include<RigidbodyStateComponent>()
             .Build();
 
-        _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks()
-        {
-            gravity = new System.Numerics.Vector3(0f, -10f, 0f)
-        }, new SolveDescription(8, 8));
+        _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks(this), new SolveDescription(8, 8));
 
         _shapeBuilder = new CompoundBuilder(_bufferPool, _sim.Shapes, 16);
     }
@@ -170,6 +174,15 @@ public class PhysicsSystem : PraxisSystem
     public override void Update(float deltaTime)
     {
         base.Update(deltaTime);
+
+        if (World.HasSingleton<PhysicsConfigSingleton>())
+        {
+            var config = World.GetSingleton<PhysicsConfigSingleton>();
+            _timestep = config.timestep;
+            _maxTimestep = config.maxTimestep;
+            _sleepThreshold = config.sleepThreshold;
+            _gravity = config.gravity;
+        }
 
         // init bodies
         foreach (var entity in _initFilter.Entities)
@@ -233,7 +246,10 @@ public class PhysicsSystem : PraxisSystem
         GatherShapes(entity, worldToLocal, Matrix.Identity, ref _shapeBuilder, false);
 
         Matrix trs = CalculateTransform(entity);
-        Debug.Assert(trs.Decompose(out _, out var rot, out var pos));
+
+        Vector3 pos = Vector3.Zero;
+        Quaternion rot = Quaternion.Identity;
+        Assert(trs.Decompose(out _, out rot, out pos));
 
         RigidPose pose = new RigidPose(Convert(pos), Convert(rot));
 
@@ -282,7 +298,10 @@ public class PhysicsSystem : PraxisSystem
         Matrix transform = CalculateLocalTransform(entity) * parent;
         Matrix localTransform = transform * worldToLocal;
 
-        Debug.Assert(localTransform.Decompose(out var scale, out var rot, out var pos));
+        Vector3 pos = Vector3.Zero;
+        Quaternion rot = Quaternion.Identity;
+        Vector3 scale = Vector3.One;
+        Assert(localTransform.Decompose(out scale, out rot, out pos));
         var localPose = new RigidPose(Convert(pos), Convert(rot));
 
         if (World.Has<BoxColliderComponent>(entity))
@@ -344,16 +363,19 @@ public class PhysicsSystem : PraxisSystem
         RigidbodyStateComponent state = World.Get<RigidbodyStateComponent>(entity);
         var body = _sim.Bodies[state.body];
 
-        var worldPos = new Vector3(body.Pose.Position.X, body.Pose.Position.Y, body.Pose.Position.Z);
-        var worldRot = new Quaternion(body.Pose.Orientation.X, body.Pose.Orientation.Y, body.Pose.Orientation.Z, body.Pose.Orientation.W);
+        if (_sim.Bodies[body].Awake)
+        {
+            var worldPos = new Vector3(body.Pose.Position.X, body.Pose.Position.Y, body.Pose.Position.Z);
+            var worldRot = new Quaternion(body.Pose.Orientation.X, body.Pose.Orientation.Y, body.Pose.Orientation.Z, body.Pose.Orientation.W);
 
-        Matrix localTransform = Matrix.CreateFromQuaternion(worldRot) * Matrix.CreateTranslation(worldPos);
-        localTransform *= worldToLocal;
+            Matrix localTransform = Matrix.CreateFromQuaternion(worldRot) * Matrix.CreateTranslation(worldPos);
+            localTransform *= worldToLocal;
 
-        TransformComponent transform = World.Get<TransformComponent>(entity);
-        Debug.Assert(localTransform.Decompose(out _, out transform.rotation, out transform.position));
+            TransformComponent transform = World.Get<TransformComponent>(entity);
+            Assert(localTransform.Decompose(out _, out transform.rotation, out transform.position));
 
-        World.Set(entity, transform);
+            World.Set(entity, transform);
+        }
     }
 
     private void OnDestroyEntity(in Entity entity)
@@ -383,12 +405,17 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
-    private System.Numerics.Vector3 Convert(Vector3 value)
+    private static void Assert(bool condition)
+    {
+        Debug.Assert(condition);
+    }
+
+    private static System.Numerics.Vector3 Convert(Vector3 value)
     {
         return new System.Numerics.Vector3(value.X, value.Y, value.Z);
     }
 
-    private System.Numerics.Quaternion Convert(Quaternion value)
+    private static System.Numerics.Quaternion Convert(Quaternion value)
     {
         return new System.Numerics.Quaternion(value.X, value.Y, value.Z, value.W);
     }

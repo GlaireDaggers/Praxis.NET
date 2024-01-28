@@ -28,29 +28,31 @@ public class World
     private List<Filter> _filterList = new List<Filter>();
 
     public void SetSingleton<T>(in T data)
-        where T : class
+        where T : struct
     {
         uint typeId = TypeId.GetTypeId<T>();
-        _singletonComponentStorage[typeId] = data;
+        if (_singletonComponentStorage.ContainsKey(typeId))
+        {
+            Unsafe.Unbox<T>(_singletonComponentStorage[typeId]) = data;
+        }
+        else
+        {
+            _singletonComponentStorage[typeId] = data;
+        }
     }
 
     public bool HasSingleton<T>()
-        where T : class
+        where T : struct
     {
         uint typeId = TypeId.GetTypeId<T>();
         return _singletonComponentStorage.ContainsKey(typeId);
     }
 
     public T GetSingleton<T>()
-        where T : class
+        where T : struct
     {
         uint typeId = TypeId.GetTypeId<T>();
-
-        #if DEBUG_CAST
-        return (T)_singletonComponentStorage[typeId];
-        #else
-        return Unsafe.As<T>(_singletonComponentStorage[typeId]);
-        #endif
+        return Unsafe.Unbox<T>(_singletonComponentStorage[typeId]);
     }
 
     public void Send<T>(in T message)
