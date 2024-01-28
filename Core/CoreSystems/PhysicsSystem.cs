@@ -10,9 +10,7 @@ using BepuUtilities.Memory;
 using Praxis.Core.ECS;
 
 using Microsoft.Xna.Framework;
-using Matrix = Microsoft.Xna.Framework.Matrix;
 using System.Diagnostics;
-using Microsoft.Xna.Framework.Input;
 
 public struct PhysicsMaterial
 {
@@ -173,12 +171,11 @@ public class PhysicsSystem : PraxisSystem
             .Build();
 
         _updateFilter = new FilterBuilder(World)
-            .Include<RigidbodyComponent>()
             .Include<TransformComponent>()
             .Include<RigidbodyStateComponent>()
             .Build();
 
-        _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks(this), new SolveDescription(8, 8));
+        _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks(this), new SolveDescription(8, 4));
 
         _shapeBuilder = new CompoundBuilder(_bufferPool, _sim.Shapes, 16);
     }
@@ -340,20 +337,34 @@ public class PhysicsSystem : PraxisSystem
     private void UpdateEntity(in Entity entity)
     {
         TransformComponent transform = World.Get<TransformComponent>(entity);
-        RigidbodyComponent rigidbody = World.Get<RigidbodyComponent>(entity);
         RigidbodyStateComponent state = World.Get<RigidbodyStateComponent>(entity);
 
-        var body = _sim.Bodies[state.body];
-
-        _bodyMaterials[state.body] = rigidbody.material;
-        _bodyMasks[state.body] = rigidbody.collisionMask;
-
-        if (body.Awake)
+        if (!World.Has<RigidbodyComponent>(entity))
         {
-            transform.position = new Vector3(body.Pose.Position.X, body.Pose.Position.Y, body.Pose.Position.Z);
-            transform.rotation = new Quaternion(body.Pose.Orientation.X, body.Pose.Orientation.Y, body.Pose.Orientation.Z, body.Pose.Orientation.W);
+            // if the rigidbody component gets removed, clean up & remove state
+            _bodyMaterials.Remove(state.body);
+            _bodyMasks.Remove(state.body);
+            _sim.Shapes.Remove(state.shape);
+            _sim.Bodies.Remove(state.body);
 
-            World.Set(entity, transform);
+            World.Remove<RigidbodyStateComponent>(entity);
+        }
+        else
+        {
+            RigidbodyComponent rigidbody = World.Get<RigidbodyComponent>(entity);
+
+            var body = _sim.Bodies[state.body];
+
+            _bodyMaterials[state.body] = rigidbody.material;
+            _bodyMasks[state.body] = rigidbody.collisionMask;
+
+            if (body.Awake)
+            {
+                transform.position = new Vector3(body.Pose.Position.X, body.Pose.Position.Y, body.Pose.Position.Z);
+                transform.rotation = new Quaternion(body.Pose.Orientation.X, body.Pose.Orientation.Y, body.Pose.Orientation.Z, body.Pose.Orientation.W);
+
+                World.Set(entity, transform);
+            }
         }
     }
 
