@@ -60,6 +60,8 @@ public class PraxisGame : Game
     private MouseState _curMouseState;
 
     private bool _debugMode = false;
+    private bool _debugPause = false;
+    private bool _debugStep = false;
 
     public PraxisGame(string title, int width = 1280, int height = 720, bool vsync = true) : base()
     {
@@ -207,6 +209,19 @@ public class PraxisGame : Game
         _curMouseState = Mouse.GetState();
 
         #if DEBUG
+        if (GetKeyPressed(Keys.F10))
+        {
+            // step one frame
+            _debugPause = false;
+            _debugStep = true;
+        }
+
+        if (GetKeyPressed(Keys.F11))
+        {
+            // toggle pause
+            _debugPause = !_debugPause;
+        }
+
         if (GetKeyPressed(Keys.F12))
         {
             // toggle debug mode
@@ -225,9 +240,18 @@ public class PraxisGame : Game
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-        foreach (var context in _worlds)
+        if (!_debugPause)
         {
-            context.Update(dt);
+            foreach (var context in _worlds)
+            {
+                context.Update(dt);
+            }
+        }
+
+        if (_debugStep)
+        {
+            _debugPause = true;
+            _debugStep = false;
         }
     }
 

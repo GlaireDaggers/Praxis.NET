@@ -90,6 +90,8 @@ public class BasicForwardRenderer : PraxisSystem
     float _debugCamMoveSpeed = 5f;
     bool _debugIsDragging = false;
 
+    RenderTarget2D? _temp;
+
     public BasicForwardRenderer(WorldContext context) : base(context)
     {
         _cameraFilter = new FilterBuilder(World)
@@ -149,6 +151,18 @@ public class BasicForwardRenderer : PraxisSystem
     public override void Update(float dt)
     {
         base.Update(dt);
+
+        if (_temp == null || _temp.Width != Game.GraphicsDevice.PresentationParameters.BackBufferWidth
+            || _temp.Height != Game.GraphicsDevice.PresentationParameters.BackBufferHeight
+            || _temp.Format != Game.GraphicsDevice.PresentationParameters.BackBufferFormat
+            || _temp.DepthStencilFormat != Game.GraphicsDevice.PresentationParameters.DepthStencilFormat)
+        {
+            _temp?.Dispose();
+            _temp = new RenderTarget2D(Game.GraphicsDevice, Game.GraphicsDevice.PresentationParameters.BackBufferWidth,
+                Game.GraphicsDevice.PresentationParameters.BackBufferHeight, false,
+                Game.GraphicsDevice.PresentationParameters.BackBufferFormat,
+                Game.GraphicsDevice.PresentationParameters.DepthStencilFormat);
+        }
 
         foreach (var msg in World.GetMessages<DebugModeMessage>())
         {
@@ -385,15 +399,13 @@ public class BasicForwardRenderer : PraxisSystem
         _cachedOpaqueMeshes.Sort(_frontToBack);
         _cachedTransparentMeshes.Sort(_backToFront);
 
-        RenderTarget2D? tempTarget = screenFilter?.GetTarget(renderTarget) ?? renderTarget;
-
-        Game.GraphicsDevice.SetRenderTarget(tempTarget);
+        Game.GraphicsDevice.SetRenderTarget(screenFilter == null ? renderTarget : _temp);
         Game.GraphicsDevice.Clear(camera.clearColor);
 
         DrawQueue(vp, _cachedOpaqueMeshes);
         DrawQueue(vp, _cachedTransparentMeshes);
 
-        screenFilter?.OnRender(tempTarget!, renderTarget);
+        screenFilter?.OnRender(_temp!, renderTarget);
     }
 
     private void DrawQueue(Matrix vp, List<RenderMesh> queue)

@@ -74,27 +74,9 @@ public class ScreenFilterStack : ScreenFilter
     public readonly List<ScreenFilter> filters = new List<ScreenFilter>();
 
     private RenderTarget2D? _temp;
-    private RenderTarget2D? _temp2;
 
     public ScreenFilterStack(PraxisGame game) : base(game)
     {
-    }
-
-    internal RenderTarget2D GetTarget(RenderTarget2D? dest)
-    {
-        int targetWidth = dest?.Width ?? Game.GraphicsDevice.PresentationParameters.BackBufferWidth;
-        int targetHeight = dest?.Height ?? Game.GraphicsDevice.PresentationParameters.BackBufferHeight;
-        SurfaceFormat targetFormat = dest?.Format ?? Game.GraphicsDevice.PresentationParameters.BackBufferFormat;
-        DepthFormat targetDepth = dest?.DepthStencilFormat ?? Game.GraphicsDevice.PresentationParameters.DepthStencilFormat;
-
-        if (_temp2 == null || _temp2.Width != targetWidth || _temp2.Height != targetHeight ||
-            _temp2.Format != targetFormat)
-        {
-            _temp2?.Dispose();
-            _temp2 = new RenderTarget2D(Game.GraphicsDevice, targetWidth, targetHeight, false, targetFormat, targetDepth, 1, RenderTargetUsage.PreserveContents);
-        }
-
-        return _temp2;
     }
 
     public override void OnRender(RenderTarget2D source, RenderTarget2D? dest)
@@ -136,7 +118,6 @@ public class ScreenFilterStack : ScreenFilter
     {
         base.Dispose();
         _temp?.Dispose();
-        _temp2?.Dispose();
     }
 }
 
