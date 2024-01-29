@@ -51,29 +51,45 @@ public class ConvexColliderDefinition<T> : ColliderDefinition
 
 public class BoxColliderDefinition : ConvexColliderDefinition<Box>
 {
+    public readonly Vector3 Size;
+
     public BoxColliderDefinition(Vector3 size) : base(new Box(size.X, size.Y, size.Z))
     {
+        Size = size;
     }
 }
 
 public class SphereColliderDefinition : ConvexColliderDefinition<Sphere>
 {
+    public readonly float Radius;
+
     public SphereColliderDefinition(float radius) : base(new Sphere(radius))
     {
+        Radius = radius;
     }
 }
 
 public class CylinderColliderDefinition : ConvexColliderDefinition<Cylinder>
 {
+    public readonly float Radius;
+    public readonly float Height;
+
     public CylinderColliderDefinition(float radius, float height) : base(new Cylinder(radius, height))
     {
+        Radius = radius;
+        Height = height;
     }
 }
 
 public class CapsuleColliderDefinition : ConvexColliderDefinition<Capsule>
 {
+    public readonly float Radius;
+    public readonly float Height;
+
     public CapsuleColliderDefinition(float radius, float height) : base(new Capsule(radius, height))
     {
+        Radius = radius;
+        Height = height;
     }
 }
 

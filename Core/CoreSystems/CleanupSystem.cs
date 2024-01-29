@@ -3,30 +3,19 @@
 using Praxis.Core.ECS;
 
 /// <summary>
-/// Message which can be posted to destroy an entity and all of its children
-/// </summary>
-public struct DestroyEntity
-{
-    public Entity entity;
-
-    public DestroyEntity(Entity entity)
-    {
-        this.entity = entity;
-    }
-}
-
-/// <summary>
 /// Helper system which responds to DestroyEntity messages and cleans up entities (including children attached via ChildOf)
 /// </summary>
 public class CleanupSystem : PraxisSystem
 {
+    public override SystemExecutionStage ExecutionStage => SystemExecutionStage.PostUpdate;
+
     public CleanupSystem(WorldContext context) : base(context)
     {
     }
 
-    public override void PostUpdate(float deltaTime)
+    public override void Update(float deltaTime)
     {
-        base.PostUpdate(deltaTime);
+        base.Update(deltaTime);
 
         foreach (var msg in World.GetMessages<DestroyEntity>())
         {

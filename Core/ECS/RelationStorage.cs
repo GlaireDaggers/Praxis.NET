@@ -86,7 +86,7 @@ internal class RelationStorage<T> : IRelationStorage
         }
         _outRelationSets[from].Add(to);
 
-        if (!_inRelationSets.ContainsKey(from))
+        if (!_inRelationSets.ContainsKey(to))
         {
             _inRelationSets[to] = GetOrCreateHashSet();
         }

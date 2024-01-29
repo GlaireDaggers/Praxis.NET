@@ -10,3 +10,6 @@
 [submodule "deps/bepuphysicsv2"]
 	path = deps/bepuphysicsv2
 	url = https://github.com/bepu/bepuphysics2.git
+[submodule "deps/ImGui.NET"]
+	path = deps/ImGui.NET
+	url = https://github.com/GlaireDaggers/ImGui.NET

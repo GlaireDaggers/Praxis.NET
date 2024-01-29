@@ -30,11 +30,23 @@ public class ExecuteAfterAttribute : Attribute
     }
 }
 
+public enum SystemExecutionStage
+{
+    Update,
+    PostUpdate,
+    Draw,
+}
+
 /// <summary>
 /// Base class for Praxis ECS systems
 /// </summary>
 public class PraxisSystem
 {
+    /// <summary>
+    /// Indicates the phase during the frame at which this system executes
+    /// </summary>
+    public virtual SystemExecutionStage ExecutionStage => SystemExecutionStage.Update;
+
     public readonly PraxisGame Game;
     public readonly World World;
 
@@ -49,14 +61,6 @@ public class PraxisSystem
     }
 
     public virtual void Update(float deltaTime)
-    {
-    }
-
-    public virtual void PostUpdate(float deltaTime)
-    {
-    }
-
-    public virtual void Draw()
     {
     }
 }

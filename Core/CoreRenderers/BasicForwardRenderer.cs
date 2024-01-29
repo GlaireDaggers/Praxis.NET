@@ -4,6 +4,13 @@ using Praxis.Core.ECS;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+
+public struct SetDebugCameraParams
+{
+    public Matrix view;
+    public Matrix projection;
+}
 
 [ExecuteAfter(typeof(CalculateTransformSystem))]
 public class BasicForwardRenderer : PraxisSystem
@@ -32,6 +39,8 @@ public class BasicForwardRenderer : PraxisSystem
         public Vector3 fwd;
         public Vector3 color;
     }
+
+    public override SystemExecutionStage ExecutionStage => SystemExecutionStage.Draw;
 
     Matrix _cachedView;
     BoundingFrustum _cachedFrustum = new BoundingFrustum(Matrix.Identity);
@@ -64,6 +73,22 @@ public class BasicForwardRenderer : PraxisSystem
 
     Vector3 _ambientLightColor = Vector3.Zero;
     Vector3 _cachedModelPos = Vector3.Zero;
+
+    bool _debugMode = false;
+    CameraComponent _debugCamSettings = new CameraComponent
+    {
+        isOrthographic = false,
+        fieldOfView = 60f,
+        near = 0.1f,
+        far = 1000.0f,
+        clearColor = Color.CornflowerBlue,
+        renderTarget = null,
+        filterStack = null
+    };
+    Vector3 _debugCamPos = Vector3.Zero;
+    Quaternion _debugCamRot = Quaternion.Identity;
+    float _debugCamMoveSpeed = 5f;
+    bool _debugIsDragging = false;
 
     public BasicForwardRenderer(WorldContext context) : base(context)
     {
@@ -121,9 +146,14 @@ public class BasicForwardRenderer : PraxisSystem
         };
     }
 
-    public override void Draw()
+    public override void Update(float dt)
     {
-        base.Draw();
+        base.Update(dt);
+
+        foreach (var msg in World.GetMessages<DebugModeMessage>())
+        {
+            _debugMode = msg.enableDebug;
+        }
 
         if (World.HasSingleton<AmbientLightSingleton>())
         {
@@ -179,104 +209,191 @@ public class BasicForwardRenderer : PraxisSystem
             });
         }
 
-        foreach (var cameraEntity in _cameraFilter.Entities)
+        if (_debugMode)
         {
-            var cachedMatrix = World.Get<CachedMatrixComponent>(cameraEntity);
-            var camera = World.Get<CameraComponent>(cameraEntity);
+            var kb = Game.CurrentKeyboardState;
+            var mouse = Game.CurrentMouseState;
 
-            RenderTarget2D? renderTarget = camera.renderTarget;
-            ScreenFilterStack? screenFilter = camera.filterStack;
-
-            int targetWidth = renderTarget?.Width ?? Game.GraphicsDevice.Viewport.Width;
-            int targetHeight = renderTarget?.Height ?? Game.GraphicsDevice.Viewport.Height;
-
-            float aspect = (float)targetWidth / targetHeight;
-
-            Matrix projection;
-
-            if (camera.isOrthographic)
+            if (_debugIsDragging)
             {
-                projection = Matrix.CreateOrthographic(aspect * camera.fieldOfView, camera.fieldOfView, camera.near, camera.far);
-            }
-            else
-            {
-                projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(camera.fieldOfView), aspect, camera.near, camera.far);
-            }
-
-            _cachedView = Matrix.Invert(cachedMatrix.transform);
-
-            Matrix vp = _cachedView * projection;
-
-            _cachedFrustum.Matrix = vp;
-
-            _cachedOpaqueMeshes.Clear();
-            _cachedTransparentMeshes.Clear();
-
-            // gather an array of visible meshes, culled against the frustum
-            foreach (var modelEntity in _modelFilter.Entities)
-            {
-                var modelComponent = World.Get<ModelComponent>(modelEntity);
-                var modelHandle = modelComponent.model;
- 
-                if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
-
-                var model = modelHandle.Value;
-
-                var meshCachedMatrix = World.Get<CachedMatrixComponent>(modelEntity).transform;
-
-                BoundingSphere bounds = model.bounds.Transform(meshCachedMatrix);
-
-                Matrix[]? pose = null;
-
-                if (World.Has<CachedPoseComponent>(modelEntity))
+                if (mouse.RightButton != ButtonState.Pressed)
                 {
-                    pose = World.Get<CachedPoseComponent>(modelEntity).Pose;
+                    Mouse.IsRelativeMouseModeEXT = false;
+                    _debugIsDragging = false;
                 }
 
-                if (_cachedFrustum.Intersects(bounds))
+                var dx = mouse.X;
+                var dy = mouse.Y;
+
+                Matrix cr = Matrix.CreateFromQuaternion(_debugCamRot);
+
+                Vector3 up = Vector3.TransformNormal(Vector3.UnitY, cr);
+                Vector3 forward = Vector3.TransformNormal(-Vector3.UnitZ, cr);
+                Vector3 right = Vector3.TransformNormal(Vector3.UnitX, cr);
+                
+                _debugCamRot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathHelper.ToRadians(dx * -0.1f)) *
+                    Quaternion.CreateFromAxisAngle(right, MathHelper.ToRadians(dy * -0.1f)) *
+                    _debugCamRot;
+
+                if (kb.IsKeyDown(Keys.W))
                 {
-                    for (int i = 0; i < model.parts.Count; i++)
-                    {
-                        var part = model.parts[i];
-                        if (part.material.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
+                    _debugCamPos += forward * _debugCamMoveSpeed * dt;
+                }
+                else if (kb.IsKeyDown(Keys.S))
+                {
+                    _debugCamPos -= forward * _debugCamMoveSpeed * dt;
+                }
 
-                        var mat = part.material.Value;
+                if (kb.IsKeyDown(Keys.D))
+                {
+                    _debugCamPos += right * _debugCamMoveSpeed * dt;
+                }
+                else if (kb.IsKeyDown(Keys.A))
+                {
+                    _debugCamPos -= right * _debugCamMoveSpeed * dt;
+                }
 
-                        var renderMesh = new RenderMesh
-                        {
-                            transform = meshCachedMatrix,
-                            mesh = part.mesh,
-                            material = mat,
-                            pose = pose
-                        };
-
-                        if (mat.type == MaterialType.Opaque)
-                        {
-                            _cachedOpaqueMeshes.Add(renderMesh);
-                        }
-                        else
-                        {
-                            _cachedTransparentMeshes.Add(renderMesh);
-                        }
-                    }
+                if (kb.IsKeyDown(Keys.E))
+                {
+                    _debugCamPos += up * _debugCamMoveSpeed * dt;
+                }
+                else if (kb.IsKeyDown(Keys.Q))
+                {
+                    _debugCamPos -= up * _debugCamMoveSpeed * dt;
+                }
+            }
+            else if (!_debugIsDragging)
+            {
+                if (mouse.RightButton == ButtonState.Pressed)
+                {
+                    Mouse.IsRelativeMouseModeEXT = true;
+                    _debugIsDragging = true;
                 }
             }
 
-            _cachedOpaqueMeshes.Sort(_frontToBack);
-            _cachedTransparentMeshes.Sort(_backToFront);
+            Matrix cameraTransform = Matrix.CreateFromQuaternion(_debugCamRot)
+                * Matrix.CreateTranslation(_debugCamPos);
 
-            RenderTarget2D? tempTarget = screenFilter?.GetTarget(renderTarget) ?? renderTarget;
+            // draw debug camera
+            DrawCamera(_debugCamSettings, cameraTransform);
+        }
+        else
+        {
+            Mouse.IsRelativeMouseModeEXT = false;
 
-            Game.GraphicsDevice.SetRenderTarget(tempTarget);
-            Game.GraphicsDevice.Clear(camera.clearColor);
+            foreach (var cameraEntity in _cameraFilter.Entities)
+            {
+                var cachedMatrix = World.Get<CachedMatrixComponent>(cameraEntity);
+                var camera = World.Get<CameraComponent>(cameraEntity);
 
-            DrawQueue(vp, _cachedOpaqueMeshes);
-            DrawQueue(vp, _cachedTransparentMeshes);
-
-            screenFilter?.OnRender(tempTarget!, renderTarget);
+                DrawCamera(camera, cachedMatrix.transform);
+            }
         }
 
         Game.GraphicsDevice.SetRenderTarget(null);
+    }
+
+    private void DrawCamera(in CameraComponent camera, in Matrix matrix)
+    {
+        RenderTarget2D? renderTarget = camera.renderTarget;
+        ScreenFilterStack? screenFilter = camera.filterStack;
+
+        int targetWidth = renderTarget?.Width ?? Game.GraphicsDevice.Viewport.Width;
+        int targetHeight = renderTarget?.Height ?? Game.GraphicsDevice.Viewport.Height;
+
+        float aspect = (float)targetWidth / targetHeight;
+
+        Matrix projection;
+
+        if (camera.isOrthographic)
+        {
+            projection = Matrix.CreateOrthographic(aspect * camera.fieldOfView, camera.fieldOfView, camera.near, camera.far);
+        }
+        else
+        {
+            projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(camera.fieldOfView), aspect, camera.near, camera.far);
+        }
+
+        _cachedView = Matrix.Invert(matrix);
+
+        if (_debugMode)
+        {
+            World.Send(new SetDebugCameraParams
+            {
+                view = _cachedView,
+                projection = projection
+            });
+        }
+
+        Matrix vp = _cachedView * projection;
+
+        _cachedFrustum.Matrix = vp;
+
+        _cachedOpaqueMeshes.Clear();
+        _cachedTransparentMeshes.Clear();
+
+        // gather an array of visible meshes, culled against the frustum
+        foreach (var modelEntity in _modelFilter.Entities)
+        {
+            var modelComponent = World.Get<ModelComponent>(modelEntity);
+            var modelHandle = modelComponent.model;
+
+            if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
+
+            var model = modelHandle.Value;
+
+            var meshCachedMatrix = World.Get<CachedMatrixComponent>(modelEntity).transform;
+
+            BoundingSphere bounds = model.bounds.Transform(meshCachedMatrix);
+
+            Matrix[]? pose = null;
+
+            if (World.Has<CachedPoseComponent>(modelEntity))
+            {
+                pose = World.Get<CachedPoseComponent>(modelEntity).Pose;
+            }
+
+            if (_cachedFrustum.Intersects(bounds))
+            {
+                for (int i = 0; i < model.parts.Count; i++)
+                {
+                    var part = model.parts[i];
+                    if (part.material.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
+
+                    var mat = part.material.Value;
+
+                    var renderMesh = new RenderMesh
+                    {
+                        transform = meshCachedMatrix,
+                        mesh = part.mesh,
+                        material = mat,
+                        pose = pose
+                    };
+
+                    if (mat.type == MaterialType.Opaque)
+                    {
+                        _cachedOpaqueMeshes.Add(renderMesh);
+                    }
+                    else
+                    {
+                        _cachedTransparentMeshes.Add(renderMesh);
+                    }
+                }
+            }
+        }
+
+        _cachedOpaqueMeshes.Sort(_frontToBack);
+        _cachedTransparentMeshes.Sort(_backToFront);
+
+        RenderTarget2D? tempTarget = screenFilter?.GetTarget(renderTarget) ?? renderTarget;
+
+        Game.GraphicsDevice.SetRenderTarget(tempTarget);
+        Game.GraphicsDevice.Clear(camera.clearColor);
+
+        DrawQueue(vp, _cachedOpaqueMeshes);
+        DrawQueue(vp, _cachedTransparentMeshes);
+
+        screenFilter?.OnRender(tempTarget!, renderTarget);
     }
 
     private void DrawQueue(Matrix vp, List<RenderMesh> queue)

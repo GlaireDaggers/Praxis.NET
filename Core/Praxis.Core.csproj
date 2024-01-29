@@ -5,16 +5,22 @@
     <ProjectReference Include="..\deps\ResourceCache\src\ResourceCache.Core\ResourceCache.Core.csproj" />
     <ProjectReference Include="..\deps\ResourceCache\src\ResourceCache.FNA.Core\ResourceCache.FNA.Core.csproj" />
     <ProjectReference Include="..\deps\bepuphysicsv2\BepuPhysics\BepuPhysics.csproj" />
+    <ProjectReference Include="..\deps\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0030" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="ImGui/" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 </Project>

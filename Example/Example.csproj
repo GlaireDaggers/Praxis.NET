@@ -29,6 +29,7 @@
     <Copy SourceFiles="../deps/fnalibs/x64/FAudio.dll" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="../deps/fnalibs/x64/SDL2.dll" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="../deps/fnalibs/x64/libtheorafile.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/imguilibs/x64/cimgui.dll" DestinationFolder="$(OutDir)" />
   </Target>
 
   <Target Condition="'$(IsLinux)'=='true'" Name="CopyDLL_Linux64" AfterTargets="AfterBuild">
@@ -36,6 +37,7 @@
     <Copy SourceFiles="../deps/fnalibs/lib64/libFAudio.so.0" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="../deps/fnalibs/lib64/libSDL2-2.0.so.0" DestinationFolder="$(OutDir)" />
     <Copy SourceFiles="../deps/fnalibs/lib64/libtheorafile.so" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/imguilibs/lib64/cimgui.so" DestinationFolder="$(OutDir)" />
   </Target>
 
   <ItemGroup>

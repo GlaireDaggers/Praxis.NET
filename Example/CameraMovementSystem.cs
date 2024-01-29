@@ -10,6 +10,8 @@ public class CameraMovementSystem : PraxisSystem
 {
     Filter _cameraFilter;
 
+    bool _debugMode = false;
+
     public CameraMovementSystem(WorldContext context) : base(context)
     {
         _cameraFilter = new FilterBuilder(World)
@@ -22,7 +24,15 @@ public class CameraMovementSystem : PraxisSystem
     {
         base.Update(deltaTime);
 
-        KeyboardState kb = Keyboard.GetState();
+        // TODO: probably a better way to handle this
+        foreach (var msg in World.GetMessages<DebugModeMessage>())
+        {
+            _debugMode = msg.enableDebug;
+        }
+
+        if (_debugMode) return;
+
+        KeyboardState kb = Game.CurrentKeyboardState;
 
         foreach (var entity in _cameraFilter.Entities)
         {

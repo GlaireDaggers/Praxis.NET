@@ -12,6 +12,10 @@ using Praxis.Core.ECS;
 using Microsoft.Xna.Framework;
 using System.Diagnostics;
 
+using Matrix = Microsoft.Xna.Framework.Matrix;
+using MathHelper = Microsoft.Xna.Framework.MathHelper;
+using Microsoft.Xna.Framework.Graphics;
+
 public struct PhysicsMaterial
 {
     public static readonly PhysicsMaterial Default = new PhysicsMaterial
@@ -29,9 +33,145 @@ public struct PhysicsMaterial
 }
 
 [ExecuteBefore(typeof(CalculateTransformSystem))]
-[ExecuteBefore(typeof(CleanupSystem))]
+[ExecuteBefore(typeof(PhysicsCleanupSystem))]
 public class PhysicsSystem : PraxisSystem
 {
+    [ExecuteAfter(typeof(BasicForwardRenderer))]
+    private class PhysicsDebugGizmoSystem : DebugGizmoSystem
+    {
+        private Filter _colliders;
+        private Filter _joints;
+
+        public PhysicsDebugGizmoSystem(WorldContext context) : base(context)
+        {
+            _colliders = new FilterBuilder(World)
+                .Include<TransformComponent>()
+                .Include<ColliderComponent>()
+                .Build();
+
+            _joints = new FilterBuilder(World)
+                .Include<TransformComponent>()
+                .Include<ConstraintComponent>()
+                .Include<ConstraintStateComponent>()
+                .Build();
+        }
+
+        protected override void DrawGizmos()
+        {
+            base.DrawGizmos();
+
+            foreach (var entity in _colliders.Entities)
+            {
+                var transform = World.Get<TransformComponent>(entity);
+                var collider = World.Get<ColliderComponent>(entity);
+
+                Matrix trs = Matrix.CreateFromQuaternion(transform.rotation)
+                    * Matrix.CreateTranslation(transform.position);
+
+                if (collider.collider is BoxColliderDefinition boxDef)
+                {
+                    DrawBoxGizmo(Matrix.CreateScale(boxDef.Size) * trs, Color.Cyan);
+                }
+                else if (collider.collider is SphereColliderDefinition sphereDef)
+                {
+                    DrawSphereGizmo(transform.position, sphereDef.Radius, Color.Cyan);
+                }
+                else if (collider.collider is CylinderColliderDefinition cylinderDef)
+                {
+                    DrawCylinderGizmo(transform.position, cylinderDef.Height, cylinderDef.Radius, transform.rotation, Color.Cyan);
+                }
+                else if (collider.collider is CapsuleColliderDefinition capsuleDef)
+                {
+                    DrawCapsuleGizmo(transform.position, capsuleDef.Height, capsuleDef.Radius, transform.rotation, Color.Cyan);
+                }
+                /*else if (collider.collider is CompoundColliderDefinition compoundDef)
+                {
+                    // todo
+                }*/
+            }
+
+            foreach (var entity in _joints.Entities)
+            {
+                var transform = World.Get<TransformComponent>(entity);
+                var joint = World.Get<ConstraintComponent>(entity);
+
+                var otherTransform = World.Get<TransformComponent>(joint.other);
+
+                Matrix trs = Matrix.CreateFromQuaternion(transform.rotation)
+                    * Matrix.CreateTranslation(transform.position);
+
+                Matrix otherTrs = Matrix.CreateFromQuaternion(otherTransform.rotation)
+                    * Matrix.CreateTranslation(otherTransform.position);
+
+                if (joint.constraint is BallSocketDefinition ballSocket)
+                {
+                    Vector3 offsetA = Vector3.Transform(ballSocket.localOffsetA, trs);
+                    Vector3 offsetB = Vector3.Transform(ballSocket.localOffsetB, otherTrs);
+
+                    DrawLineGizmo(transform.position, offsetA, Color.Red, Color.Red);
+                    DrawLineGizmo(otherTransform.position, offsetB, Color.Blue, Color.Blue);
+
+                    DrawSphereGizmo(offsetA, 0.5f, Color.Red);
+                }
+                else if (joint.constraint is DistanceLimitDefinition distanceLimit)
+                {
+                    DrawSphereGizmo(transform.position, distanceLimit.minDistance, Color.Red);
+                    DrawSphereGizmo(transform.position, distanceLimit.maxDistance, Color.Blue);
+                }
+                else if (joint.constraint is WeldDefinition weld)
+                {
+                    Vector3 offset = Vector3.Transform(weld.localOffset, trs);
+                    DrawLineGizmo(otherTransform.position, offset, Color.Red, Color.Red);
+                }
+                else if (joint.constraint is HingeDefinition hinge)
+                {
+                    Vector3 offsetA = Vector3.Transform(hinge.localOffsetA, trs);
+                    Vector3 offsetB = Vector3.Transform(hinge.localOffsetB, otherTrs);
+                    Vector3 axisA = Vector3.TransformNormal(hinge.localHingeAxisA, trs);
+                    Vector3 axisB = Vector3.TransformNormal(hinge.localHingeAxisB, otherTrs);
+
+                    DrawLineGizmo(transform.position, offsetA, Color.Red, Color.Red);
+                    DrawLineGizmo(transform.position, transform.position + axisA, Color.Red, Color.Red);
+                    DrawLineGizmo(otherTransform.position, offsetB, Color.Blue, Color.Blue);
+                    DrawLineGizmo(otherTransform.position, otherTransform.position + axisB, Color.Blue, Color.Blue);
+                }
+                else if (joint.constraint is PointOnLineDefinition pointOnLine)
+                {
+                    Vector3 offsetA = Vector3.Transform(pointOnLine.localOffsetA, trs);
+                    Vector3 offsetB = Vector3.Transform(pointOnLine.localOffsetB, otherTrs);
+                    Vector3 axis = Vector3.TransformNormal(pointOnLine.localDirection, trs) * 10f;
+
+                    DrawLineGizmo(transform.position, offsetA, Color.Red, Color.Red);
+                    DrawLineGizmo(transform.position - axis, transform.position + axis, Color.Red, Color.Red);
+                    DrawLineGizmo(otherTransform.position, offsetB, Color.Blue, Color.Blue);
+                }
+            }
+        }
+    }
+
+    [ExecuteBefore(typeof(CleanupSystem))]
+    private class PhysicsCleanupSystem : PraxisSystem
+    {
+        public override SystemExecutionStage ExecutionStage => SystemExecutionStage.PostUpdate;
+
+        private PhysicsSystem _system;
+
+        public PhysicsCleanupSystem(PhysicsSystem system, WorldContext context) : base(context)
+        {
+            _system = system;
+        }
+
+        public override void Update(float deltaTime)
+        {
+            base.Update(deltaTime);
+
+            foreach (var msg in World.GetMessages<DestroyEntity>())
+            {
+                _system.OnDestroyEntity(msg.entity);
+            }
+        }
+    }
+
     struct RigidbodyStateComponent
     {
         public TypedIndex shape;
@@ -164,6 +304,12 @@ public class PhysicsSystem : PraxisSystem
 
     public PhysicsSystem(WorldContext context) : base(context)
     {
+        // automatically install cleanup system which runs at end of frame
+        new PhysicsCleanupSystem(this, context);
+
+        // automatically install debug visualizer system
+        new PhysicsDebugGizmoSystem(context);
+
         _initBodyFilter = new FilterBuilder(World)
             .Include<RigidbodyComponent>()
             .Include<TransformComponent>()
@@ -248,16 +394,6 @@ public class PhysicsSystem : PraxisSystem
         foreach (var entity in _updateConstraintFilter.Entities)
         {
             UpdateConstraint(entity);
-        }
-    }
-
-    public override void PostUpdate(float deltaTime)
-    {
-        base.PostUpdate(deltaTime);
-
-        foreach (var msg in World.GetMessages<DestroyEntity>())
-        {
-            OnDestroyEntity(msg.entity);
         }
     }
 

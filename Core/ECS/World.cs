@@ -11,6 +11,8 @@ using System.Runtime.InteropServices;
 
 public class World
 {
+    public ReverseSpanEnumerator<Entity> AllEntities => new ReverseSpanEnumerator<Entity>(_allEntities.AsSpan);
+
     private uint _nextId = 0;
     private Stack<uint> _idPool = new Stack<uint>();
 
@@ -26,6 +28,8 @@ public class World
 
     private Dictionary<FilterSignature, Filter> _filters = new Dictionary<FilterSignature, Filter>();
     private List<Filter> _filterList = new List<Filter>();
+
+    private IndexableSet<Entity> _allEntities = new IndexableSet<Entity>();
 
     public void SetSingleton<T>(in T data)
         where T : struct
@@ -72,7 +76,9 @@ public class World
             id = _nextId++;
         }
 
-        return new Entity(id, tag);
+        var entity = new Entity(id, tag);
+        _allEntities.Add(entity);
+        return entity;
     }
 
     public void DestroyEntity(in Entity entity)
@@ -87,6 +93,7 @@ public class World
             relation.RemoveEntity(entity);
         }
 
+        _allEntities.Remove(entity);
         _idPool.Push(entity.ID);
     }
 
@@ -159,10 +166,10 @@ public class World
         return GetRelationStorage<T>().GetOutRelations(from);
     }
 
-    public ReverseSpanEnumerator<Entity> GetInRelations<T>(in Entity from)
+    public ReverseSpanEnumerator<Entity> GetInRelations<T>(in Entity to)
         where T : struct
     {
-        return GetRelationStorage<T>().GetInRelations(from);
+        return GetRelationStorage<T>().GetInRelations(to);
     }
 
     public Entity GetFirstOutRelation<T>(in Entity from)
@@ -171,10 +178,10 @@ public class World
         return GetRelationStorage<T>().GetFirstOutRelation(from);
     }
 
-    public Entity GetFirstInRelation<T>(in Entity from)
+    public Entity GetFirstInRelation<T>(in Entity to)
         where T : struct
     {
-        return GetRelationStorage<T>().GetFirstInRelation(from);
+        return GetRelationStorage<T>().GetFirstInRelation(to);
     }
 
     public ReverseSpanEnumerator<T> GetMessages<T>()

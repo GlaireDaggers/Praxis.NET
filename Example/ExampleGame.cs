@@ -111,7 +111,7 @@ public class ExampleGame : PraxisGame
         });
         AttachModel(testRigidbody1, boxModel, Vector3.Zero, Quaternion.Identity, Vector3.One * 2f);
 
-        Entity testRigidbody2 = DefaultContext.World.CreateEntity($"test rigidbody 1");
+        Entity testRigidbody2 = DefaultContext.World.CreateEntity($"test rigidbody 2");
         DefaultContext.World.Set(testRigidbody2, new TransformComponent(
             new Vector3(11f, 17f, 0f),
             Quaternion.Identity,

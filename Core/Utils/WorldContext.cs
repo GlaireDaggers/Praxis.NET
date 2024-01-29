@@ -13,11 +13,19 @@ public class WorldContext
     public readonly PraxisGame Game;
     public readonly World World;
 
-    private List<PraxisSystem> _systems = new List<PraxisSystem>();
+    public List<PraxisSystem> UpdateSystems => _updateSystems;
+    public List<PraxisSystem> PostUpdateSystems => _postUpdateSystems;
+    public List<PraxisSystem> DrawSystems => _drawSystems;
+
+    private List<PraxisSystem> _updateSystems = new List<PraxisSystem>();
+    private List<PraxisSystem> _postUpdateSystems = new List<PraxisSystem>();
+    private List<PraxisSystem> _drawSystems = new List<PraxisSystem>();
     private Dictionary<Type, PraxisSystem> _systemTypeMap = new Dictionary<Type, PraxisSystem>();
     private DependencyResolver<PraxisSystem> _sysGraph = new DependencyResolver<PraxisSystem>();
     private Dictionary<Type, DependencyResolver<PraxisSystem>.Node> _sysCache = new Dictionary<Type, DependencyResolver<PraxisSystem>.Node>();
     private bool _systemsDirty = false;
+
+    private float _cachedDt = 0f;
 
     public WorldContext(string tag, PraxisGame game)
     {
@@ -29,22 +37,22 @@ public class WorldContext
 
     public void Update(float dt)
     {
+        _cachedDt = dt;
+
         if (_systemsDirty)
         {
             InstallSystems();
         }
 
-        for (int i = 0; i < _systems.Count; i++)
+        for (int i = 0; i < _updateSystems.Count; i++)
         {
-            _systems[i].Update(dt);
+            _updateSystems[i].Update(dt);
         }
 
-        for (int i = 0; i < _systems.Count; i++)
+        for (int i = 0; i < _postUpdateSystems.Count; i++)
         {
-            _systems[i].PostUpdate(dt);
+            _postUpdateSystems[i].Update(dt);
         }
-
-        World.PostUpdate();
     }
 
     public void Draw()
@@ -54,10 +62,15 @@ public class WorldContext
             InstallSystems();
         }
 
-        for (int i = 0; i < _systems.Count; i++)
+        for (int i = 0; i < _drawSystems.Count; i++)
         {
-            _systems[i].Draw();
+            _drawSystems[i].Update(_cachedDt);
         }
+    }
+
+    public void EndFrame()
+    {
+        World.PostUpdate();
     }
 
     /// <summary>
@@ -79,11 +92,21 @@ public class WorldContext
         // somewhat goofy hack: just re-register any systems that were previously registered
         // this way, even if we've called InstallSystems, we can later still register new systems & call InstallSystems again
 
-        foreach (var sys in _systems)
+        foreach (var sys in _updateSystems)
         {
             RegisterSystem(sys);
         }
-        _systems.Clear();
+        foreach (var sys in _postUpdateSystems)
+        {
+            RegisterSystem(sys);
+        }
+        foreach (var sys in _drawSystems)
+        {
+            RegisterSystem(sys);
+        }
+        _updateSystems.Clear();
+        _postUpdateSystems.Clear();
+        _drawSystems.Clear();
 
         // generate links
         foreach (var kvp in _sysCache)
@@ -115,7 +138,23 @@ public class WorldContext
         }
 
         // resolve dependencies & add to system execution list
-        _systems.AddRange(_sysGraph.Resolve());
+        var sysList = _sysGraph.Resolve();
+
+        foreach (var sys in sysList)
+        {
+            switch (sys.ExecutionStage)
+            {
+                case SystemExecutionStage.Update:
+                    _updateSystems.Add(sys);
+                    break;
+                case SystemExecutionStage.PostUpdate:
+                    _postUpdateSystems.Add(sys);
+                    break;
+                case SystemExecutionStage.Draw:
+                    _drawSystems.Add(sys);
+                    break;
+            }
+        }
 
         _systemsDirty = false;
     }
