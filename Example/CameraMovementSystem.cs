@@ -17,7 +17,7 @@ public class CameraMovementSystem : PraxisSystem
         _cameraFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
             .Include<CameraMovementComponent>()
-            .Build();
+            .Build("CameraMovementSystem.cameraFilter");
     }
 
     public override void Update(float deltaTime)

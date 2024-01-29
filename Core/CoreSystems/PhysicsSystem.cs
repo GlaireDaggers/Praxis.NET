@@ -315,29 +315,29 @@ public class PhysicsSystem : PraxisSystem
             .Include<TransformComponent>()
             .Include<ColliderComponent>()
             .Exclude<RigidbodyStateComponent>()
-            .Build();
+            .Build("PhysicsSystem.initBodyFilter");
 
         _initStaticFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
             .Include<ColliderComponent>()
             .Exclude<RigidbodyComponent>()
             .Exclude<StaticRigidbodyStateComponent>()
-            .Build();
+            .Build("PhysicsSystem.initStaticFilter");
 
         _initConstraintFilter = new FilterBuilder(World)
             .Include<RigidbodyStateComponent>()
             .Include<ConstraintComponent>()
             .Exclude<ConstraintStateComponent>()
-            .Build();
+            .Build("PhysicsSystem.initConstraintFilter");
 
         _updateBodyFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
             .Include<RigidbodyStateComponent>()
-            .Build();
+            .Build("PhysicsSystem.updateBodyFilter");
 
         _updateConstraintFilter = new FilterBuilder(World)
             .Include<ConstraintStateComponent>()
-            .Build();
+            .Build("PhysicsSystem.updateConstraintFilter");
 
         _sim = Simulation.Create(_bufferPool, new NarrowPhaseCallbacks(this), new PoseIntegratorCallbacks(this), new SolveDescription(8, 4));
     }

@@ -95,27 +95,27 @@ public class BasicForwardRenderer : PraxisSystem
         _cameraFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<CameraComponent>()
-            .Build();
+            .Build("BasicForwardRender.cameraFilter");
 
         _modelFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<ModelComponent>()
-            .Build();
+            .Build("BasicForwardRender.modelFilter");
 
         _directionalLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<DirectionalLightComponent>()
-            .Build();
+            .Build("BasicForwardRender.directionalLightFilter");
 
         _pointLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<PointLightComponent>()
-            .Build();
+            .Build("BasicForwardRender.pointLightFilter");
 
         _spotLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<SpotLightComponent>()
-            .Build();
+            .Build("BasicForwardRender.spotLightFilter");
 
         _frontToBack = (a, b) => {
             Vector3 posA = a.transform.Translation;

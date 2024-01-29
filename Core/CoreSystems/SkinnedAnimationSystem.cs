@@ -204,7 +204,7 @@ public class SimpleAnimationSystem : SkinnedAnimationSystem
         SetFilter(new FilterBuilder(World)
             .Include<SimpleAnimationComponent>()
             .Include<ModelComponent>()
-            .Build()
+            .Build("SimpleAnimationSystem.filter")
         );
     }
 

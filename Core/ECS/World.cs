@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 public class World
 {
     public ReverseSpanEnumerator<Entity> AllEntities => new ReverseSpanEnumerator<Entity>(_allEntities.AsSpan);
+    public List<Filter> AllFilters => _filterList;
 
     private uint _nextId = 0;
     private Stack<uint> _idPool = new Stack<uint>();
@@ -209,14 +210,17 @@ public class World
         }
     }
 
-    internal Filter GetFilter(FilterSignature signature)
+    internal Filter GetFilter(FilterSignature signature, string? tag = null)
     {
         if (_filters.ContainsKey(signature))
         {
             return _filters[signature];
         }
 
-        var filter = new Filter(this, signature);
+        var filter = new Filter(this, signature)
+        {
+            tag = tag
+        };
         _filters[signature] = filter;
         _filterList.Add(filter);
 

@@ -23,11 +23,11 @@ public class FilterBuilder
         return this;
     }
 
-    public Filter Build()
+    public Filter Build(string? tag = null)
     {
         var signature = new FilterSignature(_included, _excluded);
         _included = new IndexableSet<uint>();
         _excluded = new IndexableSet<uint>();
-        return _world.GetFilter(signature);
+        return _world.GetFilter(signature, tag);
     }
 }

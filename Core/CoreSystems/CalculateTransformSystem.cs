@@ -13,7 +13,7 @@ public class CalculateTransformSystem : PraxisSystem
     {
         _transformFilter = new FilterBuilder(World)
             .Include<TransformComponent>()
-            .Build();
+            .Build("CalculateTransformSystem.transformFilter");
     }
 
     public override void Update(float deltaTime)

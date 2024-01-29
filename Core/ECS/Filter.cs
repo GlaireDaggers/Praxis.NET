@@ -16,6 +16,11 @@ public class Filter
         this.signature = signature;
     }
 
+    internal bool Contains(in Entity entity)
+    {
+        return entitySet.Contains(entity);
+    }
+
     internal void Check(in Entity entity)
     {
         foreach (var type in signature.Included.AsSpan)

@@ -249,6 +249,7 @@ public class PraxisGame : Game
                 DebugEntities();
                 DebugSystems();
                 DebugComponents();
+                DebugFilters();
             }
             _imGuiRenderer.AfterLayout();
         }
@@ -292,7 +293,7 @@ public class PraxisGame : Game
                 ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.DefaultOpen;
                 if (ImGui.TreeNodeEx((world.Tag ?? $"<World {i}>") + $"##{i}", flags))
                 {
-                    if (ImGui.TreeNode("Update"))
+                    if (ImGui.TreeNodeEx("Update", flags))
                     {
                         foreach (var sys in world.UpdateSystems)
                         {
@@ -303,7 +304,7 @@ public class PraxisGame : Game
                         }
                         ImGui.TreePop();
                     }
-                    if (ImGui.TreeNode("PostUpdate"))
+                    if (ImGui.TreeNodeEx("PostUpdate", flags))
                     {
                         foreach (var sys in world.PostUpdateSystems)
                         {
@@ -314,7 +315,7 @@ public class PraxisGame : Game
                         }
                         ImGui.TreePop();
                     }
-                    if (ImGui.TreeNode("Draw"))
+                    if (ImGui.TreeNodeEx("Draw", flags))
                     {
                         foreach (var sys in world.DrawSystems)
                         {
@@ -398,7 +399,64 @@ public class PraxisGame : Game
             {
                 ImGui.Text("Nothing selected");
             }
-            
+
+            ImGui.End();
+        }
+    }
+
+    private void DebugFilters()
+    {
+        if (ImGui.Begin("Filters"))
+        {
+            for (int i = 0; i < _worlds.Count; i++)
+            {
+                var world = _worlds[i];
+
+                ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.DefaultOpen;
+                if (ImGui.TreeNodeEx((world.Tag ?? $"<World {i}>") + $"##{i}", flags))
+                {
+                    int unnamedFilterCount = 0;
+                    foreach (var filter in world.World.AllFilters)
+                    {
+                        if (filter.tag != null)
+                        {
+                            bool included = _selectedEntity != null && _selectedWorld == world.World && filter.Contains(_selectedEntity.Value);
+
+                            if (!included)
+                            {
+                                ImGui.BeginDisabled();
+                            }
+
+                            if (ImGui.TreeNodeEx(filter.tag, ImGuiTreeNodeFlags.Leaf))
+                            {
+                                ImGui.TreePop();
+                            }
+
+                            if (!included)
+                            {
+                                ImGui.EndDisabled();
+                            }
+                        }
+                        else
+                        {
+                            unnamedFilterCount++;
+                        }
+                    }
+
+                    if (unnamedFilterCount > 0)
+                    {
+                        ImGui.BeginDisabled();
+                        if (ImGui.TreeNodeEx($"{unnamedFilterCount} untagged filter(s)##{i}", ImGuiTreeNodeFlags.Leaf))
+                        {
+                            ImGui.TreePop();
+                        }
+                        ImGui.EndDisabled();
+                    }
+
+                    ImGui.TreePop();
+                }
+            }
+
             ImGui.End();
         }
     }
