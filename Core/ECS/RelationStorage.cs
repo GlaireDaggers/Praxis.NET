@@ -2,8 +2,8 @@
 
 using System.Runtime.InteropServices;
 
-internal class IndexableSet<T>
-    where T : struct
+public class IndexableSet<T>
+    where T : notnull
 {
     public int Count => _list.Count;
     public Span<T> AsSpan => CollectionsMarshal.AsSpan(_list);

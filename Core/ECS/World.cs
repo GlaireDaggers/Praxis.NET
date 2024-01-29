@@ -31,6 +31,17 @@ public class World
 
     private IndexableSet<Entity> _allEntities = new IndexableSet<Entity>();
 
+    public void GetComponentTypes(in Entity entity, IndexableSet<Type> componentTypes)
+    {
+        foreach (var depot in _componentDepotList)
+        {
+            if (depot.Contains(entity))
+            {
+                componentTypes.Add(depot.ComponentType);
+            }
+        }
+    }
+
     public void SetSingleton<T>(in T data)
         where T : struct
     {

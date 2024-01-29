@@ -248,6 +248,7 @@ public class PraxisGame : Game
             {
                 DebugEntities();
                 DebugSystems();
+                DebugComponents();
             }
             _imGuiRenderer.AfterLayout();
         }
@@ -332,6 +333,8 @@ public class PraxisGame : Game
         }
     }
 
+    private Entity? _selectedEntity;
+    private World? _selectedWorld;
     private void DebugEntity(World world, in Entity entity)
     {
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.DefaultOpen;
@@ -341,7 +344,20 @@ public class PraxisGame : Game
             flags |= ImGuiTreeNodeFlags.Leaf;
         }
 
-        if (ImGui.TreeNodeEx((entity.Tag ?? $"<Entity {entity.ID}>") + $"##{entity.ID}", flags))
+        if (_selectedEntity is Entity e && entity.ID == e.ID && _selectedWorld == world)
+        {
+            flags |= ImGuiTreeNodeFlags.Selected;
+        }
+
+        bool isOpen = ImGui.TreeNodeEx((entity.Tag ?? $"<Entity {entity.ID}>") + $"##{entity.ID}", flags);
+
+        if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left))
+        {
+            _selectedWorld = world;
+            _selectedEntity = entity;
+        }
+
+        if (isOpen)
         {
             if (world.HasInRelations<ChildOf>(entity))
             {
@@ -360,6 +376,30 @@ public class PraxisGame : Game
             }
 
             ImGui.TreePop();
+        }
+    }
+
+    IndexableSet<Type> _cachedComponentTypes = new IndexableSet<Type>();
+    private void DebugComponents()
+    {
+        if (ImGui.Begin("Components"))
+        {
+            if (_selectedWorld != null && _selectedEntity != null)
+            {
+                _cachedComponentTypes.Clear();
+                _selectedWorld.GetComponentTypes(_selectedEntity.Value, _cachedComponentTypes);
+
+                foreach (var component in _cachedComponentTypes.AsSpan)
+                {
+                    ImGui.Text(component.Name);
+                }
+            }
+            else
+            {
+                ImGui.Text("Nothing selected");
+            }
+            
+            ImGui.End();
         }
     }
 
