@@ -447,7 +447,7 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         }
     }
 
-    private string ConvertTexture(Image image, string basePath, string contentPath, string texName)
+    private string ConvertTexture(Image image, CompressonatorTextureProcessor.TextureFormat fmt, int alphaThreshold, string basePath, string contentPath, string texName)
     {
         // unpack image to temporary file
         var tmpPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -460,8 +460,8 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         // convert via Compressonator
         _textureProcessor.ConvertTexture(tmpPath, new CompressonatorTextureProcessor.TextureMetadata
         {
-            format = CompressonatorTextureProcessor.TextureFormat.BC3,
-            alphaThreshold = 0,
+            format = fmt,
+            alphaThreshold = alphaThreshold,
             mipmap = true
         }, realDir);
 
@@ -496,7 +496,23 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
 
             if (baseColor.Texture != null)
             {
-                string texPath = ConvertTexture(baseColor.Texture.PrimaryImage, basePath, contentPath, mat.Name + "_DiffuseColor.dds");
+                // opaque materials use BC1 textures
+                // masked materials use BC1 w/ 1-bit alpha
+                // blended materials use BC3
+
+                var fmt = CompressonatorTextureProcessor.TextureFormat.BC1;
+                var alphaThreshold = 0;
+
+                if (mat.Alpha == AlphaMode.MASK)
+                {
+                    alphaThreshold = (int)(mat.AlphaCutoff * 255);
+                }
+                else if (mat.Alpha == AlphaMode.BLEND)
+                {
+                    fmt = CompressonatorTextureProcessor.TextureFormat.BC3;
+                }
+
+                string texPath = ConvertTexture(baseColor.Texture.PrimaryImage, fmt, alphaThreshold, basePath, contentPath, mat.Name + "_DiffuseColor.dds");
                 matData.Tex2DParams["DiffuseTexture"] = "content/" + texPath;
             }
         }
@@ -507,7 +523,7 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
 
             if (emissive.Texture != null)
             {
-                string texPath = ConvertTexture(emissive.Texture.PrimaryImage, basePath, contentPath, mat.Name + "_Emissive.dds");
+                string texPath = ConvertTexture(emissive.Texture.PrimaryImage, CompressonatorTextureProcessor.TextureFormat.BC1, 0, basePath, contentPath, mat.Name + "_Emissive.dds");
                 matData.Tex2DParams["EmissiveTexture"] = "content/" + texPath;
             }
         }
