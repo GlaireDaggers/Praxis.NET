@@ -54,7 +54,9 @@ public class ParticleEmitterSystem : PraxisSystem
                 for (int i = 0; i < state.particleCount; i++)
                 {
                     Vector3 p = emitter.worldSpace ? state.particles[i].position : Vector3.Transform(state.particles[i].position, transform.transform);
-                    DrawSphereGizmo(p, 0.1f, Color.White);
+                    DrawLineGizmo(p - Vector3.UnitX * 0.5f, p + Vector3.UnitX * 0.5f, Color.Red, Color.Red);
+                    DrawLineGizmo(p - Vector3.UnitY * 0.5f, p + Vector3.UnitY * 0.5f, Color.Green, Color.Green);
+                    DrawLineGizmo(p - Vector3.UnitZ * 0.5f, p + Vector3.UnitZ * 0.5f, Color.Blue, Color.Blue);
                 }
             }
         }
@@ -62,6 +64,9 @@ public class ParticleEmitterSystem : PraxisSystem
 
     private Filter _initParticles;
     private Filter _updateParticles;
+    private Filter _updateLinearForceParticles;
+    private Filter _updateNoiseForceParticles;
+    private Filter _updateAttractionForceParticles;
     private Random _rng;
 
     private FastNoiseLite _noise1;
@@ -84,6 +89,24 @@ public class ParticleEmitterSystem : PraxisSystem
             .Include<ParticleEmitterComponent>()
             .Include<ParticleEmitterStateComponent>()
             .Build("ParticleEmitterSystem.updateParticles");
+
+        _updateLinearForceParticles = new FilterBuilder(World)
+            .Include<ParticleEmitterComponent>()
+            .Include<ParticleEmitterStateComponent>()
+            .Include<ParticleEmitterAddLinearForceComponent>()
+            .Build("ParticleEmitterSystem.updateLinearForceParticles");
+
+        _updateNoiseForceParticles = new FilterBuilder(World)
+            .Include<ParticleEmitterComponent>()
+            .Include<ParticleEmitterStateComponent>()
+            .Include<ParticleEmitterAddNoiseForceComponent>()
+            .Build("ParticleEmitterSystem.updateNoiseForceParticles");
+
+        _updateAttractionForceParticles = new FilterBuilder(World)
+            .Include<ParticleEmitterComponent>()
+            .Include<ParticleEmitterStateComponent>()
+            .Include<ParticleEmitterAttractionForceComponent>()
+            .Build("ParticleEmitterSystem.updateAttractionForceParticles");
 
         _noise1 = new FastNoiseLite();
         _noise1.SetNoiseType(FastNoiseLite.NoiseType.OpenSimplex2);
@@ -126,64 +149,6 @@ public class ParticleEmitterSystem : PraxisSystem
                 }
             }
 
-            if (World.Has<ParticleEmitterAddLinearForceComponent>(entity))
-            {
-                var addLinearForce = World.Get<ParticleEmitterAddLinearForceComponent>(entity);
-                
-                Vector3 force = addLinearForce.force;
-                if (emitter.worldSpace && !addLinearForce.worldSpace)
-                {
-                    // transform vector from local to world
-                    force = Vector3.TransformNormal(force, transform.transform);
-                }
-                else if (addLinearForce.worldSpace && !emitter.worldSpace)
-                {
-                    // transform vector from world to local
-                    force = Vector3.TransformNormal(force, Matrix.Invert(transform.transform));
-                }
-
-                for (int i = 0; i < emitterState.particleCount; i++)
-                {
-                    emitterState.particles[i].velocity += force * deltaTime;
-                }
-            }
-
-            if (World.Has<ParticleEmitterAddSimplexForceComponent>(entity))
-            {
-                var addSimplexForce = World.Get<ParticleEmitterAddSimplexForceComponent>(entity);
-
-                _noise1.SetSeed(addSimplexForce.seed);
-                _noise2.SetSeed(addSimplexForce.seed + 1);
-                _noise3.SetSeed(addSimplexForce.seed + 2);
-
-                _noise1.SetFrequency(addSimplexForce.frequency);
-                _noise2.SetFrequency(addSimplexForce.frequency);
-                _noise3.SetFrequency(addSimplexForce.frequency);
-
-                Matrix forceTransform = Matrix.Identity;
-                
-                if (emitter.worldSpace && !addSimplexForce.worldSpace)
-                {
-                    // transform vector from local to world
-                    forceTransform = transform.transform;
-                }
-                else if (addSimplexForce.worldSpace && !emitter.worldSpace)
-                {
-                    // transform vector from world to local
-                    forceTransform = Matrix.Invert(transform.transform);
-                }
-
-                for (int i = 0; i < emitterState.particleCount; i++)
-                {
-                    ref var particle = ref emitterState.particles[i];
-                    var samplePos = particle.position + (addSimplexForce.scroll * deltaTime);
-                    float x = _noise1.GetNoise(samplePos.X, samplePos.Y, samplePos.Z);
-                    float y = _noise2.GetNoise(samplePos.X, samplePos.Y, samplePos.Z);
-                    float z = _noise3.GetNoise(samplePos.X, samplePos.Y, samplePos.Z);
-                    particle.velocity += Vector3.TransformNormal(new Vector3(x, y, z), forceTransform) * addSimplexForce.magnitude * deltaTime;
-                }
-            }
-
             for (int i = 0; i < emitterState.particleCount; i++)
             {
                 ref var particle = ref emitterState.particles[i];
@@ -207,6 +172,106 @@ public class ParticleEmitterSystem : PraxisSystem
             }
 
             World.Set(entity, emitterState);
+        }
+
+        foreach (var entity in _updateLinearForceParticles.Entities)
+        {
+            var transform = World.Get<CachedMatrixComponent>(entity);
+            var emitter = World.Get<ParticleEmitterComponent>(entity);
+            var emitterState = World.Get<ParticleEmitterStateComponent>(entity);
+            var addLinearForce = World.Get<ParticleEmitterAddLinearForceComponent>(entity);
+
+            Vector3 force = addLinearForce.force;
+            if (emitter.worldSpace && !addLinearForce.worldSpace)
+            {
+                // transform vector from local to world
+                force = Vector3.TransformNormal(force, transform.transform);
+            }
+            else if (addLinearForce.worldSpace && !emitter.worldSpace)
+            {
+                // transform vector from world to local
+                force = Vector3.TransformNormal(force, Matrix.Invert(transform.transform));
+            }
+
+            for (int i = 0; i < emitterState.particleCount; i++)
+            {
+                emitterState.particles[i].velocity += force * deltaTime;
+            }
+        }
+
+        foreach (var entity in _updateNoiseForceParticles.Entities)
+        {
+            var transform = World.Get<CachedMatrixComponent>(entity);
+            var emitter = World.Get<ParticleEmitterComponent>(entity);
+            var emitterState = World.Get<ParticleEmitterStateComponent>(entity);
+            var addSimplexForce = World.Get<ParticleEmitterAddNoiseForceComponent>(entity);
+
+            _noise1.SetSeed(addSimplexForce.seed);
+            _noise2.SetSeed(addSimplexForce.seed + 1);
+            _noise3.SetSeed(addSimplexForce.seed + 2);
+
+            _noise1.SetFrequency(addSimplexForce.frequency);
+            _noise2.SetFrequency(addSimplexForce.frequency);
+            _noise3.SetFrequency(addSimplexForce.frequency);
+
+            Matrix forceTransform = Matrix.Identity;
+            
+            if (emitter.worldSpace && !addSimplexForce.worldSpace)
+            {
+                // transform vector from local to world
+                forceTransform = transform.transform;
+            }
+            else if (addSimplexForce.worldSpace && !emitter.worldSpace)
+            {
+                // transform vector from world to local
+                forceTransform = Matrix.Invert(transform.transform);
+            }
+
+            for (int i = 0; i < emitterState.particleCount; i++)
+            {
+                ref var particle = ref emitterState.particles[i];
+                var samplePos = particle.position + (addSimplexForce.scroll * deltaTime);
+                float x = _noise1.GetNoise(samplePos.X, samplePos.Y, samplePos.Z);
+                float y = _noise2.GetNoise(samplePos.X, samplePos.Y, samplePos.Z);
+                float z = _noise3.GetNoise(samplePos.X, samplePos.Y, samplePos.Z);
+                particle.velocity += Vector3.TransformNormal(new Vector3(x, y, z), forceTransform) * addSimplexForce.magnitude * deltaTime;
+            }
+        }
+
+        foreach (var entity in _updateAttractionForceParticles.Entities)
+        {
+            var transform = World.Get<CachedMatrixComponent>(entity);
+            var emitter = World.Get<ParticleEmitterComponent>(entity);
+            var emitterState = World.Get<ParticleEmitterStateComponent>(entity);
+            var attractionForce = World.Get<ParticleEmitterAttractionForceComponent>(entity);
+
+            Vector3 target = attractionForce.target;
+            
+            if (emitter.worldSpace && !attractionForce.worldSpace)
+            {
+                // transform vector from local to world
+                target = Vector3.Transform(target, transform.transform);
+            }
+            else if (attractionForce.worldSpace && !emitter.worldSpace)
+            {
+                // transform vector from world to local
+                target = Vector3.Transform(target, Matrix.Invert(transform.transform));
+            }
+
+            for (int i = 0; i < emitterState.particleCount; i++)
+            {
+                ref var particle = ref emitterState.particles[i];
+                Vector3 toTarget = target - particle.position;
+                float len = toTarget.LengthSquared();
+                if (len <= attractionForce.maxRadius && len > 0f)
+                {
+                    len = MathF.Sqrt(len);
+                    float force = 1f - (len / attractionForce.maxRadius);
+                    toTarget /= len;
+
+                    particle.velocity += toTarget * force * attractionForce.force * deltaTime;
+                }
+            }
         }
     }
 

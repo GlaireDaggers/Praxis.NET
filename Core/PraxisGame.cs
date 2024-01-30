@@ -71,7 +71,8 @@ public class PraxisGame : Game
         {
             PreferredBackBufferWidth = width,
             PreferredBackBufferHeight = height,
-            SynchronizeWithVerticalRetrace = vsync
+            SynchronizeWithVerticalRetrace = vsync,
+            PreferMultiSampling = true
         };
 
         IsMouseVisible = true;

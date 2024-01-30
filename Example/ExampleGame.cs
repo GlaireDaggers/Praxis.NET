@@ -18,6 +18,8 @@ public class ExampleGame : PraxisGame
     {
         base.Init();
 
+        GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
+
         new CameraMovementSystem(DefaultContext);
 
         Resources.Mount("content", new FolderFS("content/bin"));
@@ -288,10 +290,11 @@ public class ExampleGame : PraxisGame
             worldSpace = true,
             force = new Vector3(0.1f, 2f, 0.1f)
         });
-        DefaultContext.World.Set(sparks, new ParticleEmitterAddSimplexForceComponent
+        DefaultContext.World.Set(sparks, new ParticleEmitterAddNoiseForceComponent
         {
             worldSpace = true,
             seed = 1337,
+            scroll = new Vector3(1f, 1f, 1f),
             frequency = 0.25f,
             magnitude = 5f
         });

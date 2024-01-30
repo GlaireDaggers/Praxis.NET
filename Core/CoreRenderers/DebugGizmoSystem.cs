@@ -88,6 +88,7 @@ public class DebugGizmoSystem : PraxisSystem
         _gizmoEffect.DiffuseColor = color.ToVector3();
 
         _gizmoEffect.CurrentTechnique.Passes[0].Apply();
+        Game.GraphicsDevice.BlendState = BlendState.Opaque;
         Game.GraphicsDevice.RasterizerState = _gizmoRS;
         Game.GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
 

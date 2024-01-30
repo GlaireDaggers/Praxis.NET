@@ -62,13 +62,21 @@ public struct ParticleEmitterAddLinearForceComponent
     public Vector3 force;
 }
 
-public struct ParticleEmitterAddSimplexForceComponent
+public struct ParticleEmitterAddNoiseForceComponent
 {
     public int seed;
     public bool worldSpace;
     public Vector3 scroll;
     public float frequency;
     public float magnitude;
+}
+
+public struct ParticleEmitterAttractionForceComponent
+{
+    public bool worldSpace;
+    public Vector3 target;
+    public float maxRadius;
+    public float force;
 }
 
 public struct ParticleEmitterSpriteRenderComponent

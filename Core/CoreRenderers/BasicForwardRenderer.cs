@@ -172,13 +172,15 @@ public class BasicForwardRenderer : PraxisSystem
         if (_temp == null || _temp.Width != Game.GraphicsDevice.PresentationParameters.BackBufferWidth
             || _temp.Height != Game.GraphicsDevice.PresentationParameters.BackBufferHeight
             || _temp.Format != Game.GraphicsDevice.PresentationParameters.BackBufferFormat
-            || _temp.DepthStencilFormat != Game.GraphicsDevice.PresentationParameters.DepthStencilFormat)
+            || _temp.DepthStencilFormat != Game.GraphicsDevice.PresentationParameters.DepthStencilFormat
+            || _temp.MultiSampleCount != Game.GraphicsDevice.PresentationParameters.MultiSampleCount)
         {
             _temp?.Dispose();
             _temp = new RenderTarget2D(Game.GraphicsDevice, Game.GraphicsDevice.PresentationParameters.BackBufferWidth,
                 Game.GraphicsDevice.PresentationParameters.BackBufferHeight, false,
                 Game.GraphicsDevice.PresentationParameters.BackBufferFormat,
-                Game.GraphicsDevice.PresentationParameters.DepthStencilFormat);
+                Game.GraphicsDevice.PresentationParameters.DepthStencilFormat,
+                Game.GraphicsDevice.PresentationParameters.MultiSampleCount, RenderTargetUsage.PreserveContents);
         }
 
         foreach (var msg in World.GetMessages<DebugModeMessage>())
