@@ -9,15 +9,22 @@ public static class Program
     {
         var builder = new Builder();
 
+        var compressor = new CompressonatorTextureProcessor("../Tools/binaries/win-x64/compressonator/compressonatorcli.exe",
+            "../Tools/binaries/linux-x64/compressonator/compressonatorcli");
+
+        var gltf = new GltfProcessor(compressor);
+
         builder.AddRule("*.fx", new EFBShaderProcessor("../Tools/binaries/efb.exe", []));
-        builder.AddRule("*.gltf", new GltfProcessor());
-        builder.AddRule("*.glb", new GltfProcessor());
+        builder.AddRule("*.gltf", gltf);
+        builder.AddRule("*.glb", gltf);
 
         builder.AddRule("*.dds", new CopyProcessor());
         builder.AddRule("*.ktx", new CopyProcessor());
-        builder.AddRule("*.png", new CopyProcessor());
-        builder.AddRule("*.jpg", new CopyProcessor());
-        builder.AddRule("*.jpeg", new CopyProcessor());
+        builder.AddRule("*.png", compressor);
+        builder.AddRule("*.jpg", compressor);
+        builder.AddRule("*.jpeg", compressor);
+        builder.AddRule("*.tga", compressor);
+        builder.AddRule("*.bmp", compressor);
         builder.AddRule("*.wav", new CopyProcessor());
         builder.AddRule("*.ogg", new CopyProcessor());
         builder.AddRule("*.ogv", new CopyProcessor());

@@ -3,7 +3,7 @@
 	"effectTechnique": "Default",
 	"effectTechniqueSkinned": "Skinned",
 	"tex2DParams": {
-		"DiffuseTexture": "content/models/brick_wall_02_diff_1k.jpg"
+		"DiffuseTexture": "content/models/brick_wall_02_diff_1k.dds"
 	},
 	"vec4Params": {
 		"DiffuseColor": "1.0, 1.0, 1.0, 1.0"

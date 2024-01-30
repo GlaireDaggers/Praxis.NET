@@ -9,7 +9,7 @@
 	"alphaSrcBlend": "one",
 	"alphaDstBlend": "one",
 	"tex2DParams": {
-		"MainTexture": "content/vfx/circle_05.png"
+		"MainTexture": "content/vfx/circle_05.dds"
 	},
 	"vec4Params": {
 		"Tint": "1.0, 1.0, 1.0, 1.0"

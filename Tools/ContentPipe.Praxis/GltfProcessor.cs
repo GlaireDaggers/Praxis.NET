@@ -310,6 +310,13 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         }
     }
 
+    private CompressonatorTextureProcessor _textureProcessor;
+
+    public GltfProcessor(CompressonatorTextureProcessor textureProcessor)
+    {
+        _textureProcessor = textureProcessor;
+    }
+
     protected override string GetOutputExtension(string inputExtension)
     {
         return "pmdl";
@@ -440,6 +447,30 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         }
     }
 
+    private string ConvertTexture(Image image, string basePath, string contentPath, string texName)
+    {
+        // unpack image to temporary file
+        var tmpPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        tmpPath = Path.ChangeExtension(tmpPath, image.Content.FileExtension);
+        image.Content.SaveToFile(tmpPath);
+
+        string texPath = Path.Combine(basePath, texName);
+        string realDir = Path.Combine(contentPath, texPath);
+
+        // convert via Compressonator
+        _textureProcessor.ConvertTexture(tmpPath, new CompressonatorTextureProcessor.TextureMetadata
+        {
+            format = CompressonatorTextureProcessor.TextureFormat.BC3,
+            alphaThreshold = 0,
+            mipmap = true
+        }, realDir);
+
+        // delete temp file
+        File.Delete(tmpPath);
+
+        return texPath;
+    }
+
     private void ConvertMaterial(Material mat, string outPath, string basePath, string contentPath)
     {
         PraxisMaterialData matData = new PraxisMaterialData();
@@ -465,9 +496,7 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
 
             if (baseColor.Texture != null)
             {
-                string texPath = Path.Combine(basePath, mat.Name + "_DiffuseColor." + baseColor.Texture.PrimaryImage.Content.FileExtension);
-                string realDir = Path.Combine(contentPath, texPath);
-                baseColor.Texture.PrimaryImage.Content.SaveToFile(realDir);
+                string texPath = ConvertTexture(baseColor.Texture.PrimaryImage, basePath, contentPath, mat.Name + "_DiffuseColor.dds");
                 matData.Tex2DParams["DiffuseTexture"] = "content/" + texPath;
             }
         }
@@ -478,9 +507,7 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
 
             if (emissive.Texture != null)
             {
-                string texPath = Path.Combine(basePath, mat.Name + "_Emissive." + emissive.Texture.PrimaryImage.Content.FileExtension);
-                string realDir = Path.Combine(contentPath, texPath);
-                emissive.Texture.PrimaryImage.Content.SaveToFile(realDir);
+                string texPath = ConvertTexture(emissive.Texture.PrimaryImage, basePath, contentPath, mat.Name + "_Emissive.dds");
                 matData.Tex2DParams["EmissiveTexture"] = "content/" + texPath;
             }
         }

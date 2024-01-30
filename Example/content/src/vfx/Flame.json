@@ -9,8 +9,8 @@
 	"alphaSrcBlend": "one",
 	"alphaDstBlend": "one",
 	"tex2DParams": {
-		"MainTexture": "content/vfx/flame_01.png",
-		"MaskTexture": "content/vfx/perlin.png"
+		"MainTexture": "content/vfx/flame_01.dds",
+		"MaskTexture": "content/vfx/perlin.dds"
 	},
 	"vec2Params": {
 		"ScrollSpeed": "0.5, -0.5"
