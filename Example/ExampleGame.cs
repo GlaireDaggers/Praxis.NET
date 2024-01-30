@@ -183,6 +183,9 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(flames, new ParticleEmitterSpriteRenderComponent
         {
             material = Resources.Load<Material>("content/vfx/Flame.json"),
+            sheetRows = 1,
+            sheetColumns = 1,
+            sheetCycles = 1,
             colorOverLifetime = new ColorAnimationCurve(CurveInterpolationMode.Linear, [
                 new () { time = 0f, value = new Color(1f, 1f, 1f, 0f) },
                 new () { time = 0.1f, value = Color.Yellow },
@@ -243,6 +246,9 @@ public class ExampleGame : PraxisGame
         {
             sortBias = -0.1f,
             material = Resources.Load<Material>("content/vfx/Smoke.json"),
+            sheetRows = 1,
+            sheetColumns = 1,
+            sheetCycles = 1,
             colorOverLifetime = new ColorAnimationCurve(CurveInterpolationMode.Linear, [
                 new () { time = 0f, value = new Color(1f, 0.5f, 0f, 0f) },
                 new () { time = 0.2f, value = new Color(1f, 0.5f, 0.1f, 0.5f) },
@@ -302,6 +308,9 @@ public class ExampleGame : PraxisGame
         {
             sortBias = 0.1f,
             material = Resources.Load<Material>("content/vfx/Spark.json"),
+            sheetRows = 1,
+            sheetColumns = 1,
+            sheetCycles = 1,
             colorOverLifetime = new ColorAnimationCurve(CurveInterpolationMode.Linear, [
                 new () { time = 0f, value = new Color(1f, 1f, 1f, 0f) },
                 new () { time = 0.1f, value = Color.Yellow },

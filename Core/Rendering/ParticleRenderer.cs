@@ -48,35 +48,35 @@ internal class ParticleSpriteRenderer : IDisposable
         _idxCount = 0;
     }
 
-    public void AppendQuad(in Vector3 up, in Vector3 right, in Vector3 pos, in Color tint)
+    public void AppendQuad(in Vector3 up, in Vector3 right, in Vector3 pos, Vector2 uvMin, Vector2 uvMax, in Color tint)
     {
         int vtxBase = _vtxCount;
 
         _vertices[_vtxCount++] = new ParticleVertex
         {
             position = new Vector4(pos - right + up, 1f),
-            texcoord = new Vector2(0f, 0f),
+            texcoord = new Vector2(uvMin.X, uvMin.Y),
             color = tint
         };
 
         _vertices[_vtxCount++] = new ParticleVertex
         {
             position = new Vector4(pos + right + up, 1f),
-            texcoord = new Vector2(1f, 0f),
+            texcoord = new Vector2(uvMax.X, uvMin.Y),
             color = tint
         };
 
         _vertices[_vtxCount++] = new ParticleVertex
         {
             position = new Vector4(pos - right - up, 1f),
-            texcoord = new Vector2(0f, 1f),
+            texcoord = new Vector2(uvMin.X, uvMax.Y),
             color = tint
         };
 
         _vertices[_vtxCount++] = new ParticleVertex
         {
             position = new Vector4(pos + right - up, 1f),
-            texcoord = new Vector2(1f, 1f),
+            texcoord = new Vector2(uvMax.X, uvMax.Y),
             color = tint
         };
 

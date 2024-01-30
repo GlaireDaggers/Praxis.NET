@@ -92,6 +92,8 @@ public class BasicForwardRenderer : PraxisSystem
     float _debugCamMoveSpeed = 5f;
     bool _debugIsDragging = false;
 
+    private float _time = 0f;
+
     RenderTarget2D? _temp;
     ParticleSpriteRenderer _particleSpriteRenderer;
 
@@ -168,6 +170,8 @@ public class BasicForwardRenderer : PraxisSystem
     public override void Update(float dt)
     {
         base.Update(dt);
+
+        _time += dt;
 
         if (_temp == null || _temp.Width != Game.GraphicsDevice.PresentationParameters.BackBufferWidth
             || _temp.Height != Game.GraphicsDevice.PresentationParameters.BackBufferHeight
@@ -431,17 +435,27 @@ public class BasicForwardRenderer : PraxisSystem
 
             _particleSpriteRenderer.Reset();
 
+            int totalCells = renderData.sheetRows * renderData.sheetColumns;
+            Vector2 cellSize = new Vector2(1f / renderData.sheetColumns, 1f / renderData.sheetRows);
+
             for (int i = 0; i < state.particleCount; i++)
             {
                 ref var particle = ref state.particles[i];
                 var t = particle.lifetime / particle.maxLifetime;
+                int cell = (int)(t * renderData.sheetCycles) % totalCells;
+                int row = cell / renderData.sheetRows;
+                int column = cell % renderData.sheetColumns;
+
+                Vector2 min = new Vector2(column, row) * cellSize;
+                Vector2 max = min + cellSize;
+                
                 Vector3 pos = emitter.worldSpace ? particle.position : Vector3.Transform(particle.position, transform.transform);
                 var tint = renderData.colorOverLifetime.Sample(t);
                 var size = renderData.sizeOverLifetime.Sample(t) * 0.5f;
                 var rot = Matrix.CreateFromAxisAngle(camFwd, MathHelper.ToRadians(particle.angle));
                 var up = Vector3.TransformNormal(camUp, rot);
                 var right = Vector3.TransformNormal(camRight, rot);
-                _particleSpriteRenderer.AppendQuad(up * size.Y, right * size.X, pos, tint);
+                _particleSpriteRenderer.AppendQuad(up * size.Y, right * size.X, pos, min, max, tint);
             }
 
             var mesh = _particleSpriteRenderer.Allocate();
@@ -512,6 +526,8 @@ public class BasicForwardRenderer : PraxisSystem
             _cachedModelPos = queue[i].transform.Translation;
             _cachedPointLights.Sort(_sortPointLight);
             _cachedSpotLights.Sort(_sortSpotLight);
+
+            fx.Parameters["Time"]?.SetValue(_time);
 
             fx.Parameters["ViewProjection"]?.SetValue(vp);
             fx.Parameters["World"]?.SetValue(queue[i].transform);

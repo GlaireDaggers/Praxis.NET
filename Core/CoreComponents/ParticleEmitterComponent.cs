@@ -85,4 +85,7 @@ public struct ParticleEmitterSpriteRenderComponent
     public RuntimeResource<Material> material;
     public ColorAnimationCurve colorOverLifetime;
     public Vector2AnimationCurve sizeOverLifetime;
+    public int sheetRows;
+    public int sheetColumns;
+    public int sheetCycles;
 }

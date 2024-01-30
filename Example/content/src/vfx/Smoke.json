@@ -1,5 +1,5 @@
 {
-	"effect": "content/shaders/Unlit.fxo",
+	"effect": "content/shaders/UnlitScrollingMask.fxo",
 	"effectTechnique": "Default",
 	"effectTechniqueSkinned": "Skinned",
 	"type": "transparent",
@@ -9,7 +9,11 @@
 	"alphaSrcBlend": "sourceAlpha",
 	"alphaDstBlend": "inverseSourceAlpha",
 	"tex2DParams": {
-		"MainTexture": "content/vfx/smoke_05.png"
+		"MainTexture": "content/vfx/smoke_05.png",
+		"MaskTexture": "content/vfx/perlin.png"
+	},
+	"vec2Params": {
+		"ScrollSpeed": "0.25, -0.25"
 	},
 	"vec4Params": {
 		"Tint": "1.0, 1.0, 1.0, 1.0"
