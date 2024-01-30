@@ -1,0 +1,17 @@
+{
+	"effect": "content/shaders/Unlit.fxo",
+	"effectTechnique": "Default",
+	"effectTechniqueSkinned": "Skinned",
+	"type": "transparent",
+	"depthWriteEnable": false,
+	"colorSrcBlend": "sourceAlpha",
+	"colorDstBlend": "one",
+	"alphaSrcBlend": "one",
+	"alphaDstBlend": "one",
+	"tex2DParams": {
+		"MainTexture": "content/vfx/flame_01.png"
+	},
+	"vec4Params": {
+		"Tint": "1.0, 1.0, 1.0, 1.0"
+	}
+}

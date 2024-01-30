@@ -21,6 +21,7 @@ public class BasicForwardRenderer : PraxisSystem
         public Mesh mesh;
         public Material material;
         public Matrix[]? pose;
+        public float zbias;
     }
 
     private struct RenderPointLight
@@ -62,6 +63,7 @@ public class BasicForwardRenderer : PraxisSystem
 
     Filter _cameraFilter;
     Filter _modelFilter;
+    Filter _particleSpriteEmitterFilter;
     Filter _directionalLightFilter;
     Filter _pointLightFilter;
     Filter _spotLightFilter;
@@ -91,9 +93,14 @@ public class BasicForwardRenderer : PraxisSystem
     bool _debugIsDragging = false;
 
     RenderTarget2D? _temp;
+    ParticleSpriteRenderer _particleSpriteRenderer;
+
+    Stack<Mesh> _allocatedParticleMeshes = new Stack<Mesh>();
 
     public BasicForwardRenderer(WorldContext context) : base(context)
     {
+        _particleSpriteRenderer = new ParticleSpriteRenderer(Game);
+
         _cameraFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
             .Include<CameraComponent>()
@@ -103,6 +110,12 @@ public class BasicForwardRenderer : PraxisSystem
             .Include<CachedMatrixComponent>()
             .Include<ModelComponent>()
             .Build("BasicForwardRender.modelFilter");
+
+        _particleSpriteEmitterFilter = new FilterBuilder(World)
+            .Include<CachedMatrixComponent>()
+            .Include<ParticleEmitterStateComponent>()
+            .Include<ParticleEmitterSpriteRenderComponent>()
+            .Build("BasicForwardRender.particleSpriteEmitterFilter");
 
         _directionalLightFilter = new FilterBuilder(World)
             .Include<CachedMatrixComponent>()
@@ -124,6 +137,8 @@ public class BasicForwardRenderer : PraxisSystem
             Vector3 posB = b.transform.Translation;
             posA = Vector3.Transform(posA, _cachedView);
             posB = Vector3.Transform(posB, _cachedView);
+            posA.Z += a.zbias;
+            posB.Z += b.zbias;
             return posB.Z.CompareTo(posA.Z);
         };
 
@@ -132,6 +147,8 @@ public class BasicForwardRenderer : PraxisSystem
             Vector3 posB = b.transform.Translation;
             posA = Vector3.Transform(posA, _cachedView);
             posB = Vector3.Transform(posB, _cachedView);
+            posA.Z += a.zbias;
+            posB.Z += b.zbias;
             return posA.Z.CompareTo(posB.Z);
         };
 
@@ -330,6 +347,10 @@ public class BasicForwardRenderer : PraxisSystem
 
         _cachedView = Matrix.Invert(matrix);
 
+        Vector3 camUp = Vector3.TransformNormal(Vector3.UnitY, matrix);
+        Vector3 camRight = Vector3.TransformNormal(Vector3.UnitX, matrix);
+        Vector3 camFwd = Vector3.TransformNormal(-Vector3.UnitZ, matrix);
+
         if (_debugMode)
         {
             World.Send(new SetDebugCameraParams
@@ -396,6 +417,55 @@ public class BasicForwardRenderer : PraxisSystem
             }
         }
 
+        // construct particle system meshes
+        foreach (var particleEntity in _particleSpriteEmitterFilter.Entities)
+        {
+            // TODO: frustum culling
+
+            var transform = World.Get<CachedMatrixComponent>(particleEntity);
+            var emitter = World.Get<ParticleEmitterComponent>(particleEntity);
+            var state = World.Get<ParticleEmitterStateComponent>(particleEntity);
+            var renderData = World.Get<ParticleEmitterSpriteRenderComponent>(particleEntity);
+
+            _particleSpriteRenderer.Reset();
+
+            for (int i = 0; i < state.particleCount; i++)
+            {
+                ref var particle = ref state.particles[i];
+                var t = particle.lifetime / particle.maxLifetime;
+                Vector3 pos = emitter.worldSpace ? particle.position : Vector3.Transform(particle.position, transform.transform);
+                var tint = renderData.colorOverLifetime.Sample(t);
+                var size = renderData.sizeOverLifetime.Sample(t) * 0.5f;
+                var rot = Matrix.CreateFromAxisAngle(camFwd, MathHelper.ToRadians(particle.angle));
+                var up = Vector3.TransformNormal(camUp, rot);
+                var right = Vector3.TransformNormal(camRight, rot);
+                _particleSpriteRenderer.AppendQuad(up * size.Y, right * size.X, pos, tint);
+            }
+
+            var mesh = _particleSpriteRenderer.Allocate();
+            _allocatedParticleMeshes.Push(mesh);
+
+            var mat = renderData.material.Value;
+
+            var renderMesh = new RenderMesh
+            {
+                zbias = renderData.sortBias,
+                transform = Matrix.Identity,
+                mesh = mesh,
+                material = mat,
+                pose = null
+            };
+
+            if (mat.type == MaterialType.Opaque)
+            {
+                _cachedOpaqueMeshes.Add(renderMesh);
+            }
+            else
+            {
+                _cachedTransparentMeshes.Add(renderMesh);
+            }
+        }
+
         _cachedOpaqueMeshes.Sort(_frontToBack);
         _cachedTransparentMeshes.Sort(_backToFront);
 
@@ -406,6 +476,11 @@ public class BasicForwardRenderer : PraxisSystem
         DrawQueue(vp, _cachedTransparentMeshes);
 
         screenFilter?.OnRender(_temp!, renderTarget);
+
+        while (_allocatedParticleMeshes.Count > 0)
+        {
+            _particleSpriteRenderer.Return(_allocatedParticleMeshes.Pop());
+        }
     }
 
     private void DrawQueue(Matrix vp, List<RenderMesh> queue)
