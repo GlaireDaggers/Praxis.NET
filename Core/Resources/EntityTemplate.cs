@@ -60,6 +60,10 @@ public class EntityTemplate
     [JsonPropertyName("children")]
     public EntityTemplate[]? Children { get; set; }
 
+    [JsonInclude]
+    [JsonPropertyName("$ref")]
+    private string? Ref { get; set; }
+
     public static EntityTemplate Deserialize(PraxisGame game, Stream stream)
     {
         JsonSerializerOptions options = new JsonSerializerOptions
@@ -75,13 +79,39 @@ public class EntityTemplate
         };
 
         EntityTemplate entityTemplate = JsonSerializer.Deserialize<EntityTemplate>(stream, options)!;
-        entityTemplate.OnDeserialize(game);
 
+        entityTemplate.OnDeserialize(game);
         return entityTemplate;
     }
 
     internal void OnDeserialize(PraxisGame game)
     {
+        // really hacky, but this lets us nest EntityTemplates with the "$ref" property pointing to another EntityTemplate JSON
+        // honestly best way I could think of to handle this for now, unless I want to roll the JSON serialization logic by hand
+        if (Ref != null)
+        {
+            var otherTemplateStream = game.Resources.Open(Ref);
+
+            JsonSerializerOptions options = new JsonSerializerOptions
+            {
+                Converters = {
+                    new JsonVector2Converter(),
+                    new JsonVector3Converter(),
+                    new JsonVector4Converter(),
+                    new JsonEulerConverter(),
+                    new JsonColorConverter(),
+                    new JsonComponentDataConverter()
+                }
+            };
+
+            var otherTemplate = JsonSerializer.Deserialize<EntityTemplate>(otherTemplateStream, options)!;
+
+            Tag = otherTemplate.Tag;
+            Relation = otherTemplate.Relation;
+            Children = otherTemplate.Children;
+            Components = otherTemplate.Components;
+        }
+
         if (Children != null)
         {
             foreach (var child in Children)

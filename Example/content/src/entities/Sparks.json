@@ -1,0 +1,58 @@
+{
+	"tag": "Sparks",
+	"components": [
+		{
+			"$type": "TransformComponent",
+			"position": "0.0, 0.0, 0.0"
+		},
+		{
+			"$type": "ParticleEmitterComponent",
+			"worldSpace": true,
+			"maxParticles": 100,
+			"particlesPerBurst": 1,
+			"burstInterval": 0.1,
+			"minParticleLifetime": 2.0,
+			"maxParticleLifetime": 4.0,
+			"minAngle": 0,
+			"maxAngle": 0,
+			"linearDamping": 0.1,
+			"angularDamping": 0
+		},
+		{
+			"$type": "ParticleEmitterSphereShapeComponent",
+			"radius": 2.0
+		},
+		{
+			"$type": "ParticleEmitterInitRandomVelocityComponent",
+			"minForce": "-10, -10, -10",
+			"maxForce": "10, 10, 10"
+		},
+		{
+			"$type": "ParticleEmitterAddLinearForceComponent",
+			"worldSpace": true,
+			"force": "0.1, 2.0, 0.1"
+		},
+		{
+			"$type": "ParticleEmitterAddNoiseForceComponent",
+			"worldSpace": true,
+			"scroll": "1.0, 1.0, 1.0",
+			"frequency": 0.25,
+			"magnitude": 5.0
+		},
+		{
+			"$type": "ParticleEmitterSpriteRenderComponent",
+			"sortBias": -0.1,
+			"material": "content/vfx/Spark.json",
+			"colorOverLifetimeCurve": [
+				{ "time": 0.0, "value": "255, 255, 255, 0" },
+		        { "time": 0.1, "value": "255, 255, 0, 255" },
+		        { "time": 0.5, "value": "255, 69, 0, 255" },
+		        { "time": 1.0, "value": "255, 0, 0, 0" }
+			],
+			"sizeOverLifetimeCurve": [
+				{ "time": 0.0, "value": "0.5, 0.5" },
+				{ "time": 1.0, "value": "0.0, 0.0" }
+			]
+		}
+	]
+}

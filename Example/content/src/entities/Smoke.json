@@ -1,5 +1,5 @@
 {
-	"tag": "Fire",
+	"tag": "Smoke",
 	"components": [
 		{
 			"$type": "TransformComponent",
@@ -10,9 +10,9 @@
 			"worldSpace": true,
 			"maxParticles": 100,
 			"particlesPerBurst": 1,
-			"burstInterval": 0.1,
-			"minParticleLifetime": 1.0,
-			"maxParticleLifetime": 1.0,
+			"burstInterval": 0.05,
+			"minParticleLifetime": 3.0,
+			"maxParticleLifetime": 4.0,
 			"minAngle": 0,
 			"maxAngle": 360,
 			"minAngularVelocity": -90,
@@ -38,30 +38,18 @@
 		},
 		{
 			"$type": "ParticleEmitterSpriteRenderComponent",
-			"material": "content/vfx/Flame.json",
+			"sortBias": -0.1,
+			"material": "content/vfx/Smoke.json",
 			"colorOverLifetimeCurve": [
-				{ "time": 0.0, "value": "255, 255, 255, 0" },
-                { "time": 0.1, "value": "255, 255, 0, 255" },
-                { "time": 0.5, "value": "255, 69, 0, 255" },
-                { "time": 1.0, "value": "255, 0, 0, 0" }
+				{ "time": 0.0, "value": "255, 128, 0, 0" },
+		        { "time": 0.2, "value": "255, 128, 25, 128" },
+		        { "time": 0.5, "value": "25, 25, 25, 255" },
+		        { "time": 1.0, "value": "25, 25, 25, 0" }
 			],
 			"sizeOverLifetimeCurve": [
 				{ "time": 0.0, "value": "3.0, 3.0" },
-				{ "time": 1.0, "value": "6.0, 6.0" }
+				{ "time": 1.0, "value": "8.0, 8.0" }
 			]
-		},
-		{
-			"$type": "PointLightComponent",
-			"color": "2.0, 1.0, 0.25",
-			"radius": 15.0
-		}
-	],
-	"children": [
-		{
-			"$ref": "content/entities/Smoke.json"
-		},
-		{
-			"$ref": "content/entities/Sparks.json"
 		}
 	]
 }
