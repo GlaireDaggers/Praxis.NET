@@ -1,9 +1,36 @@
 ﻿namespace Praxis.Core;
 
+using System.Text.Json.Serialization;
 using BepuPhysics;
 using BepuPhysics.Constraints;
 using Microsoft.Xna.Framework;
 using Praxis.Core.ECS;
+
+[SerializedComponent(nameof(ConstraintComponent))]
+public class ConstraintComponentData : IComponentData
+{
+    [JsonPropertyName("other")]
+    public string? Other { get; set; }
+
+    [JsonPropertyName("constraint")]
+    public ConstraintDefinition? Constraint { get; set; }
+
+    public void OnDeserialize(PraxisGame game)
+    {
+    }
+
+    public void Unpack(in Entity root, in Entity entity, World world)
+    {
+        if (world.FindTaggedEntityInChildren(Other!, root) is Entity other)
+        {
+            world.Set(entity, new ConstraintComponent
+            {
+                other = other,
+                constraint = Constraint!
+            });
+        }   
+    }
+}
 
 public struct ConstraintComponent
 {
@@ -11,6 +38,11 @@ public struct ConstraintComponent
     public ConstraintDefinition constraint;
 }
 
+[JsonDerivedType(typeof(BallSocketDefinition), "ballSocket")]
+[JsonDerivedType(typeof(DistanceLimitDefinition), "distanceLimit")]
+[JsonDerivedType(typeof(WeldDefinition), "weld")]
+[JsonDerivedType(typeof(HingeDefinition), "hinge")]
+[JsonDerivedType(typeof(PointOnLineDefinition), "pointOnLine")]
 public abstract class ConstraintDefinition
 {
     public abstract ConstraintHandle Construct(Simulation sim, in BodyHandle a, in BodyHandle b);
@@ -35,100 +67,145 @@ public abstract class ConstraintDefinition<T> : ConstraintDefinition
 
 public class BallSocketDefinition : ConstraintDefinition<BallSocket>
 {
-    public Vector3 localOffsetA = Vector3.Zero;
-    public Vector3 localOffsetB = Vector3.Zero;
-    public float springFrequency = 30f;
-    public float springDamping = 5f;
+    [JsonPropertyName("localOffsetA")]
+    public Vector3 LocalOffsetA { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("localOffsetB")]
+    public Vector3 LocalOffsetB { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("springFrequency")]
+    public float SpringFrequency { get; set; } = 30f;
+    
+    [JsonPropertyName("springDamping")]
+    public float SpringDamping { get; set; } = 5f;
 
     protected override BallSocket GetConstraint()
     {
         return new BallSocket
         {
-            LocalOffsetA = NumericsConversion.Convert(localOffsetA),
-            LocalOffsetB = NumericsConversion.Convert(localOffsetB),
-            SpringSettings = new SpringSettings(springFrequency, springDamping)
+            LocalOffsetA = NumericsConversion.Convert(LocalOffsetA),
+            LocalOffsetB = NumericsConversion.Convert(LocalOffsetB),
+            SpringSettings = new SpringSettings(SpringFrequency, SpringDamping)
         };
     }
 }
 
 public class DistanceLimitDefinition : ConstraintDefinition<DistanceLimit>
 {
-    public float minDistance = 1f;
-    public float maxDistance = 2f;
-    public Vector3 localOffsetA = Vector3.Zero;
-    public Vector3 localOffsetB = Vector3.Zero;
-    public float springFrequency = 30f;
-    public float springDamping = 5f;
+    [JsonPropertyName("minDistance")]
+    public float MinDistance { get; set; } = 1f;
+    
+    [JsonPropertyName("maxDistance")]
+    public float MaxDistance { get; set; } = 2f;
+    
+    [JsonPropertyName("LocalOffsetA")]
+    public Vector3 LocalOffsetA { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("LocalOffsetB")]
+    public Vector3 LocalOffsetB { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("SpringFrequency")]
+    public float SpringFrequency { get; set; } = 30f;
+    
+    [JsonPropertyName("SpringDamping")]
+    public float SpringDamping { get; set; } = 5f;
 
     protected override DistanceLimit GetConstraint()
     {
         return new DistanceLimit
         {
-            MinimumDistance = minDistance,
-            MaximumDistance = maxDistance,
-            LocalOffsetA = NumericsConversion.Convert(localOffsetA),
-            LocalOffsetB = NumericsConversion.Convert(localOffsetB),
-            SpringSettings = new SpringSettings(springFrequency, springDamping)
+            MinimumDistance = MinDistance,
+            MaximumDistance = MaxDistance,
+            LocalOffsetA = NumericsConversion.Convert(LocalOffsetA),
+            LocalOffsetB = NumericsConversion.Convert(LocalOffsetB),
+            SpringSettings = new SpringSettings(SpringFrequency, SpringDamping)
         };
     }
 }
 
 public class WeldDefinition : ConstraintDefinition<Weld>
 {
-    public Vector3 localOffset;
-    public Quaternion localRotation;
-    public float springFrequency = 30f;
-    public float springDamping = 5f;
+    [JsonPropertyName("localOffset")]
+    public Vector3 LocalOffset { get; set; }
+    
+    [JsonPropertyName("localRotation")]
+    public Quaternion LocalRotation { get; set; }
+    
+    [JsonPropertyName("springFrequency")]
+    public float SpringFrequency { get; set; } = 30f;
+    
+    [JsonPropertyName("springDamping")]
+    public float SpringDamping { get; set; } = 5f;
 
     protected override Weld GetConstraint()
     {
         return new Weld
         {
-            LocalOffset = NumericsConversion.Convert(localOffset),
-            LocalOrientation = NumericsConversion.Convert(localRotation),
-            SpringSettings = new SpringSettings(springFrequency, springDamping)
+            LocalOffset = NumericsConversion.Convert(LocalOffset),
+            LocalOrientation = NumericsConversion.Convert(LocalRotation),
+            SpringSettings = new SpringSettings(SpringFrequency, SpringDamping)
         };
     }
 }
 
 public class HingeDefinition : ConstraintDefinition<Hinge>
 {
-    public Vector3 localOffsetA = Vector3.Zero;
-    public Vector3 localHingeAxisA = Vector3.UnitX;
-    public Vector3 localOffsetB = Vector3.Zero;
-    public Vector3 localHingeAxisB = Vector3.UnitX;
-    public float springFrequency = 30f;
-    public float springDamping = 5f;
+    [JsonPropertyName("localOffsetA")]
+    public Vector3 LocalOffsetA { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("localHingeAxisA")]
+    public Vector3 LocalHingeAxisA { get; set; } = Vector3.UnitX;
+    
+    [JsonPropertyName("localOffsetB")]
+    public Vector3 LocalOffsetB { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("localHingeAxisB")]
+    public Vector3 LocalHingeAxisB { get; set; } = Vector3.UnitX;
+    
+    [JsonPropertyName("springFrequency")]
+    public float SpringFrequency { get; set; } = 30f;
+    
+    [JsonPropertyName("springDamping")]
+    public float SpringDamping { get; set; } = 5f;
 
     protected override Hinge GetConstraint()
     {
         return new Hinge
         {
-            LocalOffsetA = NumericsConversion.Convert(localOffsetA),
-            LocalOffsetB = NumericsConversion.Convert(localOffsetB),
-            LocalHingeAxisA = NumericsConversion.Convert(localHingeAxisA),
-            LocalHingeAxisB = NumericsConversion.Convert(localHingeAxisB),
-            SpringSettings = new SpringSettings(springFrequency, springDamping)
+            LocalOffsetA = NumericsConversion.Convert(LocalOffsetA),
+            LocalOffsetB = NumericsConversion.Convert(LocalOffsetB),
+            LocalHingeAxisA = NumericsConversion.Convert(LocalHingeAxisA),
+            LocalHingeAxisB = NumericsConversion.Convert(LocalHingeAxisB),
+            SpringSettings = new SpringSettings(SpringFrequency, SpringDamping)
         };
     }
 }
 
 public class PointOnLineDefinition : ConstraintDefinition<PointOnLineServo>
 {
-    public Vector3 localOffsetA = Vector3.Zero;
-    public Vector3 localOffsetB = Vector3.Zero;
-    public Vector3 localDirection = Vector3.Zero;
-    public float springFrequency = 30f;
-    public float springDamping = 5f;
+    [JsonPropertyName("localOffsetA")]
+    public Vector3 LocalOffsetA { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("localOffsetB")]
+    public Vector3 LocalOffsetB { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("localDirection")]
+    public Vector3 LocalDirection { get; set; } = Vector3.Zero;
+    
+    [JsonPropertyName("springFrequency")]
+    public float SpringFrequency { get; set; } = 30f;
+    
+    [JsonPropertyName("springDamping")]
+    public float SpringDamping { get; set; } = 5f;
 
     protected override PointOnLineServo GetConstraint()
     {
         return new PointOnLineServo
         {
-            LocalOffsetA = NumericsConversion.Convert(localOffsetA),
-            LocalOffsetB = NumericsConversion.Convert(localOffsetB),
-            LocalDirection = NumericsConversion.Convert(localDirection),
-            SpringSettings = new SpringSettings(springFrequency, springDamping),
+            LocalOffsetA = NumericsConversion.Convert(LocalOffsetA),
+            LocalOffsetB = NumericsConversion.Convert(LocalOffsetB),
+            LocalDirection = NumericsConversion.Convert(LocalDirection),
+            SpringSettings = new SpringSettings(SpringFrequency, SpringDamping),
             ServoSettings = ServoSettings.Default
         };
     }

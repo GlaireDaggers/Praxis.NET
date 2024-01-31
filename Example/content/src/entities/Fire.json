@@ -1,0 +1,174 @@
+{
+	"tag": "Fire",
+	"components": [
+		{
+			"$type": "TransformComponent",
+			"position": "0.0, 0.0, 0.0"
+		},
+		{
+			"$type": "ParticleEmitterComponent",
+			"worldSpace": true,
+			"maxParticles": 100,
+			"particlesPerBurst": 1,
+			"burstInterval": 0.1,
+			"minParticleLifetime": 1.0,
+			"maxParticleLifetime": 1.0,
+			"minAngle": 0,
+			"maxAngle": 360,
+			"minAngularVelocity": -90,
+			"maxAngularVelocity": 90,
+			"linearDamping": 0.1,
+			"angularDamping": 0
+		},
+		{
+			"$type": "ParticleEmitterSphereShapeComponent",
+			"radius": 1.0
+		},
+		{
+			"$type": "ParticleEmitterInitVelocityInConeComponent",
+			"angle": 10.0,
+			"direction": "0.0, 1.0, 0.0",
+			"minForce": 0.0,
+			"maxForce": 1.0
+		},
+		{
+			"$type": "ParticleEmitterAddLinearForceComponent",
+			"worldSpace": true,
+			"force": "0.1, 2.0, 0.1"
+		},
+		{
+			"$type": "ParticleEmitterSpriteRenderComponent",
+			"material": "content/vfx/Flame.json",
+			"colorOverLifetimeCurve": [
+				{ "time": 0.0, "value": "255, 255, 255, 0" },
+                { "time": 0.1, "value": "255, 255, 0, 255" },
+                { "time": 0.5, "value": "255, 69, 0, 255" },
+                { "time": 1.0, "value": "255, 0, 0, 0" }
+			],
+			"sizeOverLifetimeCurve": [
+				{ "time": 0.0, "value": "3.0, 3.0" },
+				{ "time": 1.0, "value": "6.0, 6.0" }
+			]
+		},
+		{
+			"$type": "PointLightComponent",
+			"color": "2.0, 1.0, 0.25",
+			"radius": 15.0
+		}
+	],
+	"children": [
+		{
+			"tag": "Smoke",
+			"components": [
+				{
+					"$type": "TransformComponent",
+					"position": "0.0, 0.0, 0.0"
+				},
+				{
+					"$type": "ParticleEmitterComponent",
+					"worldSpace": true,
+					"maxParticles": 100,
+					"particlesPerBurst": 1,
+					"burstInterval": 0.05,
+					"minParticleLifetime": 3.0,
+					"maxParticleLifetime": 4.0,
+					"minAngle": 0,
+					"maxAngle": 360,
+					"minAngularVelocity": -90,
+					"maxAngularVelocity": 90,
+					"linearDamping": 0.1,
+					"angularDamping": 0
+				},
+				{
+					"$type": "ParticleEmitterSphereShapeComponent",
+					"radius": 1.0
+				},
+				{
+					"$type": "ParticleEmitterInitVelocityInConeComponent",
+					"angle": 10.0,
+					"direction": "0.0, 1.0, 0.0",
+					"minForce": 0.0,
+					"maxForce": 1.0
+				},
+				{
+					"$type": "ParticleEmitterAddLinearForceComponent",
+					"worldSpace": true,
+					"force": "0.1, 2.0, 0.1"
+				},
+				{
+					"$type": "ParticleEmitterSpriteRenderComponent",
+					"sortBias": -0.1,
+					"material": "content/vfx/Smoke.json",
+					"colorOverLifetimeCurve": [
+						{ "time": 0.0, "value": "255, 128, 0, 0" },
+				        { "time": 0.2, "value": "255, 128, 25, 128" },
+				        { "time": 0.5, "value": "25, 25, 25, 255" },
+				        { "time": 1.0, "value": "25, 25, 25, 0" }
+					],
+					"sizeOverLifetimeCurve": [
+						{ "time": 0.0, "value": "3.0, 3.0" },
+						{ "time": 1.0, "value": "8.0, 8.0" }
+					]
+				}
+			]
+		},
+		{
+			"tag": "Sparks",
+			"components": [
+				{
+					"$type": "TransformComponent",
+					"position": "0.0, 0.0, 0.0"
+				},
+				{
+					"$type": "ParticleEmitterComponent",
+					"worldSpace": true,
+					"maxParticles": 100,
+					"particlesPerBurst": 1,
+					"burstInterval": 0.1,
+					"minParticleLifetime": 2.0,
+					"maxParticleLifetime": 4.0,
+					"minAngle": 0,
+					"maxAngle": 0,
+					"linearDamping": 0.1,
+					"angularDamping": 0
+				},
+				{
+					"$type": "ParticleEmitterSphereShapeComponent",
+					"radius": 2.0
+				},
+				{
+					"$type": "ParticleEmitterInitRandomVelocityComponent",
+					"minForce": "-10, -10, -10",
+					"maxForce": "10, 10, 10"
+				},
+				{
+					"$type": "ParticleEmitterAddLinearForceComponent",
+					"worldSpace": true,
+					"force": "0.1, 2.0, 0.1"
+				},
+				{
+					"$type": "ParticleEmitterAddNoiseForceComponent",
+					"worldSpace": true,
+					"scroll": "1.0, 1.0, 1.0",
+					"frequency": 0.25,
+					"magnitude": 5.0
+				},
+				{
+					"$type": "ParticleEmitterSpriteRenderComponent",
+					"sortBias": -0.1,
+					"material": "content/vfx/Spark.json",
+					"colorOverLifetimeCurve": [
+						{ "time": 0.0, "value": "255, 255, 255, 0" },
+				        { "time": 0.1, "value": "255, 255, 0, 255" },
+				        { "time": 0.5, "value": "255, 69, 0, 255" },
+				        { "time": 1.0, "value": "255, 0, 0, 0" }
+					],
+					"sizeOverLifetimeCurve": [
+						{ "time": 0.0, "value": "0.5, 0.5" },
+						{ "time": 1.0, "value": "0.0, 0.0" }
+					]
+				}
+			]
+		}
+	]
+}

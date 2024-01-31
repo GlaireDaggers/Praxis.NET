@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Text.Json.Serialization;
+using Microsoft.Xna.Framework;
 
 namespace Praxis.Core;
 
@@ -17,14 +18,21 @@ public abstract class AnimationCurve<T>
 {
     public struct CurvePoint : IComparable<CurvePoint>
     {
-        public float time;
-        public T tangentIn;
-        public T value;
-        public T tangentOut;
+        [JsonPropertyName("time")]
+        public float Time { get; set; }
+
+        [JsonPropertyName("tangentIn")]
+        public T TangentIn { get; set; }
+        
+        [JsonPropertyName("value")]
+        public T Value { get; set; }
+        
+        [JsonPropertyName("tangentOut")]
+        public T TangentOut { get; set; }
 
         public int CompareTo(CurvePoint other)
         {
-            return time.CompareTo(other.time);
+            return Time.CompareTo(other.Time);
         }
     }
 
@@ -40,19 +48,19 @@ public abstract class AnimationCurve<T>
     }
 
     public AnimationCurve(T start, T end, float startTime = 0f, float endTime = 1f)
-        : this(CurveInterpolationMode.Linear, [new CurvePoint { time = startTime, value = start }, new CurvePoint { time = endTime, value = end }])
+        : this(CurveInterpolationMode.Linear, [new CurvePoint { Time = startTime, Value = start }, new CurvePoint { Time = endTime, Value = end }])
     {
     }
 
     public T Sample(float time)
     {
-        if (time <= _curvePoints[0].time)
+        if (time <= _curvePoints[0].Time)
         {
-            return _curvePoints[0].value;
+            return _curvePoints[0].Value;
         }
-        if (time >= _curvePoints[_curvePoints.Count - 1].time)
+        if (time >= _curvePoints[_curvePoints.Count - 1].Time)
         {
-            return _curvePoints[_curvePoints.Count - 1].value;
+            return _curvePoints[_curvePoints.Count - 1].Value;
         }
 
         // get left+right keyframes
@@ -61,7 +69,7 @@ public abstract class AnimationCurve<T>
 
         for (int i = 0; i < _curvePoints.Count; i++)
         {
-            if (time <= _curvePoints[i].time)
+            if (time <= _curvePoints[i].Time)
             {
                 lhs = _curvePoints[i - 1];
                 rhs = _curvePoints[i];
@@ -70,18 +78,18 @@ public abstract class AnimationCurve<T>
         }
 
         // interpolate
-        float nt = (time - lhs.time) / (rhs.time - lhs.time);
+        float nt = (time - lhs.Time) / (rhs.Time - lhs.Time);
         if (interpolationMode == CurveInterpolationMode.Step)
         {
-            return lhs.value;
+            return lhs.Value;
         }
         else if (interpolationMode == CurveInterpolationMode.Linear)
         {
-            return Lerp(lhs.value, rhs.value, nt);
+            return Lerp(lhs.Value, rhs.Value, nt);
         }
         else
         {
-            return InterpolateCubic(lhs.value, rhs.value, lhs.tangentOut, rhs.tangentIn, nt);
+            return InterpolateCubic(lhs.Value, rhs.Value, lhs.TangentOut, rhs.TangentIn, nt);
         }
     }
 

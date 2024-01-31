@@ -27,6 +27,8 @@ public class ExampleGame : PraxisGame
         var foxModel = Resources.Load<Model>("content/models/Fox.pmdl");
         var boxModel = Resources.Load<Model>("content/models/Box.pmdl");
 
+        var flamesTemplate = Resources.Load<EntityTemplate>("content/entities/Fire.json");
+
         var filterStack = new ScreenFilterStack(this);
         filterStack.filters.Add(new BloomFilter(this));
         filterStack.filters.Add(new TestFilter(this));
@@ -94,7 +96,7 @@ public class ExampleGame : PraxisGame
         {
             collider = new BoxColliderDefinition(Vector3.One * 2f)
             {
-                mass = 0.25f
+                Mass = 0.25f
             }
         });
         DefaultContext.World.Set(testRigidbody1, new RigidbodyComponent
@@ -107,8 +109,8 @@ public class ExampleGame : PraxisGame
             other = testKinematic,
             constraint = new BallSocketDefinition
             {
-                localOffsetA = new Vector3(-3f, 0f, 0f),
-                localOffsetB = new Vector3(0f, -3f, 0f)
+                LocalOffsetA = new Vector3(-3f, 0f, 0f),
+                LocalOffsetB = new Vector3(0f, -3f, 0f)
             }
         });
         AttachModel(testRigidbody1, boxModel, Vector3.Zero, Quaternion.Identity, Vector3.One * 2f);
@@ -123,7 +125,7 @@ public class ExampleGame : PraxisGame
         {
             collider = new BoxColliderDefinition(Vector3.One * 2f)
             {
-                mass = 0.25f
+                Mass = 0.25f
             }
         });
         DefaultContext.World.Set(testRigidbody2, new RigidbodyComponent
@@ -136,193 +138,14 @@ public class ExampleGame : PraxisGame
             other = testRigidbody1,
             constraint = new BallSocketDefinition
             {
-                localOffsetA = new Vector3(-3f, 0f, 0f),
-                localOffsetB = new Vector3(3f, 0f, 0f)
+                LocalOffsetA = new Vector3(-3f, 0f, 0f),
+                LocalOffsetB = new Vector3(3f, 0f, 0f)
             }
         });
         AttachModel(testRigidbody2, boxModel, Vector3.Zero, Quaternion.Identity, Vector3.One * 2f);
 
-        Entity flames = DefaultContext.World.CreateEntity("flames");
-        DefaultContext.World.Set(flames, new TransformComponent(
-            new Vector3(0f, 0f, 0f),
-            Quaternion.Identity,
-            Vector3.One
-        ));
-        DefaultContext.World.Set(flames, new ParticleEmitterComponent
-        {
-            worldSpace = true,
-            maxParticles = 100,
-            particlesPerBurst = 1,
-            maxBurstCount = 0,
-            burstInterval = 0.1f,
-            minParticleLifetime = 1f,
-            maxParticleLifetime = 2f,
-            minAngle = 0f,
-            maxAngle = 360f,
-            minAngularVelocity = -90f,
-            maxAngularVelocity = 90f,
-            linearDamping = 0.1f,
-            angularDamping = 0f,
-        });
-        DefaultContext.World.Set(flames, new ParticleEmitterSphereShapeComponent
-        {
-            radius = 1f
-        });
-        DefaultContext.World.Set(flames, new ParticleEmitterInitVelocityInConeComponent
-        {
-            angle = 10f,
-            direction = Vector3.UnitY,
-            minForce = 0f,
-            maxForce = 1f,
-        });
-        DefaultContext.World.Set(flames, new ParticleEmitterAddLinearForceComponent
-        {
-            worldSpace = true,
-            force = new Vector3(0.1f, 2f, 0.1f)
-        });
-        DefaultContext.World.Set(flames, new ParticleEmitterSpriteRenderComponent
-        {
-            material = Resources.Load<Material>("content/vfx/Flame.json"),
-            sheetRows = 1,
-            sheetColumns = 1,
-            sheetCycles = 1,
-            colorOverLifetime = new ColorAnimationCurve(CurveInterpolationMode.Linear, [
-                new () { time = 0f, value = new Color(1f, 1f, 1f, 0f) },
-                new () { time = 0.1f, value = Color.Yellow },
-                new () { time = 0.5f, value = Color.OrangeRed },
-                new () { time = 1f, value = new Color(1f, 0f, 0f, 0f) }
-            ]),
-            sizeOverLifetime = new Vector2AnimationCurve(CurveInterpolationMode.Linear, [
-                new () { time = 0f, value = Vector2.One * 3f },
-                new () { time = 1f, value = Vector2.One * 6f }
-            ])
-        });
-        DefaultContext.World.Set(flames, new PointLightComponent
-        {
-            radius = 15f,
-            color = new Vector3(2f, 1f, 0.25f)
-        });
+        Entity flames = flamesTemplate.Value.Unpack(DefaultContext.World, null);
         DefaultContext.World.Relate(flames, testRigidbody2, new ChildOf());
-
-        Entity smoke = DefaultContext.World.CreateEntity("smoke");
-        DefaultContext.World.Set(smoke, new TransformComponent(
-            new Vector3(0f, 0f, 0f),
-            Quaternion.Identity,
-            Vector3.One
-        ));
-        DefaultContext.World.Set(smoke, new ParticleEmitterComponent
-        {
-            worldSpace = true,
-            maxParticles = 100,
-            particlesPerBurst = 1,
-            maxBurstCount = 0,
-            burstInterval = 0.05f,
-            minParticleLifetime = 3f,
-            maxParticleLifetime = 4f,
-            minAngle = 0f,
-            maxAngle = 360f,
-            minAngularVelocity = -90f,
-            maxAngularVelocity = 90f,
-            linearDamping = 0.1f,
-            angularDamping = 0f,
-        });
-        DefaultContext.World.Set(smoke, new ParticleEmitterSphereShapeComponent
-        {
-            radius = 1f
-        });
-        DefaultContext.World.Set(smoke, new ParticleEmitterInitVelocityInConeComponent
-        {
-            angle = 10f,
-            direction = Vector3.UnitY,
-            minForce = 0f,
-            maxForce = 1f,
-        });
-        DefaultContext.World.Set(smoke, new ParticleEmitterAddLinearForceComponent
-        {
-            worldSpace = true,
-            force = new Vector3(0.1f, 2f, 0.1f)
-        });
-        DefaultContext.World.Set(smoke, new ParticleEmitterSpriteRenderComponent
-        {
-            sortBias = -0.1f,
-            material = Resources.Load<Material>("content/vfx/Smoke.json"),
-            sheetRows = 1,
-            sheetColumns = 1,
-            sheetCycles = 1,
-            colorOverLifetime = new ColorAnimationCurve(CurveInterpolationMode.Linear, [
-                new () { time = 0f, value = new Color(1f, 0.5f, 0f, 0f) },
-                new () { time = 0.2f, value = new Color(1f, 0.5f, 0.1f, 0.5f) },
-                new () { time = 0.5f, value = new Color(0.1f, 0.1f, 0.1f, 1f) },
-                new () { time = 1f, value = new Color(0.1f, 0.1f, 0.1f, 0f) }
-            ]),
-            sizeOverLifetime = new Vector2AnimationCurve(CurveInterpolationMode.Linear, [
-                new () { time = 0f, value = Vector2.One * 3f },
-                new () { time = 1f, value = Vector2.One * 8f }
-            ])
-        });
-        DefaultContext.World.Relate(smoke, flames, new ChildOf());
-
-        Entity sparks = DefaultContext.World.CreateEntity("sparks");
-        DefaultContext.World.Set(sparks, new TransformComponent(
-            new Vector3(0f, 0f, 0f),
-            Quaternion.Identity,
-            Vector3.One
-        ));
-        DefaultContext.World.Set(sparks, new ParticleEmitterComponent
-        {
-            worldSpace = true,
-            maxParticles = 100,
-            particlesPerBurst = 1,
-            maxBurstCount = 0,
-            burstInterval = 0.1f,
-            minParticleLifetime = 2f,
-            maxParticleLifetime = 4f,
-            minAngle = 0f,
-            maxAngle = 0f,
-            linearDamping = 0.1f,
-            angularDamping = 0f,
-        });
-        DefaultContext.World.Set(sparks, new ParticleEmitterSphereShapeComponent
-        {
-            radius = 2f
-        });
-        DefaultContext.World.Set(sparks, new ParticleEmitterInitRandomVelocityComponent
-        {
-            minForce = new Vector3(-10f, -10f, -10f),
-            maxForce = new Vector3(10f, 10f, 10f)
-        });
-        DefaultContext.World.Set(sparks, new ParticleEmitterAddLinearForceComponent
-        {
-            worldSpace = true,
-            force = new Vector3(0.1f, 2f, 0.1f)
-        });
-        DefaultContext.World.Set(sparks, new ParticleEmitterAddNoiseForceComponent
-        {
-            worldSpace = true,
-            seed = 1337,
-            scroll = new Vector3(1f, 1f, 1f),
-            frequency = 0.25f,
-            magnitude = 5f
-        });
-        DefaultContext.World.Set(sparks, new ParticleEmitterSpriteRenderComponent
-        {
-            sortBias = 0.1f,
-            material = Resources.Load<Material>("content/vfx/Spark.json"),
-            sheetRows = 1,
-            sheetColumns = 1,
-            sheetCycles = 1,
-            colorOverLifetime = new ColorAnimationCurve(CurveInterpolationMode.Linear, [
-                new () { time = 0f, value = new Color(1f, 1f, 1f, 0f) },
-                new () { time = 0.1f, value = Color.Yellow },
-                new () { time = 0.5f, value = Color.OrangeRed },
-                new () { time = 1f, value = new Color(1f, 0f, 0f, 0f) }
-            ]),
-            sizeOverLifetime = new Vector2AnimationCurve(CurveInterpolationMode.Linear, [
-                new () { time = 0f, value = Vector2.One * 0.5f },
-                new () { time = 1f, value = Vector2.Zero }
-            ])
-        });
-        DefaultContext.World.Relate(sparks, flames, new ChildOf());
 
         /*Random rng = new Random();
         for (int i = -4; i < 4; i++)

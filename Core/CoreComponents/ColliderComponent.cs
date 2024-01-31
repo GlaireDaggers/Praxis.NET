@@ -1,95 +1,152 @@
 ﻿namespace Praxis.Core;
 
+using System.Text.Json.Serialization;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using Microsoft.Xna.Framework;
+using Praxis.Core.ECS;
+
+[SerializedComponent(nameof(ColliderComponent))]
+public class ColliderComponentData : IComponentData
+{
+    [JsonPropertyName("collider")]
+    public ColliderDefinition? collider { get; set; }
+
+    private ColliderComponent _component;
+
+    public void OnDeserialize(PraxisGame game)
+    {
+        _component.collider = collider!;
+    }
+
+    public void Unpack(in Entity root, in Entity entity, World world)
+    {
+        world.Set(entity, _component);
+    }
+}
 
 public struct ColliderComponent
 {
     public ColliderDefinition collider;
 }
 
+[JsonDerivedType(typeof(BoxColliderDefinition), "box")]
+[JsonDerivedType(typeof(SphereColliderDefinition), "sphere")]
+[JsonDerivedType(typeof(CylinderColliderDefinition), "cylinder")]
+[JsonDerivedType(typeof(CapsuleColliderDefinition), "capsule")]
+[JsonDerivedType(typeof(CompoundColliderDefinition), "compound")]
 public abstract class ColliderDefinition
 {
-    public Vector3 position;
-    public Quaternion rotation;
+    [JsonPropertyName("position")]
+    public Vector3 Position { get; set; }
+
+    [JsonPropertyName("rotation")]
+    public Quaternion Rotation { get; set; }
 
     internal abstract TypedIndex ConstructDynamic(Simulation sim, out BodyInertia inertia);
     internal abstract TypedIndex ConstructKinematic(Simulation sim);
     internal abstract void AddToShapeBuilder(Simulation sim, ref CompoundBuilder builder);
 }
 
-public class ConvexColliderDefinition<T> : ColliderDefinition
+public abstract class ConvexColliderDefinition<T> : ColliderDefinition
     where T : unmanaged, IConvexShape
 {
-    public float mass = 1f;
-    public T shape;
-
-    public ConvexColliderDefinition(T shape)
-    {
-        this.shape = shape;
-    }
+    [JsonPropertyName("mass")]
+    public float Mass { get; set; } = 1f;
+    
+    protected abstract T CreateShape();
 
     internal override TypedIndex ConstructDynamic(Simulation sim, out BodyInertia inertia)
     {
-        inertia = shape.ComputeInertia(mass);
+        var shape = CreateShape();
+        inertia = shape.ComputeInertia(Mass);
         return sim.Shapes.Add(shape);
     }
 
     internal override TypedIndex ConstructKinematic(Simulation sim)
     {
+        var shape = CreateShape();
         return sim.Shapes.Add(shape);
     }
 
     internal override void AddToShapeBuilder(Simulation sim, ref CompoundBuilder builder)
     {
-        RigidPose localPose = new RigidPose(new System.Numerics.Vector3(position.X, position.Y, position.Z),
-            new System.Numerics.Quaternion(rotation.X, rotation.Y, rotation.Z, rotation.W));
-        builder.Add(shape, localPose, mass);
+        var shape = CreateShape();
+        RigidPose localPose = new RigidPose(new System.Numerics.Vector3(Position.X, Position.Y, Position.Z),
+            new System.Numerics.Quaternion(Rotation.X, Rotation.Y, Rotation.Z, Rotation.W));
+        builder.Add(shape, localPose, Mass);
     }
 }
 
 public class BoxColliderDefinition : ConvexColliderDefinition<Box>
 {
-    public readonly Vector3 Size;
+    [JsonPropertyName("size")]
+    public Vector3 Size { get; set; }
 
-    public BoxColliderDefinition(Vector3 size) : base(new Box(size.X, size.Y, size.Z))
+    public BoxColliderDefinition(Vector3 size)
     {
         Size = size;
+    }
+
+    protected override Box CreateShape()
+    {
+        return new Box(Size.X, Size.Y, Size.Z);
     }
 }
 
 public class SphereColliderDefinition : ConvexColliderDefinition<Sphere>
 {
-    public readonly float Radius;
+    [JsonPropertyName("radius")]
+    public float Radius { get; set; }
 
-    public SphereColliderDefinition(float radius) : base(new Sphere(radius))
+    public SphereColliderDefinition(float radius)
     {
         Radius = radius;
+    }
+
+    protected override Sphere CreateShape()
+    {
+        return new Sphere(Radius);
     }
 }
 
 public class CylinderColliderDefinition : ConvexColliderDefinition<Cylinder>
 {
-    public readonly float Radius;
-    public readonly float Height;
+    [JsonPropertyName("radius")]
+    public float Radius { get; set; }
+    
+    [JsonPropertyName("height")]
+    public float Height { get; set; }
 
-    public CylinderColliderDefinition(float radius, float height) : base(new Cylinder(radius, height))
+    public CylinderColliderDefinition(float radius, float height)
     {
         Radius = radius;
         Height = height;
+    }
+
+    protected override Cylinder CreateShape()
+    {
+        return new Cylinder(Radius, Height);
     }
 }
 
 public class CapsuleColliderDefinition : ConvexColliderDefinition<Capsule>
 {
-    public readonly float Radius;
-    public readonly float Height;
+    [JsonPropertyName("radius")]
+    public float Radius { get; set; }
+    
+    [JsonPropertyName("height")]
+    public float Height { get; set; }
 
-    public CapsuleColliderDefinition(float radius, float height) : base(new Capsule(radius, height))
+    public CapsuleColliderDefinition(float radius, float height)
     {
         Radius = radius;
         Height = height;
+    }
+
+    protected override Capsule CreateShape()
+    {
+        return new Capsule(Radius, Height);
     }
 }
 

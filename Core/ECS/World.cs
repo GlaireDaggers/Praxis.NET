@@ -76,6 +76,31 @@ public class World
         GetMessageStorage<T>().Add(message);
     }
 
+    public Entity? FindTaggedEntityInChildren(string tag, in Entity root)
+    {
+        if (root.Tag == tag) return root;
+
+        if (HasInRelations<ChildOf>(root))
+        {
+            foreach (var child in GetInRelations<ChildOf>(root))
+            {
+                var result = FindTaggedEntityInChildren(tag, child);
+                if (result != null) return result;
+            }
+        }
+
+        if (HasInRelations<BelongsTo>(root))
+        {
+            foreach (var child in GetInRelations<BelongsTo>(root))
+            {
+                var result = FindTaggedEntityInChildren(tag, child);
+                if (result != null) return result;
+            }
+        }
+
+        return null;
+    }
+
     public Entity CreateEntity(string? tag = null)
     {
         uint id;

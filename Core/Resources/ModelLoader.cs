@@ -204,27 +204,35 @@ internal static class ModelLoader
 
         for (int i = 0; i < numKeys; i++)
         {
-            points[i].time = reader.ReadSingle();
+            points[i].Time = reader.ReadSingle();
 
             if (interpolationMode == CurveInterpolationMode.Cubic)
             {
-                points[i].tangentIn.X = reader.ReadSingle();
-                points[i].tangentIn.Y = reader.ReadSingle();
-                points[i].tangentIn.Z = reader.ReadSingle();
+                points[i].TangentIn = new Vector3(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
 
-                points[i].value.X = reader.ReadSingle();
-                points[i].value.Y = reader.ReadSingle();
-                points[i].value.Z = reader.ReadSingle();
+                points[i].Value = new Vector3(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
 
-                points[i].tangentOut.X = reader.ReadSingle();
-                points[i].tangentOut.Y = reader.ReadSingle();
-                points[i].tangentOut.Z = reader.ReadSingle();
+                points[i].TangentOut = new Vector3(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
             }
             else
             {
-                points[i].value.X = reader.ReadSingle();
-                points[i].value.Y = reader.ReadSingle();
-                points[i].value.Z = reader.ReadSingle();
+                points[i].Value = new Vector3(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
             }
         }
 
@@ -242,31 +250,39 @@ internal static class ModelLoader
 
         for (int i = 0; i < numKeys; i++)
         {
-            points[i].time = reader.ReadSingle();
+            points[i].Time = reader.ReadSingle();
 
             if (interpolationMode == CurveInterpolationMode.Cubic)
             {
-                points[i].tangentIn.X = reader.ReadSingle();
-                points[i].tangentIn.Y = reader.ReadSingle();
-                points[i].tangentIn.Z = reader.ReadSingle();
-                points[i].tangentIn.W = reader.ReadSingle();
+                points[i].TangentIn = new Quaternion(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
 
-                points[i].value.X = reader.ReadSingle();
-                points[i].value.Y = reader.ReadSingle();
-                points[i].value.Z = reader.ReadSingle();
-                points[i].value.W = reader.ReadSingle();
+                points[i].Value = new Quaternion(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
 
-                points[i].tangentOut.X = reader.ReadSingle();
-                points[i].tangentOut.Y = reader.ReadSingle();
-                points[i].tangentOut.Z = reader.ReadSingle();
-                points[i].tangentOut.W = reader.ReadSingle();
+                points[i].TangentOut = new Quaternion(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
             }
             else
             {
-                points[i].value.X = reader.ReadSingle();
-                points[i].value.Y = reader.ReadSingle();
-                points[i].value.Z = reader.ReadSingle();
-                points[i].value.W = reader.ReadSingle();
+                points[i].Value = new Quaternion(
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                );
             }
         }
 

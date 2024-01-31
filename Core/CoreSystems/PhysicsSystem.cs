@@ -13,8 +13,6 @@ using Microsoft.Xna.Framework;
 using System.Diagnostics;
 
 using Matrix = Microsoft.Xna.Framework.Matrix;
-using MathHelper = Microsoft.Xna.Framework.MathHelper;
-using Microsoft.Xna.Framework.Graphics;
 
 public struct PhysicsMaterial
 {
@@ -105,8 +103,8 @@ public class PhysicsSystem : PraxisSystem
 
                 if (joint.constraint is BallSocketDefinition ballSocket)
                 {
-                    Vector3 offsetA = Vector3.Transform(ballSocket.localOffsetA, trs);
-                    Vector3 offsetB = Vector3.Transform(ballSocket.localOffsetB, otherTrs);
+                    Vector3 offsetA = Vector3.Transform(ballSocket.LocalOffsetA, trs);
+                    Vector3 offsetB = Vector3.Transform(ballSocket.LocalOffsetB, otherTrs);
 
                     DrawLineGizmo(transform.position, offsetA, Color.Red, Color.Red);
                     DrawLineGizmo(otherTransform.position, offsetB, Color.Blue, Color.Blue);
@@ -115,20 +113,20 @@ public class PhysicsSystem : PraxisSystem
                 }
                 else if (joint.constraint is DistanceLimitDefinition distanceLimit)
                 {
-                    DrawSphereGizmo(transform.position, distanceLimit.minDistance, Color.Red);
-                    DrawSphereGizmo(transform.position, distanceLimit.maxDistance, Color.Blue);
+                    DrawSphereGizmo(transform.position, distanceLimit.MinDistance, Color.Red);
+                    DrawSphereGizmo(transform.position, distanceLimit.MaxDistance, Color.Blue);
                 }
                 else if (joint.constraint is WeldDefinition weld)
                 {
-                    Vector3 offset = Vector3.Transform(weld.localOffset, trs);
+                    Vector3 offset = Vector3.Transform(weld.LocalOffset, trs);
                     DrawLineGizmo(otherTransform.position, offset, Color.Red, Color.Red);
                 }
                 else if (joint.constraint is HingeDefinition hinge)
                 {
-                    Vector3 offsetA = Vector3.Transform(hinge.localOffsetA, trs);
-                    Vector3 offsetB = Vector3.Transform(hinge.localOffsetB, otherTrs);
-                    Vector3 axisA = Vector3.TransformNormal(hinge.localHingeAxisA, trs);
-                    Vector3 axisB = Vector3.TransformNormal(hinge.localHingeAxisB, otherTrs);
+                    Vector3 offsetA = Vector3.Transform(hinge.LocalOffsetA, trs);
+                    Vector3 offsetB = Vector3.Transform(hinge.LocalOffsetB, otherTrs);
+                    Vector3 axisA = Vector3.TransformNormal(hinge.LocalHingeAxisA, trs);
+                    Vector3 axisB = Vector3.TransformNormal(hinge.LocalHingeAxisB, otherTrs);
 
                     DrawLineGizmo(transform.position, offsetA, Color.Red, Color.Red);
                     DrawLineGizmo(transform.position, transform.position + axisA, Color.Red, Color.Red);
@@ -137,9 +135,9 @@ public class PhysicsSystem : PraxisSystem
                 }
                 else if (joint.constraint is PointOnLineDefinition pointOnLine)
                 {
-                    Vector3 offsetA = Vector3.Transform(pointOnLine.localOffsetA, trs);
-                    Vector3 offsetB = Vector3.Transform(pointOnLine.localOffsetB, otherTrs);
-                    Vector3 axis = Vector3.TransformNormal(pointOnLine.localDirection, trs) * 10f;
+                    Vector3 offsetA = Vector3.Transform(pointOnLine.LocalOffsetA, trs);
+                    Vector3 offsetB = Vector3.Transform(pointOnLine.LocalOffsetB, otherTrs);
+                    Vector3 axis = Vector3.TransformNormal(pointOnLine.LocalDirection, trs) * 10f;
 
                     DrawLineGizmo(transform.position, offsetA, Color.Red, Color.Red);
                     DrawLineGizmo(transform.position - axis, transform.position + axis, Color.Red, Color.Red);

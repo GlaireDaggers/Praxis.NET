@@ -114,7 +114,7 @@ public class PraxisGame : Game
                 new JsonVector3Converter(),
                 new JsonVector4Converter(),
                 new JsonQuaternionConverter(),
-                new JsonColorConverter(),
+                new JsonColorConverter()
             }
         };
         using var stream = Resources.Open(path);
@@ -178,6 +178,11 @@ public class PraxisGame : Game
         // model loader
         Resources.RegisterFactory((stream) => {
             return ModelLoader.Load(this, stream);
+        }, false);
+
+        // entity template loader
+        Resources.RegisterFactory((stream) => {
+            return EntityTemplate.Deserialize(this, stream);
         }, false);
 
         // let subclasses perform initialization
