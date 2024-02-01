@@ -12,6 +12,8 @@ using ResourceCache.Core;
 using ResourceCache.FNA;
 using ImGuiNET;
 using Microsoft.Xna.Framework.Input;
+using System.Text.Json.Serialization;
+using Microsoft.Xna.Framework.Audio;
 
 /// <summary>
 /// Base class for a game running on the Praxis engine
@@ -63,6 +65,14 @@ public class PraxisGame : Game
     private bool _debugPause = false;
     private bool _debugStep = false;
 
+    private List<JsonConverter> _converters = [
+        new JsonVector2Converter(),
+        new JsonVector3Converter(),
+        new JsonVector4Converter(),
+        new JsonQuaternionConverter(),
+        new JsonColorConverter()
+    ];
+
     public PraxisGame(string title, int width = 1280, int height = 720, bool vsync = true) : base()
     {
         Window.Title = title;
@@ -103,20 +113,25 @@ public class PraxisGame : Game
     }
 
     /// <summary>
+    /// Construct serializer options which is aware of Praxis types & resources
+    /// </summary>
+    public JsonSerializerOptions CreateJsonOptions()
+    {
+        JsonSerializerOptions options = new JsonSerializerOptions();
+        foreach (var converter in _converters)
+        {
+            options.Converters.Add(converter);
+        }
+
+        return options;
+    }
+
+    /// <summary>
     /// Load a new scene into the given world and return a reference to it
     /// </summary>
     public Scene LoadScene(string path, World world, IGenericEntityHandler? entityHandler = null)
     {
-        JsonSerializerOptions options = new JsonSerializerOptions
-        {
-            Converters = {
-                new JsonVector2Converter(),
-                new JsonVector3Converter(),
-                new JsonVector4Converter(),
-                new JsonQuaternionConverter(),
-                new JsonColorConverter()
-            }
-        };
+        JsonSerializerOptions options = CreateJsonOptions();
         using var stream = Resources.Open(path);
         Level level = JsonSerializer.Deserialize<Level>(stream, options)!;
 
@@ -131,6 +146,12 @@ public class PraxisGame : Game
     public bool GetKeyReleased(Keys key)
     {
         return _curKbState.IsKeyUp(key) && !_prevKbState.IsKeyUp(key);
+    }
+
+    public void RegisterResourceType<T>()
+    {
+        _converters.Add(new JsonResourceHandleConverter<T>(this));
+        _converters.Add(new JsonRuntimeResourceConverter<T>(this));
     }
 
     protected override void LoadContent()
@@ -184,6 +205,14 @@ public class PraxisGame : Game
         Resources.RegisterFactory((stream) => {
             return EntityTemplate.Deserialize(this, stream);
         }, false);
+
+        RegisterResourceType<Effect>();
+        RegisterResourceType<Texture2D>();
+        RegisterResourceType<TextureCube>();
+        RegisterResourceType<SoundEffect>();
+        RegisterResourceType<Material>();
+        RegisterResourceType<Model>();
+        RegisterResourceType<EntityTemplate>();
 
         // let subclasses perform initialization
         Init();

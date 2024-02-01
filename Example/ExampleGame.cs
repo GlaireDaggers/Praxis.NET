@@ -69,9 +69,11 @@ public class ExampleGame : PraxisGame
             collider = new BoxColliderDefinition(new Vector3(100f, 1f, 100f))
         });
 
+        var chainOffset = 13f;
+
         Entity testKinematic = DefaultContext.World.CreateEntity($"test kinematic rigidbody");
         DefaultContext.World.Set(testKinematic, new TransformComponent(
-            new Vector3(5f, 20f, 0f),
+            new Vector3(chainOffset, 20f, 0f),
             Quaternion.Identity,
             Vector3.One
         ));
@@ -88,7 +90,7 @@ public class ExampleGame : PraxisGame
 
         Entity testRigidbody1 = DefaultContext.World.CreateEntity($"test rigidbody 1");
         DefaultContext.World.Set(testRigidbody1, new TransformComponent(
-            new Vector3(8f, 17f, 0f),
+            new Vector3(chainOffset + 3f, 17f, 0f),
             Quaternion.Identity,
             Vector3.One
         ));
@@ -117,7 +119,7 @@ public class ExampleGame : PraxisGame
 
         Entity testRigidbody2 = DefaultContext.World.CreateEntity($"test rigidbody 2");
         DefaultContext.World.Set(testRigidbody2, new TransformComponent(
-            new Vector3(11f, 17f, 0f),
+            new Vector3(chainOffset + 6f, 17f, 0f),
             Quaternion.Identity,
             Vector3.One
         ));

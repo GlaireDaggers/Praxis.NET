@@ -60,6 +60,8 @@ public class Scene : IDisposable
 
     private Entity UnpackBase(Node node, Entity? parent)
     {
+        CalcWorldRecursive(node, Matrix.Identity);
+
         Entity entity = World.CreateEntity(node.Name!);
         World.Set(entity, new TransformComponent(node.Position, node.Rotation, node.Scale));
 
@@ -167,10 +169,38 @@ public class Scene : IDisposable
 
         var model = Game.Resources.Load<Model>(meshPath);
 
-        World.Set(target, new ModelComponent
+        if (node.Visible)
         {
-            model = model
-        });
+            World.Set(target, new ModelComponent
+            {
+                model = model
+            });
+        }
+
+        if (node.Collision == 1)
+        {
+            // we can't use ChildOf for colliders, so we construct a brand-new entity to contain this entity's collision
+            if (!node.worldTransform.Decompose(out var scale, out var rotation, out var translation))
+            {
+                throw new Exception("Failed to decompose transform for collision entity");
+            }
+
+            var collisionEntity = World.CreateEntity("collision");
+            World.Set(collisionEntity, new TransformComponent
+            {
+                position = translation,
+                rotation = rotation
+            });
+            World.Set(collisionEntity, new ColliderComponent
+            {
+                collider = new MeshColliderDefinition
+                {
+                    Mesh = model,
+                    Scale = scale
+                }
+            });
+            World.Relate(collisionEntity, target, new BelongsTo());
+        }
     }
 
     private void Unpack(BrushNode node, Entity target)
@@ -179,5 +209,22 @@ public class Scene : IDisposable
 
     private void Unpack(TerrainNode node, Entity target)
     {
+    }
+
+    private void CalcWorldRecursive(Node node, Matrix parent)
+    {
+        Matrix trs = Matrix.CreateScale(node.Scale)
+            * Matrix.CreateFromQuaternion(node.Rotation)
+            * Matrix.CreateTranslation(node.Position);
+
+        node.worldTransform = trs * parent;
+
+        if (node.Children != null)
+        {
+            foreach (var child in node.Children)
+            {
+                CalcWorldRecursive(child, trs);
+            }
+        }
     }
 }

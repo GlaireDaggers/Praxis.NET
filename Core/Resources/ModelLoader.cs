@@ -59,6 +59,8 @@ internal static class ModelLoader
         float boundsZ = reader.ReadSingle();
         float boundsR = reader.ReadSingle();
 
+        List<CollisionMesh.Triangle> collisionTriangles = new List<CollisionMesh.Triangle>();
+
         BoundingSphere bounds = new BoundingSphere(new Vector3(boundsX, boundsY, boundsZ), boundsR);
 
         // load materials
@@ -73,7 +75,7 @@ internal static class ModelLoader
         ModelPart[] parts = new ModelPart[numModelParts];
         for (int i = 0; i < numModelParts; i++)
         {
-            parts[i] = ReadModelPart(game, reader, materials, bounds);
+            parts[i] = ReadModelPart(game, reader, materials, collisionTriangles);
         }
 
         // load skeleton
@@ -149,7 +151,8 @@ internal static class ModelLoader
         Model model = new Model
         {
             bounds = bounds,
-            skeleton = skeleton
+            skeleton = skeleton,
+            collision = new CollisionMesh(collisionTriangles.ToArray())
         };
 
         model.parts.AddRange(parts);
@@ -304,7 +307,7 @@ internal static class ModelLoader
         }
     }
 
-    private static ModelPart ReadModelPart(PraxisGame game, BinaryReader reader, ResourceHandle<Material>[] materials, BoundingSphere bounds)
+    private static ModelPart ReadModelPart(PraxisGame game, BinaryReader reader, ResourceHandle<Material>[] materials, List<CollisionMesh.Triangle> triangles)
     {
         uint matId = reader.ReadUInt32();
         uint numVertices = reader.ReadUInt32();
@@ -360,6 +363,22 @@ internal static class ModelLoader
         for (int i = 0; i < numIndices; i++)
         {
             indices[i] = reader.ReadUInt16();
+        }
+
+        for (int i = 0; i < indices.Length; i += 3)
+        {
+            ref var vtxA = ref vertices[indices[i]];
+            ref var vtxB = ref vertices[indices[i + 1]];
+            ref var vtxC = ref vertices[indices[i + 2]];
+            Vector3 a = new Vector3(vtxA.pos.X, vtxA.pos.Y, vtxA.pos.Z);
+            Vector3 b = new Vector3(vtxB.pos.X, vtxB.pos.Y, vtxB.pos.Z);
+            Vector3 c = new Vector3(vtxC.pos.X, vtxC.pos.Y, vtxC.pos.Z);
+            triangles.Add(new CollisionMesh.Triangle
+            {
+                a = a,
+                b = b,
+                c = c
+            });
         }
 
         VertexBuffer vb = new VertexBuffer(game.GraphicsDevice, MeshVertDeclaration, (int)numVertices, BufferUsage.WriteOnly);

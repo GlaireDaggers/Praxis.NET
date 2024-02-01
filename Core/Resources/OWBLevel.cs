@@ -21,6 +21,8 @@
     [JsonDerivedType(typeof(TerrainNode), typeDiscriminator: "TerrainNode")]
     public partial class Node
     {
+        public Matrix worldTransform;
+
         [JsonPropertyName("children")]
         public Node[]? Children { get; set; }
 

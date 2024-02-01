@@ -3,9 +3,51 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework;
-using OWB;
+using ResourceCache.Core;
 
 namespace Praxis.Core;
+
+public class JsonResourceHandleConverter<T> : JsonConverter<ResourceHandle<T>>
+{
+    public readonly PraxisGame Game;
+
+    public JsonResourceHandleConverter(PraxisGame game)
+    {
+        Game = game;
+    }
+
+    public override ResourceHandle<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        string path = reader.GetString()!;
+        return Game.Resources.Load<T>(path);
+    }
+
+    public override void Write(Utf8JsonWriter writer, ResourceHandle<T> value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class JsonRuntimeResourceConverter<T> : JsonConverter<RuntimeResource<T>>
+{
+    public readonly PraxisGame Game;
+
+    public JsonRuntimeResourceConverter(PraxisGame game)
+    {
+        Game = game;
+    }
+
+    public override RuntimeResource<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        string path = reader.GetString()!;
+        return Game.Resources.Load<T>(path);
+    }
+
+    public override void Write(Utf8JsonWriter writer, RuntimeResource<T> value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
+    }
+}
 
 public class JsonVector2Converter : JsonConverter<Vector2>
 {

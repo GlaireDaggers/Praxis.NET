@@ -144,6 +144,7 @@ public class SkeletonAnimation
 public class Model
 {
     public List<ModelPart> parts = new List<ModelPart>();
+    public CollisionMesh? collision = null;
     public BoundingSphere bounds;
     public Skeleton? skeleton = null;
     public List<SkeletonAnimation> animations = new List<SkeletonAnimation>();
@@ -166,7 +167,7 @@ public class Model
 }
 
 /// <summary>
-/// A model part, referencing a mesh, a material, and a local transform relative to its parent Model container
+/// A model part, referencing a mesh & a material
 /// </summary>
 public class ModelPart
 {
@@ -177,6 +178,26 @@ public class ModelPart
     {
         this.mesh = mesh;
         this.material = material;
+    }
+}
+
+/// <summary>
+/// Contains information which can be used to create a mesh collision shape
+/// </summary>
+public class CollisionMesh
+{
+    public struct Triangle
+    {
+        public Vector3 a;
+        public Vector3 b;
+        public Vector3 c;
+    }
+
+    public Triangle[] triangles;
+
+    public CollisionMesh(Triangle[] triangles)
+    {
+        this.triangles = triangles;
     }
 }
 

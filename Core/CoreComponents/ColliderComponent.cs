@@ -3,8 +3,11 @@
 using System.Text.Json.Serialization;
 using BepuPhysics;
 using BepuPhysics.Collidables;
+using BepuUtilities.Memory;
 using Microsoft.Xna.Framework;
 using Praxis.Core.ECS;
+
+using BepuMesh = BepuPhysics.Collidables.Mesh;
 
 [SerializedComponent(nameof(ColliderComponent))]
 public class ColliderComponentData : IComponentData
@@ -152,13 +155,14 @@ public class CapsuleColliderDefinition : ConvexColliderDefinition<Capsule>
 
 public class CompoundColliderDefinition : ColliderDefinition
 {
-    public List<ColliderDefinition> children = new List<ColliderDefinition>();
+    [JsonPropertyName("children")]
+    public List<ColliderDefinition> Children { get; set; } = [];
 
     internal override TypedIndex ConstructDynamic(Simulation sim, out BodyInertia inertia)
     {
         var shapeBuilder = new CompoundBuilder(sim.BufferPool, sim.Shapes, 16);
 
-        foreach (var child in children)
+        foreach (var child in Children)
         {
             child.AddToShapeBuilder(sim, ref shapeBuilder);
         }
@@ -172,7 +176,7 @@ public class CompoundColliderDefinition : ColliderDefinition
     {
         var shapeBuilder = new CompoundBuilder(sim.BufferPool, sim.Shapes, 16);
 
-        foreach (var child in children)
+        foreach (var child in Children)
         {
             child.AddToShapeBuilder(sim, ref shapeBuilder);
         }
@@ -180,6 +184,54 @@ public class CompoundColliderDefinition : ColliderDefinition
         shapeBuilder.BuildKinematicCompound(out var compoundChildren);
 
         return sim.Shapes.Add(new Compound(compoundChildren));
+    }
+
+    internal override void AddToShapeBuilder(Simulation sim, ref CompoundBuilder builder)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class MeshColliderDefinition : ColliderDefinition
+{
+    [JsonPropertyName("mass")]
+    public float Mass { get; set; } = 1f;
+
+    [JsonPropertyName("mesh")]
+    public RuntimeResource<Model>? Mesh { get; set; } = null;
+
+    [JsonPropertyName("scale")]
+    public Vector3 Scale { get; set; } = Vector3.One;
+
+    private BepuMesh CreateShape(Simulation sim)
+    {
+        var collisionMesh = Mesh!.Value.Value.collision!;
+        sim.BufferPool.Take<Triangle>(collisionMesh.triangles.Length, out var buffer);
+
+        for (int i = 0; i < collisionMesh.triangles.Length; i++)
+        {
+            buffer[i] = new Triangle(
+                NumericsConversion.Convert(collisionMesh.triangles[i].a),
+                NumericsConversion.Convert(collisionMesh.triangles[i].b),
+                NumericsConversion.Convert(collisionMesh.triangles[i].c)
+            );
+        }
+
+        return new BepuMesh(buffer, NumericsConversion.Convert(Scale), sim.BufferPool, null);
+    }
+
+    internal override TypedIndex ConstructDynamic(Simulation sim, out BodyInertia inertia)
+    {
+        BepuMesh shape = CreateShape(sim);
+        inertia = shape.ComputeOpenInertia(Mass);
+
+        return sim.Shapes.Add(shape);
+    }
+
+    internal override TypedIndex ConstructKinematic(Simulation sim)
+    {
+        BepuMesh shape = CreateShape(sim);
+        return sim.Shapes.Add(shape);
     }
 
     internal override void AddToShapeBuilder(Simulation sim, ref CompoundBuilder builder)
