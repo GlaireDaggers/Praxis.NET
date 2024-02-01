@@ -81,9 +81,18 @@ public struct ParticleEmitterAttractionForceComponent
     public float force;
 }
 
+public enum SpriteFacingMode
+{
+    FaceCamera,
+    AlignVelocity,
+    Vertical,
+    Horizontal
+}
+
 public struct ParticleEmitterSpriteRenderComponent
 {
     public float sortBias;
+    public SpriteFacingMode facingMode;
     public RuntimeResource<Material> material;
     public ColorAnimationCurve colorOverLifetime;
     public Vector2AnimationCurve sizeOverLifetime;
@@ -422,6 +431,10 @@ public class ParticleEmitterSpriteRenderComponentData : IComponentData
     [JsonPropertyName("sortBias")]
     public float SortBias { get; set; }
     
+    [JsonPropertyName("facingMode")]
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public SpriteFacingMode FacingMode { get; set; } = SpriteFacingMode.FaceCamera;
+    
     [JsonPropertyName("material")]
     public string? Material { get; set; }
     
@@ -453,6 +466,7 @@ public class ParticleEmitterSpriteRenderComponentData : IComponentData
         _comp = new ParticleEmitterSpriteRenderComponent
         {
             sortBias = SortBias,
+            facingMode = FacingMode,
             material = game.Resources.Load<Material>(Material!),
             colorOverLifetime = new ColorAnimationCurve(ColorOverLifetimeCurveType, ColorOverLifetimeCurve!),
             sizeOverLifetime = new Vector2AnimationCurve(SizeOverLifetimeCurveType, SizeOverLifetimeCurve!),

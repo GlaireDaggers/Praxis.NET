@@ -454,9 +454,46 @@ public class BasicForwardRenderer : PraxisSystem
                 Vector3 pos = emitter.worldSpace ? particle.position : Vector3.Transform(particle.position, transform.transform);
                 var tint = renderData.colorOverLifetime.Sample(t);
                 var size = renderData.sizeOverLifetime.Sample(t) * 0.5f;
-                var rot = Matrix.CreateFromAxisAngle(camFwd, MathHelper.ToRadians(particle.angle));
-                var up = Vector3.TransformNormal(camUp, rot);
-                var right = Vector3.TransformNormal(camRight, rot);
+
+                Vector3 up, right;
+
+                switch (renderData.facingMode)
+                {
+                    case SpriteFacingMode.FaceCamera: {
+                        var rot = Matrix.CreateFromAxisAngle(camFwd, MathHelper.ToRadians(particle.angle));
+                        up = Vector3.TransformNormal(camUp, rot);
+                        right = Vector3.TransformNormal(camRight, rot);
+                        break;
+                    }
+                    case SpriteFacingMode.AlignVelocity: {
+                        up = Vector3.Normalize(particle.velocity);
+                        right = Vector3.Normalize(Vector3.Cross(camFwd, up));
+                        var fwd = Vector3.Normalize(Vector3.Cross(up, right));
+                        var rot = Matrix.CreateFromAxisAngle(fwd, MathHelper.ToRadians(particle.angle));
+                        up = Vector3.TransformNormal(up, rot);
+                        right = Vector3.TransformNormal(right, rot);
+                        break;
+                    }
+                    case SpriteFacingMode.Vertical: {
+                        up = Vector3.UnitY;
+                        right = camRight;
+                        var fwd = Vector3.Normalize(Vector3.Cross(up, right));
+                        var rot = Matrix.CreateFromAxisAngle(fwd, MathHelper.ToRadians(particle.angle));
+                        up = Vector3.TransformNormal(up, rot);
+                        right = Vector3.TransformNormal(right, rot);
+                        break;
+                    }
+                    case SpriteFacingMode.Horizontal: {
+                        var rot = Matrix.CreateFromAxisAngle(-Vector3.UnitY, MathHelper.ToRadians(particle.angle));
+                        up = Vector3.TransformNormal(-Vector3.UnitZ, rot);
+                        right = Vector3.TransformNormal(Vector3.UnitX, rot);
+                        break;
+                    }
+                    default: {
+                        throw new InvalidOperationException();
+                    }
+                }
+
                 _particleSpriteRenderer.AppendQuad(up * size.Y, right * size.X, pos, min, max, tint);
             }
 

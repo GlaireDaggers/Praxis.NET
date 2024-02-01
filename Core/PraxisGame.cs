@@ -66,11 +66,6 @@ public class PraxisGame : Game
     private bool _debugStep = false;
 
     private List<JsonConverter> _converters = [
-        new JsonVector2Converter(),
-        new JsonVector3Converter(),
-        new JsonVector4Converter(),
-        new JsonQuaternionConverter(),
-        new JsonColorConverter()
     ];
 
     public PraxisGame(string title, int width = 1280, int height = 720, bool vsync = true) : base()
@@ -132,6 +127,12 @@ public class PraxisGame : Game
     public Scene LoadScene(string path, World world, IGenericEntityHandler? entityHandler = null)
     {
         JsonSerializerOptions options = CreateJsonOptions();
+        options.Converters.Add(new JsonVector2Converter());
+        options.Converters.Add(new JsonVector3Converter());
+        options.Converters.Add(new JsonVector4Converter());
+        options.Converters.Add(new JsonQuaternionConverter());
+        options.Converters.Add(new JsonColorConverter());
+
         using var stream = Resources.Open(path);
         Level level = JsonSerializer.Deserialize<Level>(stream, options)!;
 
@@ -316,7 +317,7 @@ public class PraxisGame : Game
             _imGuiRenderer.AfterLayout();
         }
         #endif
-        
+
         Resources.UpdateHotReload();
     }
 

@@ -66,17 +66,14 @@ public class EntityTemplate
 
     public static EntityTemplate Deserialize(PraxisGame game, Stream stream)
     {
-        JsonSerializerOptions options = new JsonSerializerOptions
-        {
-            Converters = {
-                new JsonVector2Converter(),
-                new JsonVector3Converter(),
-                new JsonVector4Converter(),
-                new JsonEulerConverter(),
-                new JsonColorConverter(),
-                new JsonComponentDataConverter()
-            }
-        };
+        JsonSerializerOptions options = game.CreateJsonOptions();
+        options.Converters.Add(new JsonVector2Converter());
+        options.Converters.Add(new JsonVector3Converter());
+        options.Converters.Add(new JsonVector4Converter());
+        options.Converters.Add(new JsonEulerConverter());
+        options.Converters.Add(new JsonColorConverter());
+        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+        options.Converters.Add(new JsonComponentDataConverter());
 
         EntityTemplate entityTemplate = JsonSerializer.Deserialize<EntityTemplate>(stream, options)!;
 
