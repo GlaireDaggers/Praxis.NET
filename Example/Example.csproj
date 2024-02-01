@@ -6,12 +6,13 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RunPreBuildEvent>Always</RunPreBuildEvent>
 	  <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
     <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
   </PropertyGroup>
@@ -42,6 +43,7 @@
 
   <ItemGroup>
     <None Include="content/bin/**" CopyToOutputDirectory="PreserveNewest" LinkBase="content/" />
+    <None Include="icon_32.bmp" CopyToOutputDirectory="PreserveNewest"/>
   </ItemGroup>
 
 </Project>

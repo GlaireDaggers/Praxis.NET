@@ -1,5 +1,7 @@
 # Praxis Game Engine
 
+[Praxis Game Engine logo](./Assets/logo_neutral_small.png)
+
 A C# ECS-based game engine.
 
 Under heavy construction, check back later!

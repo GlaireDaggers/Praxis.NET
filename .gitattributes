@@ -14,3 +14,4 @@ Tools/binaries/linux-x64/compressonator/compressonatorcli-bin filter=lfs diff=lf
 *.dylib filter=lfs diff=lfs merge=lfs -text
 *.bin filter=lfs diff=lfs merge=lfs -text
 Tools/binaries/linux-x64/ContentPipe.Praxis filter=lfs diff=lfs merge=lfs -text
+*.ico filter=lfs diff=lfs merge=lfs -text

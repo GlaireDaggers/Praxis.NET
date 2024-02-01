@@ -4,7 +4,7 @@ using Microsoft.Xna.Framework.Input;
 using Praxis.Core;
 using Praxis.Core.ECS;
 using ResourceCache.Core.FS;
-
+using SDL2;
 using Model = Praxis.Core.Model;
 
 namespace Example;
@@ -13,6 +13,8 @@ public class ExampleGame : PraxisGame
 {
     public ExampleGame() : base("Example Game", 1280, 720)
     {
+        var icon = SDL.SDL_LoadBMP("icon_32.bmp");
+        SDL.SDL_SetWindowIcon(Window.Handle, icon);
     }
 
     protected override void Init()
