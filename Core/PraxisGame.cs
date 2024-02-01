@@ -316,6 +316,8 @@ public class PraxisGame : Game
             _imGuiRenderer.AfterLayout();
         }
         #endif
+        
+        Resources.UpdateHotReload();
     }
 
     private string _entityPreviewPath = "";
@@ -338,9 +340,8 @@ public class PraxisGame : Game
 
                 try
                 {
-                    var entityStream = Resources.Open(_entityPreviewPath);
-                    var entityDef = EntityTemplate.Deserialize(this, entityStream);
-                    _previewEntity = entityDef.Unpack(DefaultContext.World, null);
+                    var entityDef = Resources.Load<EntityTemplate>(_entityPreviewPath);
+                    _previewEntity = entityDef.Value.Unpack(DefaultContext.World, null);
                 }
                 catch (Exception e)
                 {

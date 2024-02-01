@@ -378,7 +378,8 @@ public class BasicForwardRenderer : PraxisSystem
         {
             var modelComponent = World.Get<ModelComponent>(modelEntity);
             var modelHandle = modelComponent.model;
-
+            modelHandle.EnsureLoaded();
+            
             if (modelHandle.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
 
             var model = modelHandle.Value;
@@ -399,6 +400,7 @@ public class BasicForwardRenderer : PraxisSystem
                 for (int i = 0; i < model.parts.Count; i++)
                 {
                     var part = model.parts[i];
+                    part.material.EnsureLoaded();
                     if (part.material.State != ResourceCache.Core.ResourceLoadState.Loaded) continue;
 
                     var mat = part.material.Value;

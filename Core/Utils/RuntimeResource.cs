@@ -33,6 +33,14 @@ public struct RuntimeResource<T>
     }
 
     /// <summary>
+    /// If this contains a resource handle that has been unloaded, this will reload it
+    /// </summary>
+    public void EnsureLoaded()
+    {
+        _handle?.Load();
+    }
+
+    /// <summary>
     /// Construct a reference to a loaded resource handle
     /// </summary>
     public RuntimeResource(ResourceHandle<T> resourceHandle)

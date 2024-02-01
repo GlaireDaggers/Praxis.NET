@@ -22,7 +22,11 @@ public class ExampleGame : PraxisGame
 
         new CameraMovementSystem(DefaultContext);
 
-        Resources.Mount("content", new FolderFS("content/bin"));
+        #if DEBUG
+        Resources.Mount("content", new FolderFS("content/bin"), true);
+        #else
+        Resources.Mount("content", new FolderFS("content/bin"), false);
+        #endif
 
         var foxModel = Resources.Load<Model>("content/models/Fox.pmdl");
         var boxModel = Resources.Load<Model>("content/models/Box.pmdl");
