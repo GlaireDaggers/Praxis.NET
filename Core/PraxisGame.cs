@@ -14,6 +14,7 @@ using ImGuiNET;
 using Microsoft.Xna.Framework.Input;
 using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework.Audio;
+using System.Runtime.CompilerServices;
 
 /// <summary>
 /// Base class for a game running on the Praxis engine
@@ -29,6 +30,11 @@ public class PraxisGame : Game
     /// The resource loader
     /// </summary>
     public readonly ResourceManager Resources;
+
+    /// <summary>
+    /// The input service
+    /// </summary>
+    public readonly InputService Input;
 
     /// <summary>
     /// A blank white placeholder texture
@@ -65,6 +71,9 @@ public class PraxisGame : Game
     private bool _debugPause = false;
     private bool _debugStep = false;
 
+    private Dictionary<Type, PraxisService> _services = [];
+    private List<PraxisService> _serviceList = [];
+
     private List<JsonConverter> _converters = [
     ];
 
@@ -86,6 +95,9 @@ public class PraxisGame : Game
         DefaultContext = new WorldContext("Default World", this);
         Resources = new ResourceManager();
 
+        Input = new InputService(this);
+        RegisterService(Input);
+
         RegisterContext(DefaultContext);
     }
 
@@ -105,6 +117,28 @@ public class PraxisGame : Game
     {
         Debug.Assert(_worlds.Contains(context));
         _worlds.Remove(context);
+    }
+
+    /// <summary>
+    /// Add a new service
+    /// </summary>
+    public void RegisterService(PraxisService service)
+    {
+        _services.Add(service.GetType(), service);
+        _serviceList.Add(service);
+    }
+
+    /// <summary>
+    /// Get a service of the given type, if it exists
+    /// </summary>
+    public T? GetService<T>() where T : PraxisService
+    {
+        if (_services.ContainsKey(typeof(T)))
+        {
+            return Unsafe.As<T>(_services[typeof(T)]);
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -264,6 +298,9 @@ public class PraxisGame : Game
             // toggle debug mode
             _debugMode = !_debugMode;
 
+            // disable input while in debug mode
+            Input.enabled = !_debugMode;
+
             // post message to allow systems to respond to enter/exit debug
             foreach (var world in _worlds)
             {
@@ -276,6 +313,11 @@ public class PraxisGame : Game
         #endif
 
         float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+        foreach (var service in _serviceList)
+        {
+            service.Update(dt);
+        }
 
         if (!_debugPause)
         {

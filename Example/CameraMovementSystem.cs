@@ -1,7 +1,6 @@
 ﻿namespace Example;
 
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Input;
 using Praxis.Core;
 using Praxis.Core.ECS;
 
@@ -9,8 +8,6 @@ using Praxis.Core.ECS;
 public class CameraMovementSystem : PraxisSystem
 {
     Filter _cameraFilter;
-
-    bool _debugMode = false;
 
     public CameraMovementSystem(WorldContext context) : base(context)
     {
@@ -24,16 +21,6 @@ public class CameraMovementSystem : PraxisSystem
     {
         base.Update(deltaTime);
 
-        // TODO: probably a better way to handle this
-        foreach (var msg in World.GetMessages<DebugModeMessage>())
-        {
-            _debugMode = msg.enableDebug;
-        }
-
-        if (_debugMode) return;
-
-        KeyboardState kb = Game.CurrentKeyboardState;
-
         foreach (var entity in _cameraFilter.Entities)
         {
             var transformComp = World.Get<TransformComponent>(entity);
@@ -44,23 +31,10 @@ public class CameraMovementSystem : PraxisSystem
             Vector3 fwd = Vector3.TransformNormal(-Vector3.UnitZ, rot);
             Vector3 right = Vector3.TransformNormal(Vector3.UnitX, rot);
 
-            if (kb.IsKeyDown(Keys.W))
-            {
-                transformComp.position += fwd * movementComp.moveSpeed * deltaTime;
-            }
-            else if (kb.IsKeyDown(Keys.S))
-            {
-                transformComp.position -= fwd * movementComp.moveSpeed * deltaTime;
-            }
+            float moveX = Game.Input.GetAxis("Move X");
+            float moveY = Game.Input.GetAxis("Move Y");
 
-            if (kb.IsKeyDown(Keys.D))
-            {
-                transformComp.position += right * movementComp.moveSpeed * deltaTime;
-            }
-            else if (kb.IsKeyDown(Keys.A))
-            {
-                transformComp.position -= right * movementComp.moveSpeed * deltaTime;
-            }
+            transformComp.position += (fwd * moveY * movementComp.moveSpeed * deltaTime) + (right * moveX * movementComp.moveSpeed * deltaTime);
 
             World.Set(entity, transformComp);
         }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Praxis.Core;
 using Praxis.Core.ECS;
 using ResourceCache.Core.FS;
@@ -21,6 +22,23 @@ public class ExampleGame : PraxisGame
         GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
 
         new CameraMovementSystem(DefaultContext);
+
+        // set up input
+        Input.BindInput("Move X", new CompositeAxisSource
+        {
+            sources = [
+                new GamepadAxisSource(PlayerIndex.One, GamepadAxis.LeftStickX),
+                new DualButtonAxisSource(new KeyboardButtonSource(Keys.D), new KeyboardButtonSource(Keys.A))
+            ]
+        });
+
+        Input.BindInput("Move Y", new CompositeAxisSource
+        {
+            sources = [
+                new GamepadAxisSource(PlayerIndex.One, GamepadAxis.LeftStickY),
+                new DualButtonAxisSource(new KeyboardButtonSource(Keys.W), new KeyboardButtonSource(Keys.S))
+            ]
+        });
 
         #if DEBUG
         Resources.Mount("content", new FolderFS("content/bin"), true);
