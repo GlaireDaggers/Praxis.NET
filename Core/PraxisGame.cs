@@ -281,10 +281,55 @@ public class PraxisGame : Game
                 DebugSystems();
                 DebugComponents();
                 DebugFilters();
+
+                EntityPreview();
             }
             _imGuiRenderer.AfterLayout();
         }
         #endif
+    }
+
+    private string _entityPreviewPath = "";
+    private Entity? _previewEntity;
+    private void EntityPreview()
+    {
+        if (ImGui.Begin("Entity Preview"))
+        {
+            ImGui.InputText("Entity Template Path", ref _entityPreviewPath, 1024);
+            if (ImGui.Button("Load"))
+            {
+                if (_previewEntity != null)
+                {
+                    DefaultContext.World.Send(new DestroyEntity
+                    {
+                        entity = _previewEntity.Value
+                    });
+                    _previewEntity = null;
+                }
+
+                try
+                {
+                    var entityDef = Resources.Load<EntityTemplate>(_entityPreviewPath);
+                    _previewEntity = entityDef.Value.Unpack(DefaultContext.World, null);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed spawning entity: " + e.Message);
+                }
+            }
+            if (ImGui.Button("Delete"))
+            {
+                if (_previewEntity != null)
+                {
+                    DefaultContext.World.Send(new DestroyEntity
+                    {
+                        entity = _previewEntity.Value
+                    });
+                    _previewEntity = null;
+                }
+            }
+            ImGui.End();
+        }
     }
 
     private void DebugEntities()

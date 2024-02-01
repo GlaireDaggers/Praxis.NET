@@ -130,6 +130,11 @@ public class World
             relation.RemoveEntity(entity);
         }
 
+        foreach (var filter in _filterList)
+        {
+            filter.entitySet.Remove(entity);
+        }
+
         _allEntities.Remove(entity);
         _idPool.Push(entity.ID);
     }
