@@ -82,6 +82,10 @@ public class PhysicsSystem : PraxisSystem
                 {
                     DrawCapsuleGizmo(transform.position, capsuleDef.Height, capsuleDef.Radius, transform.rotation, Color.Cyan);
                 }
+                else if (collider.collider is MeshColliderDefinition meshDef)
+                {
+                    DrawCollisionMesh(meshDef.Mesh.Value.collision!, Matrix.CreateScale(meshDef.Scale) * trs, Color.Cyan);
+                }
                 /*else if (collider.collider is CompoundColliderDefinition compoundDef)
                 {
                     // todo
@@ -143,6 +147,20 @@ public class PhysicsSystem : PraxisSystem
                     DrawLineGizmo(transform.position - axis, transform.position + axis, Color.Red, Color.Red);
                     DrawLineGizmo(otherTransform.position, offsetB, Color.Blue, Color.Blue);
                 }
+            }
+        }
+
+        private void DrawCollisionMesh(CollisionMesh mesh, Matrix transform, Color color)
+        {
+            foreach (var tri in mesh.triangles)
+            {
+                Vector3 a = Vector3.Transform(tri.a, transform);
+                Vector3 b = Vector3.Transform(tri.b, transform);
+                Vector3 c = Vector3.Transform(tri.c, transform);
+
+                DrawLineGizmo(a, b, color, color);
+                DrawLineGizmo(b, c, color, color);
+                DrawLineGizmo(c, a, color, color);
             }
         }
     }

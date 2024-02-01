@@ -338,8 +338,9 @@ public class PraxisGame : Game
 
                 try
                 {
-                    var entityDef = Resources.Load<EntityTemplate>(_entityPreviewPath);
-                    _previewEntity = entityDef.Value.Unpack(DefaultContext.World, null);
+                    var entityStream = Resources.Open(_entityPreviewPath);
+                    var entityDef = EntityTemplate.Deserialize(this, entityStream);
+                    _previewEntity = entityDef.Unpack(DefaultContext.World, null);
                 }
                 catch (Exception e)
                 {

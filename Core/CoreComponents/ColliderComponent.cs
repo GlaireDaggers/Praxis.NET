@@ -198,14 +198,14 @@ public class MeshColliderDefinition : ColliderDefinition
     public float Mass { get; set; } = 1f;
 
     [JsonPropertyName("mesh")]
-    public RuntimeResource<Model>? Mesh { get; set; } = null;
+    public RuntimeResource<Model> Mesh { get; set; }
 
     [JsonPropertyName("scale")]
     public Vector3 Scale { get; set; } = Vector3.One;
 
     private BepuMesh CreateShape(Simulation sim)
     {
-        var collisionMesh = Mesh!.Value.Value.collision!;
+        var collisionMesh = Mesh.Value.collision!;
         sim.BufferPool.Take<Triangle>(collisionMesh.triangles.Length, out var buffer);
 
         for (int i = 0; i < collisionMesh.triangles.Length; i++)
