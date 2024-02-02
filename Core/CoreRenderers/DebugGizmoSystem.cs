@@ -204,9 +204,8 @@ public class DebugGizmoSystem : PraxisSystem
         Matrix m = Matrix.CreateFromQuaternion(rotation);
         Vector3 right = Vector3.TransformNormal(Vector3.UnitX, m);
         Vector3 up = Vector3.TransformNormal(Vector3.UnitY, m);
-        Vector3 fwd = Vector3.TransformNormal(Vector3.UnitZ, m);
-        Vector3 top = center + (up * height);
-        Vector3 bottom = center - (up * height);
+        Vector3 top = center + (up * height * 0.5f);
+        Vector3 bottom = center - (up * height * 0.5f);
 
         DrawSphereGizmo(top, radius, color);
         DrawSphereGizmo(bottom, radius, color);

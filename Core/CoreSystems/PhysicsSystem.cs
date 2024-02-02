@@ -13,6 +13,15 @@ using Microsoft.Xna.Framework;
 using System.Diagnostics;
 
 using Matrix = Microsoft.Xna.Framework.Matrix;
+using BepuPhysics.Trees;
+
+public struct RaycastHit
+{
+    public Entity hitEntity;
+    public float hitDistance;
+    public Vector3 hitPoint;
+    public Vector3 hitNormal;
+}
 
 public struct PhysicsMaterial
 {
@@ -188,6 +197,190 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
+    struct RayHitAllHandler : IRayHitHandler
+    {
+        private List<RaycastHit> _hits;
+        private uint _mask;
+        private PhysicsSystem _system;
+
+        public RayHitAllHandler(PhysicsSystem system, List<RaycastHit> hits, uint mask = uint.MaxValue)
+        {
+            _hits = hits;
+            _system = system;
+            _mask = mask;
+        }
+
+        public bool AllowTest(CollidableReference collidable)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public bool AllowTest(CollidableReference collidable, int childIndex)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public void OnRayHit(in RayData ray, ref float maximumT, float t, System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
+        {
+            Entity entity = collidable.Mobility == CollidableMobility.Static ? _system._staticHandleToEntity[collidable.StaticHandle] : _system._bodyHandleToEntity[collidable.BodyHandle];
+            _hits.Add(new RaycastHit
+            {
+                hitEntity = entity,
+                hitDistance = t,
+                hitPoint = NumericsConversion.Convert(ray.Origin + (ray.Direction * t)),
+                hitNormal = NumericsConversion.Convert(normal)
+            });
+        }
+    }
+
+    struct RayHitNearestHandler : IRayHitHandler
+    {
+        public bool hit;
+        public RaycastHit nearestHit;
+
+        private uint _mask;
+        private PhysicsSystem _system;
+
+        public RayHitNearestHandler(PhysicsSystem system, uint mask = uint.MaxValue)
+        {
+            hit = false;
+            nearestHit.hitDistance = float.MaxValue;
+            _system = system;
+            _mask = mask;
+        }
+
+        public bool AllowTest(CollidableReference collidable)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public bool AllowTest(CollidableReference collidable, int childIndex)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public void OnRayHit(in RayData ray, ref float maximumT, float t, System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
+        {
+            hit = true;
+
+            if (t < nearestHit.hitDistance)
+            {
+                Entity entity = collidable.Mobility == CollidableMobility.Static ? _system._staticHandleToEntity[collidable.StaticHandle] : _system._bodyHandleToEntity[collidable.BodyHandle];
+
+                nearestHit = new RaycastHit
+                {
+                    hitEntity = entity,
+                    hitDistance = t,
+                    hitPoint = NumericsConversion.Convert(ray.Origin + (ray.Direction * t)),
+                    hitNormal = NumericsConversion.Convert(normal)
+                };
+            }
+        }
+    }
+
+    struct SweepHitAllHandler : ISweepHitHandler
+    {
+        private List<RaycastHit> _hits;
+        private uint _mask;
+        private PhysicsSystem _system;
+        private float _maxT;
+
+        public SweepHitAllHandler(PhysicsSystem system, float maxT, List<RaycastHit> hits, uint mask = uint.MaxValue)
+        {
+            _hits = hits;
+            _system = system;
+            _mask = mask;
+            _maxT = maxT;
+        }
+
+        public bool AllowTest(CollidableReference collidable)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public bool AllowTest(CollidableReference collidable, int childIndex)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public void OnHit(ref float maximumT, float t, System.Numerics.Vector3 hitLocation, System.Numerics.Vector3 hitNormal, CollidableReference collidable)
+        {
+            if (t <= _maxT)
+            {
+                Entity entity = collidable.Mobility == CollidableMobility.Static ? _system._staticHandleToEntity[collidable.StaticHandle] : _system._bodyHandleToEntity[collidable.BodyHandle];
+                _hits.Add(new RaycastHit
+                {
+                    hitEntity = entity,
+                    hitDistance = t,
+                    hitPoint = NumericsConversion.Convert(hitLocation),
+                    hitNormal = NumericsConversion.Convert(hitNormal)
+                });
+            }
+        }
+
+        public void OnHitAtZeroT(ref float maximumT, CollidableReference collidable)
+        {
+        }
+    }
+
+    struct SweepHitNearestHandler : ISweepHitHandler
+    {
+        public bool hit;
+        public RaycastHit nearestHit;
+
+        private float _maxT;
+        private uint _mask;
+        private PhysicsSystem _system;
+
+        public SweepHitNearestHandler(PhysicsSystem system, float maxT, uint mask = uint.MaxValue)
+        {
+            hit = false;
+            nearestHit.hitDistance = float.MaxValue;
+            _system = system;
+            _mask = mask;
+            _maxT = maxT;
+        }
+
+        public bool AllowTest(CollidableReference collidable)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public bool AllowTest(CollidableReference collidable, int childIndex)
+        {
+            uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
+            return (_mask & mask) != 0;
+        }
+
+        public void OnHit(ref float maximumT, float t, System.Numerics.Vector3 hitLocation, System.Numerics.Vector3 hitNormal, CollidableReference collidable)
+        {
+            if (t < nearestHit.hitDistance && t <= _maxT)
+            {
+                hit = true;
+                
+                Entity entity = collidable.Mobility == CollidableMobility.Static ? _system._staticHandleToEntity[collidable.StaticHandle] : _system._bodyHandleToEntity[collidable.BodyHandle];
+                nearestHit = new RaycastHit
+                {
+                    hitEntity = entity,
+                    hitDistance = t,
+                    hitPoint = NumericsConversion.Convert(hitLocation),
+                    hitNormal = NumericsConversion.Convert(hitNormal)
+                };
+            }
+        }
+
+        public void OnHitAtZeroT(ref float maximumT, CollidableReference collidable)
+        {
+        }
+    }
+
     struct RigidbodyStateComponent
     {
         public TypedIndex shape;
@@ -302,6 +495,8 @@ public class PhysicsSystem : PraxisSystem
     private IThreadDispatcher _threadDispatcher = new ThreadDispatcher(Environment.ProcessorCount);
     private Simulation _sim;
 
+    private Dictionary<BodyHandle, Entity> _bodyHandleToEntity = new Dictionary<BodyHandle, Entity>();
+    private Dictionary<StaticHandle, Entity> _staticHandleToEntity = new Dictionary<StaticHandle, Entity>();
     private Dictionary<BodyHandle, PhysicsMaterial> _bodyMaterials = new Dictionary<BodyHandle, PhysicsMaterial>();
     private Dictionary<BodyHandle, uint> _bodyMasks = new Dictionary<BodyHandle, uint>();
     private Dictionary<BodyHandle, Entity> _incomingConstraints = new Dictionary<BodyHandle, Entity>();
@@ -413,14 +608,112 @@ public class PhysicsSystem : PraxisSystem
         }
     }
 
-    public void RegisterBody(in BodyHandle handle, uint collisionMask, in PhysicsMaterial material)
+    public void RaycastAll(in Vector3 origin, in Vector3 direction, float distance, List<RaycastHit> outHits, uint mask = uint.MaxValue)
     {
+        var rayHitHandler = new RayHitAllHandler(this, outHits, mask);
+        _sim.RayCast(NumericsConversion.Convert(origin), NumericsConversion.Convert(direction), distance, ref rayHitHandler);
+    }
+
+    public void SphereCastAll(in Vector3 origin, in Vector3 direction, float radius, float distance, List<RaycastHit> outHits, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitAllHandler(this, distance, outHits, mask);
+        var sphere = new Sphere(radius);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin));
+        _sim.Sweep(sphere, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+    }
+
+    public void BoxCastAll(in Vector3 origin, in Quaternion rotation, in Vector3 direction, in Vector3 size, float distance, List<RaycastHit> outHits, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitAllHandler(this, distance, outHits, mask);
+        var box = new Box(size.X, size.Y, size.Z);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin), NumericsConversion.Convert(rotation));
+        _sim.Sweep(box, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+    }
+
+    public void CylinderCastAll(in Vector3 origin, in Quaternion rotation, in Vector3 direction, float radius, float height, float distance, List<RaycastHit> outHits, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitAllHandler(this, distance, outHits, mask);
+        var cylinder = new Cylinder(radius, height);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin), NumericsConversion.Convert(rotation));
+        _sim.Sweep(cylinder, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+    }
+
+    public void CapsuleCastAll(in Vector3 origin, in Quaternion rotation, in Vector3 direction, float radius, float height, float distance, List<RaycastHit> outHits, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitAllHandler(this, distance, outHits, mask);
+        var capsule = new Capsule(radius, height);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin), NumericsConversion.Convert(rotation));
+        _sim.Sweep(capsule, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+    }
+
+    public bool Raycast(in Vector3 origin, in Vector3 direction, float distance, out RaycastHit outHit, uint mask = uint.MaxValue)
+    {
+        var rayHitHandler = new RayHitNearestHandler(this, mask);
+        _sim.RayCast(NumericsConversion.Convert(origin), NumericsConversion.Convert(direction), distance, ref rayHitHandler);
+
+        outHit = rayHitHandler.nearestHit;
+        return rayHitHandler.hit;
+    }
+
+    public bool SphereCast(in Vector3 origin, in Vector3 direction, float radius, float distance, out RaycastHit outHit, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitNearestHandler(this, distance, mask);
+        var sphere = new Sphere(radius);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin));
+        _sim.Sweep(sphere, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+        
+        outHit = sweepHitHandler.nearestHit;
+        return sweepHitHandler.hit;
+    }
+
+    public bool BoxCast(in Vector3 origin, in Quaternion rotation, in Vector3 direction, in Vector3 size, float distance, out RaycastHit outHit, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitNearestHandler(this, distance, mask);
+        var box = new Box(size.X, size.Y, size.Z);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin), NumericsConversion.Convert(rotation));
+        _sim.Sweep(box, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+        
+        outHit = sweepHitHandler.nearestHit;
+        return sweepHitHandler.hit;
+    }
+
+    public bool CylinderCast(in Vector3 origin, in Quaternion rotation, in Vector3 direction, float radius, float height, float distance, out RaycastHit outHit, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitNearestHandler(this, distance, mask);
+        var cylinder = new Cylinder(radius, height);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin), NumericsConversion.Convert(rotation));
+        _sim.Sweep(cylinder, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+        
+        outHit = sweepHitHandler.nearestHit;
+        return sweepHitHandler.hit;
+    }
+
+    public bool CapsuleCast(in Vector3 origin, in Quaternion rotation, in Vector3 direction, float radius, float height, float distance, out RaycastHit outHit, uint mask = uint.MaxValue)
+    {
+        var sweepHitHandler = new SweepHitNearestHandler(this, distance, mask);
+        var capsule = new Capsule(radius, height);
+        RigidPose pose = new RigidPose(NumericsConversion.Convert(origin), NumericsConversion.Convert(rotation));
+        _sim.Sweep(capsule, pose, NumericsConversion.Convert(direction), distance + 1f, _bufferPool, ref sweepHitHandler);
+        
+        outHit = sweepHitHandler.nearestHit;
+        return sweepHitHandler.hit;
+    }
+
+    public void SetBodyMask(in BodyHandle handle, uint collisionMask)
+    {
+        _bodyMasks[handle] = collisionMask;
+    }
+
+    public void RegisterBody(in BodyHandle handle, in Entity owner, uint collisionMask, in PhysicsMaterial material)
+    {
+        _bodyHandleToEntity.Add(handle, owner);
         _bodyMaterials[handle] = material;
         _bodyMasks[handle] = collisionMask;
     }
 
     public void UnregisterBody(in BodyHandle handle)
     {
+        _bodyHandleToEntity.Remove(handle);
         _bodyMaterials.Remove(handle);
         _bodyMasks.Remove(handle);
     }
@@ -501,6 +794,7 @@ public class PhysicsSystem : PraxisSystem
             body = _sim.Bodies.Add(BodyDescription.CreateDynamic(pose, inertia, shape, _sleepThreshold));
         }
 
+        _bodyHandleToEntity.Add(body, entity);
         _bodyMaterials.Add(body, rigidbody.material);
         _bodyMasks.Add(body, rigidbody.collisionMask);
 
@@ -526,6 +820,8 @@ public class PhysicsSystem : PraxisSystem
 
         var shape = collider.collider.ConstructKinematic(_sim);
         var body = _sim.Statics.Add(new StaticDescription(pose, shape));
+
+        _staticHandleToEntity.Add(body, entity);
 
         World.Set(entity, new StaticRigidbodyStateComponent
         {
@@ -622,6 +918,7 @@ public class PhysicsSystem : PraxisSystem
         if (World.Has<StaticRigidbodyStateComponent>(entity))
         {
             StaticRigidbodyStateComponent stateComp = World.Get<StaticRigidbodyStateComponent>(entity);
+            _staticHandleToEntity.Remove(stateComp.body);
             _sim.Shapes.Remove(stateComp.shape);
             _sim.Statics.Remove(stateComp.body);
         }
@@ -629,6 +926,7 @@ public class PhysicsSystem : PraxisSystem
 
     private void RemoveBody(BodyHandle body)
     {
+        _bodyHandleToEntity.Remove(body);
         _bodyMaterials.Remove(body);
         _bodyMasks.Remove(body);
 

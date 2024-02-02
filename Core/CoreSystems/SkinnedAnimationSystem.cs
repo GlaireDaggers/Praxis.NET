@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 /// <summary>
 /// Base class for a system which performs skeletal animation
 /// </summary>
-public class SkinnedAnimationSystem : PraxisSystem
+public class SkinnedAnimationSystem(WorldContext context) : PraxisSystem(context)
 {
     /// <summary>
     /// Enumeration of ways bone animation can be blend into the current pose
@@ -30,10 +30,6 @@ public class SkinnedAnimationSystem : PraxisSystem
     private Dictionary<Skeleton.SkeletonNode, Matrix> _nodeTransformCache = new Dictionary<Skeleton.SkeletonNode, Matrix>();
 
     private Filter? _animFilter = null;
-
-    public SkinnedAnimationSystem(WorldContext context) : base(context)
-    {
-    }
 
     public override void Update(float deltaTime)
     {

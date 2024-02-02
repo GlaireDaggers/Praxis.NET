@@ -31,8 +31,8 @@ public class CameraMovementSystem : PraxisSystem
             Vector3 fwd = Vector3.TransformNormal(-Vector3.UnitZ, rot);
             Vector3 right = Vector3.TransformNormal(Vector3.UnitX, rot);
 
-            float moveX = Game.Input.GetAxis("Move X");
-            float moveY = Game.Input.GetAxis("Move Y");
+            float moveX = Game.Input.GetAxis("Camera X");
+            float moveY = Game.Input.GetAxis("Camera Y");
 
             transformComp.position += (fwd * moveY * movementComp.moveSpeed * deltaTime) + (right * moveX * movementComp.moveSpeed * deltaTime);
 

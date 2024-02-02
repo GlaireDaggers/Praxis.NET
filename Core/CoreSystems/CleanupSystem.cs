@@ -5,13 +5,9 @@ using Praxis.Core.ECS;
 /// <summary>
 /// Helper system which responds to DestroyEntity messages and cleans up entities (including children attached via ChildOf)
 /// </summary>
-public class CleanupSystem : PraxisSystem
+public class CleanupSystem(WorldContext context) : PraxisSystem(context)
 {
     public override SystemExecutionStage ExecutionStage => SystemExecutionStage.PostUpdate;
-
-    public CleanupSystem(WorldContext context) : base(context)
-    {
-    }
 
     public override void Update(float deltaTime)
     {

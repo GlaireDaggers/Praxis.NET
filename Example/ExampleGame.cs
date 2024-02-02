@@ -1,7 +1,9 @@
-﻿using Microsoft.Xna.Framework;
+﻿using ImGuiNET;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Praxis.Core;
+using Praxis.Core.DebugGui;
 using Praxis.Core.ECS;
 using ResourceCache.Core.FS;
 using SDL2;
@@ -24,6 +26,7 @@ public class ExampleGame : PraxisGame
         GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
 
         new CameraMovementSystem(DefaultContext);
+        new SimpleCharacterMovementSystem(DefaultContext);
 
         // set up input
         Input.BindInput("Move X", new CompositeAxisSource
@@ -39,6 +42,22 @@ public class ExampleGame : PraxisGame
             sources = [
                 new GamepadAxisSource(PlayerIndex.One, GamepadAxis.LeftStickY),
                 new DualButtonAxisSource(new KeyboardButtonSource(Keys.W), new KeyboardButtonSource(Keys.S))
+            ]
+        });
+
+        Input.BindInput("Camera X", new CompositeAxisSource
+        {
+            sources = [
+                new GamepadAxisSource(PlayerIndex.One, GamepadAxis.RightStickX),
+                new DualButtonAxisSource(new KeyboardButtonSource(Keys.Right), new KeyboardButtonSource(Keys.Left))
+            ]
+        });
+
+        Input.BindInput("Camera Y", new CompositeAxisSource
+        {
+            sources = [
+                new GamepadAxisSource(PlayerIndex.One, GamepadAxis.RightStickY),
+                new DualButtonAxisSource(new KeyboardButtonSource(Keys.Up), new KeyboardButtonSource(Keys.Down))
             ]
         });
 
@@ -75,6 +94,25 @@ public class ExampleGame : PraxisGame
         {
             moveSpeed = 5f
         });
+
+        Entity testCharacter = DefaultContext.World.CreateEntity("testCharacter");
+        DefaultContext.World.Set(testCharacter, new TransformComponent(new Vector3(-20f, 5f, 0f), Quaternion.Identity, Vector3.One));
+        DefaultContext.World.Set(testCharacter, new SimpleCharacterComponent
+        {
+            collisionMask = uint.MaxValue,
+            radius = 0.5f,
+            height = 2f,
+            skinWidth = 0.1f,
+            maxSlope = 60f
+        });
+
+        Entity testCharacterMesh = DefaultContext.World.CreateEntity("mesh");
+        DefaultContext.World.Set(testCharacterMesh, new TransformComponent(new Vector3(0f, 0f, 0f), Quaternion.Identity, new Vector3(1f, 2f, 1f)));
+        DefaultContext.World.Set(testCharacterMesh, new ModelComponent
+        {
+            model = boxModel
+        });
+        DefaultContext.World.Relate(testCharacterMesh, testCharacter, new ChildOf());
         
         Entity fox = DefaultContext.World.CreateEntity("fox");
         SimpleAnimationComponent foxAnim = new SimpleAnimationComponent();
@@ -87,7 +125,8 @@ public class ExampleGame : PraxisGame
         DefaultContext.World.Set(fox, foxAnim);
 
         Entity floor = DefaultContext.World.CreateEntity("floor");
-        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, -0.5f, 0f), Quaternion.Identity, Vector3.One));
+        DefaultContext.World.Set(floor, new TransformComponent(new Vector3(0f, -0.5f, 0f),
+            Quaternion.CreateFromYawPitchRoll(0f, MathHelper.ToRadians(10f), 0f), Vector3.One));
         DefaultContext.World.Set(floor, new ColliderComponent
         {
             collider = new BoxColliderDefinition(new Vector3(100f, 1f, 100f))

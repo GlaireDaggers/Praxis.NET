@@ -355,12 +355,18 @@ public class PraxisGame : Game
                 DebugFilters();
 
                 EntityPreview();
+
+                DrawDebugUI();
             }
             _imGuiRenderer.AfterLayout();
         }
         #endif
 
         Resources.UpdateHotReload();
+    }
+
+    protected virtual void DrawDebugUI()
+    {
     }
 
     private string _entityPreviewPath = "";
