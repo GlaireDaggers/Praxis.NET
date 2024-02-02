@@ -74,6 +74,8 @@ public class PraxisGame : Game
     private Dictionary<Type, PraxisService> _services = [];
     private List<PraxisService> _serviceList = [];
 
+    private GameState? _activeState = null;
+
     private List<JsonConverter> _converters = [
     ];
 
@@ -99,6 +101,16 @@ public class PraxisGame : Game
         RegisterService(Input);
 
         RegisterContext(DefaultContext);
+    }
+
+    public void InstallDefaultSystems(WorldContext context)
+    {
+        new SimpleAnimationSystem(context);
+        new PhysicsSystem(context);
+        new ParticleEmitterSystem(context);
+        new CalculateTransformSystem(context);
+        new BasicForwardRenderer(context);
+        new CleanupSystem(context);
     }
 
     /// <summary>
@@ -189,6 +201,13 @@ public class PraxisGame : Game
         _converters.Add(new JsonRuntimeResourceConverter<T>(this));
     }
 
+    public void SetState(GameState? state)
+    {
+        _activeState?.OnExit();
+        _activeState = state;
+        _activeState?.OnEnter();
+    }
+
     protected override void LoadContent()
     {
         base.LoadContent();
@@ -216,12 +235,7 @@ public class PraxisGame : Game
         });
 
         // register default systems
-        new SimpleAnimationSystem(DefaultContext);
-        new PhysicsSystem(DefaultContext);
-        new ParticleEmitterSystem(DefaultContext);
-        new CalculateTransformSystem(DefaultContext);
-        new BasicForwardRenderer(DefaultContext);
-        new CleanupSystem(DefaultContext);
+        InstallDefaultSystems(DefaultContext);
 
         // register default resource loaders
         Resources.InstallFNAResourceLoaders(this);
@@ -327,6 +341,8 @@ public class PraxisGame : Game
             }
         }
 
+        _activeState?.Update(dt);
+
         if (_debugStep)
         {
             _debugPause = true;
@@ -343,6 +359,8 @@ public class PraxisGame : Game
             context.Draw();
             context.EndFrame();
         }
+
+        _activeState?.Draw();
 
         #if DEBUG
         if (_debugMode)
