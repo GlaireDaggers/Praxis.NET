@@ -8,9 +8,17 @@
             "name": "C#: Example Debug",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build",
+            "preLaunchTask": "build-example",
             "program": "${workspaceFolder}/Example/bin/Debug/net8.0/Example.dll",
             "cwd": "${workspaceFolder}/Example"
+        },
+        {
+            "name": "C#: Starter Debug",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-starter",
+            "program": "${workspaceFolder}/Starter/bin/Debug/net8.0/Starter.dll",
+            "cwd": "${workspaceFolder}/Starter"
         }
     ]
 }
