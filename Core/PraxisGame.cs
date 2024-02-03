@@ -365,6 +365,7 @@ public class PraxisGame : Game
         #if DEBUG
         if (_debugMode)
         {
+            GraphicsDevice.Clear(ClearOptions.DepthBuffer | ClearOptions.Stencil, Color.Black, 1f, 0);
             _imGuiRenderer!.BeforeLayout(gameTime);
             {
                 DebugEntities();
