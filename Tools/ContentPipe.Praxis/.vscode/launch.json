@@ -10,7 +10,8 @@
             "request": "launch",
             "preLaunchTask": "build",
             "program": "${workspaceFolder}/bin/Debug/net8.0/linux-x64/ContentPipe.Praxis.dll",
-            "args": ["/media/hazel/DATA[HDD]/Projects/dotnet/PraxisV2/Example/content/src", "/media/hazel/DATA[HDD]/Projects/dotnet/PraxisV2/Example/content/bin", "-threads", "1"]
+            "cwd": "${workspaceFolder}/../../PlatformerSample/",
+            "args": ["content/src", "content/bin", "-threads", "1"]
         }
     ]
 }

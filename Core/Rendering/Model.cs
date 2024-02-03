@@ -72,6 +72,11 @@ public class Skeleton
             Name = name;
         }
 
+        public override string ToString()
+        {
+            return $"(Skeleton Node) \"{Name}\"";
+        }
+
         internal SkeletonNode(SkeletonNode? parent, Node srcNode, Dictionary<Node, int> jointmap, Dictionary<Node, SkeletonNode> nodemap)
         {
             Name = srcNode.Name;

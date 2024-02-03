@@ -57,7 +57,7 @@ public class CompressonatorTextureProcessor : SingleAssetProcessor<Compressonato
 
         if (options.mipmap)
         {
-            compressonatorArgs += $" -mipsize 4";
+            compressonatorArgs += $" -mipsize 1";
         }
         else
         {

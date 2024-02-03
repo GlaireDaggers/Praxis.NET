@@ -3,6 +3,7 @@
 public class Filter
 {
     public string? tag;
+    public Entity FirstEntity => entitySet.AsSpan[0];
     public ReverseSpanEnumerator<Entity> Entities => new ReverseSpanEnumerator<Entity>(entitySet.AsSpan);
     public int Count => entitySet.Count;
 
@@ -42,5 +43,10 @@ public class Filter
         }
 
         entitySet.Add(entity);
+    }
+
+    public Entity GetRandomEntity(Random rng)
+    {
+        return entitySet.AsSpan[rng.Next(entitySet.Count)];
     }
 }

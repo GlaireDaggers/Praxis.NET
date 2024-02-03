@@ -1,0 +1,26 @@
+{
+	"tag": "Player",
+	"components": [
+		{
+			"$type": "TransformComponent"
+		}
+	],
+	"children": [
+		{
+			"tag": "Mesh",
+			"components": [
+				{
+					"$type": "TransformComponent",
+					"position": "0.0, -1.0, 0.0"
+				},
+				{
+					"$type": "ModelComponent",
+					"model": "content/model/leigh/leigh.pmdl"
+				},
+				{
+					"$type": "SimpleAnimationComponent"
+				}
+			]
+		}
+	]
+}

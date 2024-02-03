@@ -5,7 +5,7 @@ using Praxis.Core;
 using ResourceCache.Core.FS;
 using SDL2;
 
-namespace Starter;
+namespace Platformer;
 
 public class StarterGame : PraxisGame
 {
@@ -38,28 +38,12 @@ public class StarterGame : PraxisGame
             ]
         });
 
-        Input.BindInput("Camera X", new CompositeAxisSource
-        {
-            sources = [
-                new GamepadAxisSource(PlayerIndex.One, GamepadAxis.RightStickX),
-                new DualButtonAxisSource(new KeyboardButtonSource(Keys.Right), new KeyboardButtonSource(Keys.Left))
-            ]
-        });
-
-        Input.BindInput("Camera Y", new CompositeAxisSource
-        {
-            sources = [
-                new GamepadAxisSource(PlayerIndex.One, GamepadAxis.RightStickY),
-                new DualButtonAxisSource(new KeyboardButtonSource(Keys.Up), new KeyboardButtonSource(Keys.Down))
-            ]
-        });
-
         #if DEBUG
         Resources.Mount("content", new FolderFS("content/bin"), true);
         #else
         Resources.Mount("content", new FolderFS("content/bin"), false);
         #endif
-        
+
         SetState(new SplashGameState(this, 3f, Color.Black, Resources.Load<Texture2D>("content/image/splash.dds"), new DefaultGameState(this)));
     }
 }

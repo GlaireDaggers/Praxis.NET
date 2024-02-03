@@ -363,7 +363,11 @@ public class Scene : IDisposable
             return _brushMaterials[texturePath];
         }
 
-        var mat = new Material(Game, Game.Resources.Load<Effect>("content/shaders/BasicLit.fxo"));
+        var mat = new Material(Game, Game.Resources.Load<Effect>("content/shaders/BasicLit.fxo"))
+        {
+            technique = "Default"
+        };
+
         if (!string.IsNullOrEmpty(texturePath))
         {
             mat.SetParameter("DiffuseTexture", Game.Resources.Load<Texture2D>(Path.Combine(_projectPath, Path.ChangeExtension(texturePath, "dds"))));

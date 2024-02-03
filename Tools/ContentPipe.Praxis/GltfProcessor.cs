@@ -423,25 +423,40 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
 
                 Dictionary<Node, int> jointmap = new Dictionary<Node, int>();
 
+                // note: skin may omit "skeleton", in which case we just use the root node of the first joint (according to spec joints must all share
+                // a common root)
+                Node skeletonRoot = skin.Skeleton ?? skin.GetJoint(0).Joint.VisualRoot;
+
                 for (int i = 0; i < skin.JointsCount; i++)
                 {
                     var jointNode = skin.GetJoint(i).Joint;
+                    var root = jointNode.VisualRoot;
                     jointmap[jointNode] = i;
                 }
 
-                GatherSkeleton(skin.Skeleton, skeletonNodes);
+                GatherSkeleton(skeletonRoot, skeletonNodes);
 
                 // serialize skeleton nodes
                 writer.Write(skeletonNodes.Count);
                 foreach (var node in skeletonNodes)
                 {
-                    SerializeSkeleton(node, jointmap, skeletonNodes, writer);
+                    SerializeSkeleton(skin, node, jointmap, skeletonNodes, writer);
                 }
 
                 // serialize animations
+                Dictionary<Node, IAnimationSampler<Vector3>> transformSamplers = [];
+                Dictionary<Node, IAnimationSampler<Quaternion>> rotationSamplers = [];
+                Dictionary<Node, IAnimationSampler<Vector3>> scaleSamplers = [];
+
                 foreach (var anim in model.LogicalAnimations)
-                {
-                    SerializeAnimation(anim, skeletonNodes, writer);
+                {    
+                    // gather animation channels (note: valid for GLTF to have multiple channels targetting a node's pos/rot/scale, but we condense them)
+                    transformSamplers.Clear();
+                    rotationSamplers.Clear();
+                    scaleSamplers.Clear();
+                    GatherChannels(anim, transformSamplers, rotationSamplers, scaleSamplers);
+
+                    SerializeAnimation(anim, transformSamplers, rotationSamplers, scaleSamplers, skeletonNodes, writer);
                 }
             }
         }
@@ -537,7 +552,35 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         File.WriteAllText(outPath, matJson);
     }
 
-    private void SerializeAnimation(Animation anim, List<Node> nodeArray, BinaryWriter writer)
+    private void GatherChannels(Animation anim, Dictionary<Node, IAnimationSampler<Vector3>> transformSamplers,
+        Dictionary<Node, IAnimationSampler<Quaternion>> rotationSamplers, Dictionary<Node, IAnimationSampler<Vector3>> scaleSamplers)
+    {
+        foreach (var channel in anim.Channels)
+        {
+            var translation = channel.GetTranslationSampler();
+            var rotation = channel.GetRotationSampler();
+            var scale = channel.GetScaleSampler();
+
+            if (translation != null)
+            {
+                transformSamplers[channel.TargetNode] = translation;
+            }
+
+            if (rotation != null)
+            {
+                rotationSamplers[channel.TargetNode] = rotation;
+            }
+
+            if (scale != null)
+            {
+                scaleSamplers[channel.TargetNode] = scale;
+            }
+        }   
+    }
+
+    private void SerializeAnimation(Animation anim, Dictionary<Node, IAnimationSampler<Vector3>> transformSamplers,
+        Dictionary<Node, IAnimationSampler<Quaternion>> rotationSamplers, Dictionary<Node, IAnimationSampler<Vector3>> scaleSamplers,
+        List<Node> nodeArray, BinaryWriter writer)
     {
         // name
         writer.Write(anim.Name);
@@ -554,9 +597,9 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
             int targetId = nodeArray.IndexOf(channel.TargetNode);
             writer.Write(targetId);
 
-            var translation = channel.GetTranslationSampler();
-            var rotation = channel.GetRotationSampler();
-            var scale = channel.GetScaleSampler();
+            var translation = transformSamplers.ContainsKey(channel.TargetNode) ? transformSamplers[channel.TargetNode] : null;
+            var rotation = rotationSamplers.ContainsKey(channel.TargetNode) ? rotationSamplers[channel.TargetNode] : null;
+            var scale = scaleSamplers.ContainsKey(channel.TargetNode) ? scaleSamplers[channel.TargetNode] : null;
 
             if (translation == null)
             {
@@ -717,7 +760,7 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         }
     }
 
-    private void SerializeSkeleton(Node node, Dictionary<Node, int> jointmap, List<Node> nodeArray, BinaryWriter writer)
+    private void SerializeSkeleton(Skin skin, Node node, Dictionary<Node, int> jointmap, List<Node> nodeArray, BinaryWriter writer)
     {
         // bone name
         writer.Write(node.Name);

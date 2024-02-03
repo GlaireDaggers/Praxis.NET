@@ -354,13 +354,13 @@ public class PraxisGame : Game
     {
         base.Draw(gameTime);
 
+        _activeState?.Draw();
+
         foreach (var context in _worlds)
         {
             context.Draw();
             context.EndFrame();
         }
-
-        _activeState?.Draw();
 
         #if DEBUG
         if (_debugMode)

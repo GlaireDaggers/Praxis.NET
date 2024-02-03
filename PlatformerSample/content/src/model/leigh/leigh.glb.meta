@@ -1,0 +1,9 @@
+{
+	"Default": {
+		"materials": {
+			"eyemat": "content/model/leigh/eyemat.json",
+			"eyelidmat": "content/model/leigh/eyelidmat.json",
+			"leighmat": "content/model/leigh/leighmat.json"
+		}
+	}
+}

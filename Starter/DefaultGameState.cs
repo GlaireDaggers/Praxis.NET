@@ -1,8 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Praxis.Core;
-using Praxis.Core.ECS;
 
-namespace Starter;
+namespace Platformer;
 
 /// <summary>
 /// Default game state for starter game

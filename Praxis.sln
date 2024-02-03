@@ -31,6 +31,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImGui.NET", "deps\ImGui.NET
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Starter", "Starter\Starter.csproj", "{13633C4C-475F-46AF-B7D8-E523FCB21777}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlatformerSample", "PlatformerSample\PlatformerSample.csproj", "{C6AC5070-9F63-4267-A5A7-CEF3C704B681}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +82,10 @@ Global
 		{13633C4C-475F-46AF-B7D8-E523FCB21777}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13633C4C-475F-46AF-B7D8-E523FCB21777}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13633C4C-475F-46AF-B7D8-E523FCB21777}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6AC5070-9F63-4267-A5A7-CEF3C704B681}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6AC5070-9F63-4267-A5A7-CEF3C704B681}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6AC5070-9F63-4267-A5A7-CEF3C704B681}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6AC5070-9F63-4267-A5A7-CEF3C704B681}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8527AB53-F539-4E34-8E06-F1CBFED1F14F} = {09F7B2B6-560E-4D1E-8FA9-5A7A6610B9F9}

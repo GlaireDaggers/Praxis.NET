@@ -19,6 +19,14 @@
             "preLaunchTask": "build-starter",
             "program": "${workspaceFolder}/Starter/bin/Debug/net8.0/Starter.dll",
             "cwd": "${workspaceFolder}/Starter"
+        },
+        {
+            "name": "C#: PlatformerSample Debug",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-platformer",
+            "program": "${workspaceFolder}/PlatformerSample/bin/Debug/net8.0/PlatformerSample.dll",
+            "cwd": "${workspaceFolder}/PlatformerSample"
         }
     ]
 }

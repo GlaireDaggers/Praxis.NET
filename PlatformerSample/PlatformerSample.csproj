@@ -1,0 +1,53 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\deps\FNA\FNA.Core.csproj" />
+    <ProjectReference Include="..\Core\Praxis.Core.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RunPreBuildEvent>Always</RunPreBuildEvent>
+	  <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
+    <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
+    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+  </PropertyGroup>
+
+  <Target Condition="'$(IsWindows)'=='true'" Name="PostBuild_Win" AfterTargets="PreBuildEvent">
+    <Exec Command="../Tools/binaries/win-x64/ContentPipe.Praxis.exe content/src content/bin" />
+  </Target>
+
+  <Target Condition="'$(IsLinux)'=='true'" Name="PostBuild_Linux" AfterTargets="PreBuildEvent">
+    <Exec Command="../Tools/binaries/linux-x64/ContentPipe.Praxis content/src content/bin" />
+  </Target>
+
+  <Target Condition="'$(IsWindows)'=='true'" Name="CopyDLL_Win64" AfterTargets="AfterBuild">
+    <Copy SourceFiles="../deps/fnalibs/x64/FNA3D.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/fnalibs/x64/FAudio.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/fnalibs/x64/SDL2.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/fnalibs/x64/libtheorafile.dll" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/imguilibs/x64/cimgui.dll" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <Target Condition="'$(IsLinux)'=='true'" Name="CopyDLL_Linux64" AfterTargets="AfterBuild">
+    <Copy SourceFiles="../deps/fnalibs/lib64/libFNA3D.so.0" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/fnalibs/lib64/libFAudio.so.0" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/fnalibs/lib64/libSDL2-2.0.so.0" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/fnalibs/lib64/libtheorafile.so" DestinationFolder="$(OutDir)" />
+    <Copy SourceFiles="../deps/imguilibs/lib64/cimgui.so" DestinationFolder="$(OutDir)" />
+  </Target>
+
+  <ItemGroup>
+    <None Include="content/bin/**" CopyToOutputDirectory="PreserveNewest" LinkBase="content/" />
+    <None Include="icon_32.bmp" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="System/" />
+  </ItemGroup>
+
+</Project>

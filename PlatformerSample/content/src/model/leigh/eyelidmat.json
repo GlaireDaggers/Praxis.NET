@@ -1,0 +1,47 @@
+{
+  "type": "opaque",
+  "effect": "content/shaders/BasicLit.fxo",
+  "effectTechnique": "Default_Mask",
+  "effectTechniqueSkinned": "Skinned_Mask",
+  "colorBlendFunc": "add",
+  "alphaBlendFunc": "add",
+  "colorSrcBlend": "one",
+  "alphaSrcBlend": "one",
+  "colorDstBlend": "zero",
+  "alphaDstBlend": "zero",
+  "blendColor": "0, 0, 0, 0",
+  "writeR": true,
+  "writeG": true,
+  "writeB": true,
+  "writeA": true,
+  "depthEnable": true,
+  "depthWriteEnable": true,
+  "depthCompare": "lessEqual",
+  "stencilCompare": "always",
+  "stencilPass": "keep",
+  "stencilFail": "keep",
+  "stencilDepthFail": "keep",
+  "ccwStencilCompare": "always",
+  "ccwStencilPass": "keep",
+  "ccwStencilFail": "keep",
+  "ccwStencilDepthFail": "keep",
+  "stencilMask": 2147483647,
+  "stencilWriteMask": 2147483647,
+  "cullMode": "cullClockwiseFace",
+  "fillMode": "solid",
+  "msaa": true,
+  "intParams": {},
+  "floatParams": {
+    "AlphaCutoff": 0.5
+  },
+  "vec2Params": {},
+  "vec3Params": {},
+  "vec4Params": {
+    "DiffuseColor": "1, 1, 1, 1",
+    "EmissiveColor": "0, 0, 0, 1"
+  },
+  "tex2DParams": {
+  	"DiffuseTexture": "content/model/leigh/eyelidmat_diffuse.dds"
+  },
+  "texCubeParams": {}
+}

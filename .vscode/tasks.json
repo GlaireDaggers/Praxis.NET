@@ -20,6 +20,16 @@
 				"${workspaceFolder}/Starter/Starter.csproj"	
 			],
 			"problemMatcher": "$msCompile"
+		},
+		{
+			"label": "build-platformer",
+			"command": "dotnet",
+			"type": "process",
+			"args": [
+				"build",
+				"${workspaceFolder}/PlatformerSample/PlatformerSample.csproj"	
+			],
+			"problemMatcher": "$msCompile"
 		}
 	]
 }
