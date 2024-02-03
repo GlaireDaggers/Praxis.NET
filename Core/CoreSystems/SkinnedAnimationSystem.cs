@@ -145,7 +145,7 @@ public class SkinnedAnimationSystem(WorldContext context) : PraxisSystem(context
         }
         else
         {
-            Matrix trs = node.LocalBindPose;
+            Matrix trs = node.LocalRestPose;
 
             if (node.Parent != null)
             {

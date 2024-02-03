@@ -43,14 +43,14 @@ public class Skeleton
         public Vector3 LocalRestScale;
 
         /// <summary>
-        /// This node's default bind pose (in local space)
+        /// This node's default rest pose (in local space)
         /// </summary>
-        public Matrix LocalBindPose;
+        public Matrix LocalRestPose;
 
         /// <summary>
-        /// This node's default bind pose (relative to the model root)
+        /// This node's default rest pose (relative to the model root)
         /// </summary>
-        public Matrix BindPose;
+        public Matrix RestPose;
 
         /// <summary>
         /// The inverse of this node's bind pose
@@ -75,35 +75,6 @@ public class Skeleton
         public override string ToString()
         {
             return $"(Skeleton Node) \"{Name}\"";
-        }
-
-        internal SkeletonNode(SkeletonNode? parent, Node srcNode, Dictionary<Node, int> jointmap, Dictionary<Node, SkeletonNode> nodemap)
-        {
-            Name = srcNode.Name;
-            Parent = parent;
-            LocalRestPosition = new Vector3(srcNode.LocalTransform.Translation.X, srcNode.LocalTransform.Translation.Y, srcNode.LocalTransform.Translation.Z);
-            LocalRestRotation = new Quaternion(srcNode.LocalTransform.Rotation.X, srcNode.LocalTransform.Rotation.Y, srcNode.LocalTransform.Rotation.Z, srcNode.LocalTransform.Rotation.W);
-            LocalRestScale = new Vector3(srcNode.LocalTransform.Scale.X, srcNode.LocalTransform.Scale.Y, srcNode.LocalTransform.Scale.Z);
-            LocalBindPose = Matrix.CreateScale(LocalRestScale) * Matrix.CreateFromQuaternion(LocalRestRotation) * Matrix.CreateTranslation(LocalRestPosition);
-            InverseBindPose = Matrix.Invert(ToFNA(srcNode.WorldMatrix));
-
-            if (!jointmap.TryGetValue(srcNode, out BoneIndex))
-            {
-                BoneIndex = -1;
-            }
-
-            foreach (var child in srcNode.VisualChildren)
-            {
-                var childNode = new SkeletonNode(this, child, jointmap, nodemap);
-                Children.Add(childNode);
-            }
-
-            nodemap.Add(srcNode, this);
-        }
-
-        private static Matrix ToFNA(System.Numerics.Matrix4x4 m)
-        {
-            return Unsafe.As<System.Numerics.Matrix4x4, Matrix>(ref m);
         }
     }
 

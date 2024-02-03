@@ -106,6 +106,8 @@ internal static class ModelLoader
                 float scaleY = reader.ReadSingle();
                 float scaleZ = reader.ReadSingle();
 
+                Matrix invBindPose = ReadMatrix(reader);
+
                 uint childCount = reader.ReadUInt32();
                 uint[] children = new uint[childCount];
 
@@ -122,11 +124,11 @@ internal static class ModelLoader
                     LocalRestScale = new Vector3(scaleX, scaleY, scaleZ)
                 };
 
-                node.LocalBindPose = Matrix.CreateScale(node.LocalRestScale)
+                node.LocalRestPose = Matrix.CreateScale(node.LocalRestScale)
                     * Matrix.CreateFromQuaternion(node.LocalRestRotation)
                     * Matrix.CreateTranslation(node.LocalRestPosition);
-                node.BindPose = node.LocalBindPose;
-                node.InverseBindPose = Matrix.Invert(node.BindPose);
+                node.RestPose = node.LocalRestPose;
+                node.InverseBindPose = invBindPose;
 
                 nodes[i] = node;
                 childrenMap.Add(node, children);
@@ -163,6 +165,30 @@ internal static class ModelLoader
         }
 
         return model;
+    }
+
+    private static Matrix ReadMatrix(BinaryReader reader)
+    {
+        Matrix m = new Matrix();
+        
+        m.M11 = reader.ReadSingle();
+        m.M12 = reader.ReadSingle();
+        m.M13 = reader.ReadSingle();
+        m.M14 = reader.ReadSingle();
+        m.M21 = reader.ReadSingle();
+        m.M22 = reader.ReadSingle();
+        m.M23 = reader.ReadSingle();
+        m.M24 = reader.ReadSingle();
+        m.M31 = reader.ReadSingle();
+        m.M32 = reader.ReadSingle();
+        m.M33 = reader.ReadSingle();
+        m.M34 = reader.ReadSingle();
+        m.M41 = reader.ReadSingle();
+        m.M42 = reader.ReadSingle();
+        m.M43 = reader.ReadSingle();
+        m.M44 = reader.ReadSingle();
+
+        return m;
     }
 
     private static SkeletonAnimation ReadAnimation(Skeleton.SkeletonNode[] nodes, BinaryReader reader)
@@ -300,8 +326,8 @@ internal static class ModelLoader
         {
             var child = nodes[children[i]];
             child.Parent = currentNode;
-            child.BindPose = child.LocalBindPose * currentNode.BindPose;
-            child.InverseBindPose = Matrix.Invert(child.BindPose);
+            child.RestPose = child.LocalRestPose * currentNode.RestPose;
+            child.InverseBindPose = Matrix.Invert(child.RestPose);
 
             currentNode.Children.Add(child);
         }

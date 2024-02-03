@@ -762,6 +762,8 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
 
     private void SerializeSkeleton(Skin skin, Node node, Dictionary<Node, int> jointmap, List<Node> nodeArray, BinaryWriter writer)
     {
+        Matrix4x4 invBindPose;
+
         // bone name
         writer.Write(node.Name);
 
@@ -769,10 +771,12 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         if (jointmap.ContainsKey(node))
         {
             writer.Write(jointmap[node]);
+            invBindPose = skin.GetJoint(jointmap[node]).InverseBindMatrix;
         }
         else
         {
             writer.Write(-1);
+            Matrix4x4.Invert(node.WorldMatrix, out invBindPose);
         }
 
         // local rest position
@@ -790,6 +794,15 @@ public class GltfProcessor : SingleAssetProcessor<GltfProcessor.Data>
         writer.Write(node.LocalTransform.Scale.X);
         writer.Write(node.LocalTransform.Scale.Y);
         writer.Write(node.LocalTransform.Scale.Z);
+
+        // inverse bind pose (not necessarily the same as rest pose!)
+        for (int i = 0; i < 4; i++)
+        {
+            for (int j = 0; j < 4; j++)
+            {
+                writer.Write(invBindPose[i, j]);
+            }
+        }
 
         // child indices
         var children = node.VisualChildren.ToArray();
