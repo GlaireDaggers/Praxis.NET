@@ -10,12 +10,16 @@ texture DiffuseTexture <string defaultTex="white";>;
 sampler DiffuseSampler = sampler_state
 {
 	Texture = DiffuseTexture;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
 
 texture EmissiveTexture <string defaultTex="black";>;
 sampler EmissiveSampler = sampler_state
 {
 	Texture = EmissiveTexture;
+	AddressU = Wrap;
+	AddressV = Wrap;
 };
 
 float AlphaCutoff;
