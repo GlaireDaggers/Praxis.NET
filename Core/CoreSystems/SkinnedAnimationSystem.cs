@@ -181,12 +181,15 @@ public class SkinnedAnimationSystem(WorldContext context) : PraxisSystem(context
     private Matrix LerpBoneTransform(Matrix lhs, Matrix rhs, float t)
     {
         // decompose into translation, rotation, scale and lerp separately
-        lhs.Decompose(out var scaleLhs, out var rotLhs, out var posLhs);
+        /*lhs.Decompose(out var scaleLhs, out var rotLhs, out var posLhs);
         rhs.Decompose(out var scaleRhs, out var rotRhs, out var posRhs);
 
         return Matrix.CreateScale(Vector3.Lerp(scaleLhs, scaleRhs, t))
             * Matrix.CreateFromQuaternion(Quaternion.Slerp(rotLhs, rotRhs, t))
-            * Matrix.CreateTranslation(Vector3.Lerp(posLhs, posRhs, t));
+            * Matrix.CreateTranslation(Vector3.Lerp(posLhs, posRhs, t));*/
+
+        // TODO: above is broken, I don't know why. This looks better for now, but probably not quite correct
+        return Matrix.Lerp(lhs, rhs, t);
     }
 }
 

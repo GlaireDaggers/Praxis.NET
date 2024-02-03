@@ -6,6 +6,7 @@ namespace PlatformerSample;
 
 public struct SimpleCharacterStateComponent
 {
+    public Entity visual;
     public Vector3 velocity;
     public CharacterController characterController;
     public bool grounded;
@@ -115,9 +116,12 @@ public class SimpleCharacterMovementSystem : PraxisSystem
                 Position = transformComp.position
             };
 
+            var childMesh = World.FindTaggedEntityInChildren("Mesh", entity) ?? throw new NullReferenceException();
+
             World.Set(entity, new SimpleCharacterStateComponent
             {
-                characterController = characterController
+                characterController = characterController,
+                visual = childMesh
             });
         }
 
@@ -144,7 +148,7 @@ public class SimpleCharacterMovementSystem : PraxisSystem
                 stateComp.characterController.MaxSlope = characterComp.maxSlope;
             }
 
-            Vector3 inputVel;
+            Vector3 inputDir;
 
             if (_cameraFilter.Count > 0)
             {
@@ -158,15 +162,15 @@ public class SimpleCharacterMovementSystem : PraxisSystem
                 right.Y = 0f;
                 right = Vector3.Normalize(right);
 
-                inputVel = (fwd * Game.Input.GetAxis("Move Y")) + (right * Game.Input.GetAxis("Move X"));
+                inputDir = (fwd * Game.Input.GetAxis("Move Y")) + (right * Game.Input.GetAxis("Move X"));
             }
             else
             {
-                inputVel = new Vector3(Game.Input.GetAxis("Move X"), 0f, -Game.Input.GetAxis("Move Y"));
+                inputDir = new Vector3(Game.Input.GetAxis("Move X"), 0f, -Game.Input.GetAxis("Move Y"));
             }
 
-            stateComp.velocity.X = inputVel.X * characterComp.moveSpeed;
-            stateComp.velocity.Z = inputVel.Z * characterComp.moveSpeed;
+            stateComp.velocity.X = inputDir.X * characterComp.moveSpeed;
+            stateComp.velocity.Z = inputDir.Z * characterComp.moveSpeed;
 
             if (stateComp.grounded && Game.Input.GetButton("Jump") == ButtonPhase.Pressed)
             {
@@ -187,6 +191,44 @@ public class SimpleCharacterMovementSystem : PraxisSystem
             {
                 stateComp.velocity.Y -= 10f * deltaTime;
             }
+
+            // rotate character to face input direction
+            if (inputDir.LengthSquared() > 0f)
+            {
+                Vector3 facing = Vector3.Normalize(inputDir);
+                Matrix lookAt = Matrix.CreateLookAt(Vector3.Zero, facing, Vector3.UnitY);
+                lookAt.Decompose(out _, out var lookRot, out _);
+                transformComp.rotation = Quaternion.Slerp(transformComp.rotation, Quaternion.Inverse(lookRot), 1f - MathF.Pow(0.01f, deltaTime));
+            }
+
+            // play animation based on current state
+            var model = World.Get<ModelComponent>(stateComp.visual);
+            var anim = World.Get<AnimationStateComponent>(stateComp.visual);
+
+            if (!stateComp.grounded)
+            {
+                if (stateComp.velocity.Y > 0f)
+                {
+                    anim.SetAnimation(model.model.Value.GetAnimationId("jump"));
+                }
+                else
+                {
+                    anim.SetAnimation(model.model.Value.GetAnimationId("fall"));
+                }
+            }
+            else
+            {
+                if (inputDir.LengthSquared() > 0f)
+                {
+                    anim.SetAnimation(model.model.Value.GetAnimationId("run"));
+                }
+                else
+                {
+                    anim.SetAnimation(model.model.Value.GetAnimationId("idle"));
+                }
+            }
+
+            World.Set(stateComp.visual, anim);
             
             World.Set(entity, stateComp);
             World.Set(entity, transformComp);

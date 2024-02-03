@@ -135,7 +135,7 @@ public class JsonEulerConverter : JsonConverter<Quaternion>
         float x = float.Parse(v[0]);
         float y = float.Parse(v[1]);
         float z = float.Parse(v[2]);
-        return Quaternion.CreateFromYawPitchRoll(y, x, z);
+        return Quaternion.CreateFromYawPitchRoll(MathHelper.ToRadians(y), MathHelper.ToRadians(x), MathHelper.ToRadians(z));
     }
 
     public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)

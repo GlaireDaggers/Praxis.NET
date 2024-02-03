@@ -33,6 +33,7 @@ public class DefaultGameState : GameState, IGenericEntityHandler
         Game.InstallDefaultSystems(_context);
 
         new SimpleCharacterMovementSystem(_context);
+        new AnimationStateSystem(_context);
         new CameraFollowSystem(_context);
 
         _scene = Game.LoadScene("content/levels/TestLevel.owblevel", _context.World, this);
@@ -53,14 +54,6 @@ public class DefaultGameState : GameState, IGenericEntityHandler
 
         var player = playerTemplate.Value.Unpack(_context.World, null);
         _context.World.Set(player, spawnPos);
-
-        if (_context.World.FindTaggedEntityInChildren("Mesh", player) is Entity playerMesh)
-        {
-            var anim = _context.World.Get<SimpleAnimationComponent>(playerMesh);
-            var model = _context.World.Get<ModelComponent>(playerMesh);
-            anim.SetAnimation(model.model.Value.GetAnimationId("idle"));
-            _context.World.Set(playerMesh, anim);
-        }
 
         _context.World.Set(cam, new CameraFollowComponent
         {

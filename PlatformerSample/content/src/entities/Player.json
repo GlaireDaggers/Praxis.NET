@@ -17,14 +17,15 @@
 				{
 					"$type": "TransformComponent",
 					"position": "0.0, -1.0, 0.0",
-					"scale": "0.75, 0.75, 0.75"
+					"scale": "0.75, 0.75, 0.75",
+					"rotation": "0.0, 180.0, 0.0"
 				},
 				{
 					"$type": "ModelComponent",
 					"model": "content/model/leigh/leigh.pmdl"
 				},
 				{
-					"$type": "SimpleAnimationComponent"
+					"$type": "AnimationStateComponent"
 				}
 			]
 		}
