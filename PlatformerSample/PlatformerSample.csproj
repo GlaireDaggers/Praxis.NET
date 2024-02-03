@@ -46,8 +46,4 @@
     <None Include="icon_32.bmp" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="System/" />
-  </ItemGroup>
-
 </Project>

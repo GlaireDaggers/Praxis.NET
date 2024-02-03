@@ -1,10 +1,9 @@
 ﻿using Microsoft.Xna.Framework;
 using OWB;
-using PlatformerSample;
 using Praxis.Core;
 using Praxis.Core.ECS;
 
-namespace Platformer;
+namespace PlatformerSample;
 
 /// <summary>
 /// Default game state for platformer game
@@ -33,6 +32,9 @@ public class DefaultGameState : GameState, IGenericEntityHandler
         Game.RegisterContext(_context);
         Game.InstallDefaultSystems(_context);
 
+        new SimpleCharacterMovementSystem(_context);
+        new CameraFollowSystem(_context);
+
         _scene = Game.LoadScene("content/levels/TestLevel.owblevel", _context.World, this);
 
         var playerTemplate = Game.Resources.Load<EntityTemplate>("content/entities/Player.json");
@@ -59,6 +61,15 @@ public class DefaultGameState : GameState, IGenericEntityHandler
             anim.SetAnimation(model.model.Value.GetAnimationId("idle"));
             _context.World.Set(playerMesh, anim);
         }
+
+        _context.World.Set(cam, new CameraFollowComponent
+        {
+            lookatHeightOffset = 1f,
+            followHeightOffset = 3f,
+            followRadius = 7f,
+            damping = 0.05f
+        });
+        _context.World.Relate(cam, player, new Following());
     }
 
     public override void OnExit()

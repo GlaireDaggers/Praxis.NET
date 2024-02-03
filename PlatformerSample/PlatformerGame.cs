@@ -5,7 +5,7 @@ using Praxis.Core;
 using ResourceCache.Core.FS;
 using SDL2;
 
-namespace Platformer;
+namespace PlatformerSample;
 
 public class PlatformerGame : PraxisGame
 {
@@ -35,6 +35,14 @@ public class PlatformerGame : PraxisGame
             sources = [
                 new GamepadAxisSource(PlayerIndex.One, GamepadAxis.LeftStickY),
                 new DualButtonAxisSource(new KeyboardButtonSource(Keys.W), new KeyboardButtonSource(Keys.S))
+            ]
+        });
+
+        Input.BindInput("Jump", new CompositeButtonSource
+        {
+            sources = [
+                new GamepadButtonSource(PlayerIndex.One, Buttons.A),
+                new KeyboardButtonSource(Keys.Space)
             ]
         });
 

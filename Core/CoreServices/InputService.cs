@@ -35,6 +35,11 @@ public class InputService : PraxisService
         _axisList.Add(source);
     }
 
+    public void BindInput(string name, IInputSource<bool> source)
+    {
+        BindInput(name, new ButtonPhaseFilter(source));
+    }
+
     public string[] GetButtonBindingNames()
     {
         return _buttonInputSources.Keys.ToArray();

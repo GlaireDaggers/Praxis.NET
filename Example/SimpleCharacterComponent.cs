@@ -1,6 +1,4 @@
-﻿using Microsoft.Xna.Framework;
-
-namespace Example;
+﻿namespace Example;
 
 public struct SimpleCharacterComponent
 {

@@ -1,4 +1,4 @@
-﻿using Platformer;
+﻿using PlatformerSample;
 
 public static class Program
 {
