@@ -21,6 +21,12 @@ public class PlatformerGame : PraxisGame
 
         GraphicsDevice.PresentationParameters.MultiSampleCount = 4;
 
+        #if DEBUG
+        Resources.Mount("content", new FolderFS("content/bin"), true);
+        #else
+        Resources.Mount("content", new FolderFS("content/bin"), false);
+        #endif
+
         // set up input
         Input.BindInput("Move X", new CompositeAxisSource
         {
@@ -46,11 +52,8 @@ public class PlatformerGame : PraxisGame
             ]
         });
 
-        #if DEBUG
-        Resources.Mount("content", new FolderFS("content/bin"), true);
-        #else
-        Resources.Mount("content", new FolderFS("content/bin"), false);
-        #endif
+        // open OWB project
+        LoadOWBProject("content/mapdata.owbproject");
         
         SetState(new SplashGameState(this, 3f, Color.Black, Resources.Load<Texture2D>("content/image/splash.dds"), new DefaultGameState(this)));
     }

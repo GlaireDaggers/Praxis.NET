@@ -6,6 +6,7 @@ namespace Praxis.Core;
 public struct RigidbodyComponent
 {
     public bool isKinematic;
+    public bool isTrigger;
     public bool lockRotationX;
     public bool lockRotationY;
     public bool lockRotationZ;
@@ -15,6 +16,7 @@ public struct RigidbodyComponent
     public RigidbodyComponent()
     {
         isKinematic = false;
+        isTrigger = false;
         lockRotationX = false;
         lockRotationY = false;
         lockRotationZ = false;
@@ -28,6 +30,9 @@ public class RigidbodyComponentData : IComponentData
 {
     [JsonPropertyName("isKinematic")]
     public bool IsKinematic { get; set; } = false;
+    
+    [JsonPropertyName("isTrigger")]
+    public bool IsTrigger { get; set; } = false;
     
     [JsonPropertyName("lockRotationX")]
     public bool LockRotationX { get; set; } = false;
@@ -60,6 +65,7 @@ public class RigidbodyComponentData : IComponentData
         _comp = new RigidbodyComponent
         {
             isKinematic = IsKinematic,
+            isTrigger = IsTrigger,
             lockRotationX = LockRotationX,
             lockRotationY = LockRotationY,
             lockRotationZ = LockRotationZ,

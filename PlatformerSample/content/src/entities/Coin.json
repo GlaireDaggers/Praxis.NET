@@ -1,0 +1,41 @@
+{
+	"tag": "Coin",
+	"components": [
+		{
+			"$type": "TransformComponent"
+		},
+		{
+			"$type": "RigidbodyComponent",
+			"isKinematic": true,
+			"isTrigger": true
+		},
+		{
+			"$type": "ColliderComponent",
+			"collider": {
+				"$type": "sphere",
+				"radius": 1.0
+			}
+		},
+		{
+			"$type": "CoinComponent"
+		}
+	],
+	"children": [
+		{
+			"tag": "Mesh",
+			"components": [
+				{
+					"$type": "TransformComponent"
+				},
+				{
+					"$type": "ModelComponent",
+					"model": "content/model/coin/coin.pmdl"
+				},
+				{
+					"$type": "SpinComponent",
+					"rate": 180.0
+				}
+			]
+		}
+	]
+}

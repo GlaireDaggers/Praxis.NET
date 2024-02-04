@@ -94,7 +94,7 @@ public struct CharacterController : IDisposable
         RigidPose pose = new RigidPose(System.Numerics.Vector3.Zero);
         _collision = system.Sim.Bodies.Add(BodyDescription.CreateKinematic(pose, _shapeHandle, 0.01f));
 
-        system.RegisterBody(_collision, owner, collisionMask, PhysicsMaterial.Default);
+        system.RegisterBody(_collision, owner, collisionMask, false, PhysicsMaterial.Default);
     }
 
     public readonly void Dispose()

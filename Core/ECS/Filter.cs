@@ -17,7 +17,7 @@ public class Filter
         this.signature = signature;
     }
 
-    internal bool Contains(in Entity entity)
+    public bool Contains(in Entity entity)
     {
         return entitySet.Contains(entity);
     }

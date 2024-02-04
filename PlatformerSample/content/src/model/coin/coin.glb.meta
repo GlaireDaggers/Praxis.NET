@@ -1,0 +1,7 @@
+{
+	"Default": {
+		"materials": {
+			"colormap": "content/model/coin/coinmat.json"
+		}
+	}
+}

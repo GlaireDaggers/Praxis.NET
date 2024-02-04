@@ -22,11 +22,6 @@ using System.Runtime.CompilerServices;
 public class PraxisGame : Game
 {
     /// <summary>
-    /// A default world context constructed on game startup
-    /// </summary>
-    public readonly WorldContext DefaultContext;
-
-    /// <summary>
     /// The resource loader
     /// </summary>
     public readonly ResourceManager Resources;
@@ -76,6 +71,8 @@ public class PraxisGame : Game
 
     private GameState? _activeState = null;
 
+    private Project? _owbProject;
+
     private List<JsonConverter> _converters = [
     ];
 
@@ -94,13 +91,10 @@ public class PraxisGame : Game
         IsMouseVisible = true;
         IsFixedTimeStep = false;
 
-        DefaultContext = new WorldContext("Default World", this);
         Resources = new ResourceManager();
 
         Input = new InputService(this);
         RegisterService(Input);
-
-        RegisterContext(DefaultContext);
     }
 
     public void InstallDefaultSystems(WorldContext context)
@@ -165,6 +159,40 @@ public class PraxisGame : Game
         }
 
         return options;
+    }
+
+    /// <summary>
+    /// Load the given OWB project. This should be called in Init before any scenes are loaded
+    /// </summary>
+    public void LoadOWBProject(string path)
+    {
+        JsonSerializerOptions options = CreateJsonOptions();
+        options.Converters.Add(new JsonVector2Converter());
+        options.Converters.Add(new JsonVector3Converter());
+        options.Converters.Add(new JsonVector4Converter());
+        options.Converters.Add(new JsonQuaternionConverter());
+        options.Converters.Add(new JsonColorConverter());
+
+        using var stream = Resources.Open(path);
+        _owbProject = JsonSerializer.Deserialize<Project>(stream, options)!;
+    }
+
+    /// <summary>
+    /// Find the OWB entity definition by GUID, or null if it could not be found (or LoadOWBProject has not been called)
+    /// </summary>
+    public EntityDefinition? FindEntityDefinition(Guid guid)
+    {
+        if (_owbProject == null || _owbProject.EntityDefinitions == null) return null;
+
+        foreach (var def in _owbProject.EntityDefinitions)
+        {
+            if (def.Guid == guid)
+            {
+                return def;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -233,9 +261,6 @@ public class PraxisGame : Game
             flatNormal, flatNormal,
             flatNormal, flatNormal
         });
-
-        // register default systems
-        InstallDefaultSystems(DefaultContext);
 
         // register default resource loaders
         Resources.InstallFNAResourceLoaders(this);
@@ -399,7 +424,7 @@ public class PraxisGame : Game
             {
                 if (_previewEntity != null)
                 {
-                    DefaultContext.World.Send(new DestroyEntity
+                    _worlds[0].World.Send(new DestroyEntity
                     {
                         entity = _previewEntity.Value
                     });
@@ -409,7 +434,7 @@ public class PraxisGame : Game
                 try
                 {
                     var entityDef = Resources.Load<EntityTemplate>(_entityPreviewPath);
-                    _previewEntity = entityDef.Value.Unpack(DefaultContext.World, null);
+                    _previewEntity = entityDef.Value.Unpack(_worlds[0].World, null);
                 }
                 catch (Exception e)
                 {
@@ -420,7 +445,7 @@ public class PraxisGame : Game
             {
                 if (_previewEntity != null)
                 {
-                    DefaultContext.World.Send(new DestroyEntity
+                    _worlds[0].World.Send(new DestroyEntity
                     {
                         entity = _previewEntity.Value
                     });

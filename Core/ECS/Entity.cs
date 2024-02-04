@@ -35,4 +35,9 @@ public readonly struct Entity : IEquatable<Entity>
     {
         return (int)ID;
     }
+
+    public override string ToString()
+    {
+        return Tag ?? $"<entity {ID}>";
+    }
 }

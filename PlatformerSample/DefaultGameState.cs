@@ -32,6 +32,8 @@ public class DefaultGameState : GameState, IGenericEntityHandler
         Game.RegisterContext(_context);
         Game.InstallDefaultSystems(_context);
 
+        new SpinSystem(_context);
+        new PickupSystem(_context);
         new SimpleCharacterMovementSystem(_context);
         new AnimationStateSystem(_context);
         new CameraFollowSystem(_context);
@@ -80,8 +82,26 @@ public class DefaultGameState : GameState, IGenericEntityHandler
 
     public void Unpack(GenericEntityNode node, World world, Entity target)
     {
-        var transform = world.Get<TransformComponent>(target);
-        Console.WriteLine("Found spawn at " + transform.position);
-        world.Set(target, new PlayerSpawnComponent());
+        var entityDef = Game.FindEntityDefinition(node.EntityDefinition);
+
+        if (entityDef != null)
+        {
+            var transform = world.Get<TransformComponent>(target);
+
+            switch (entityDef.Name)
+            {
+                case "PlayerSpawn": {
+                    Console.WriteLine("Found spawn at " + transform.position);
+                    world.Set(target, new PlayerSpawnComponent());
+                    break;
+                }
+                case "Coin": {
+                    var coinTemplate = Game.Resources.Load<EntityTemplate>("content/entities/Coin.json");
+                    var coin = coinTemplate.Value.Unpack(world, null);
+                    world.Set(coin, transform);
+                    break;
+                }
+            }
+        }
     }
 }

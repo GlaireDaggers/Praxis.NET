@@ -39,6 +39,30 @@ public struct PhysicsMaterial
     public float bounceDamping;
 }
 
+public struct CollisionEnterMessage
+{
+    public Entity a;
+    public Entity b;
+}
+
+public struct CollisionExitMessage
+{
+    public Entity a;
+    public Entity b;
+}
+
+public struct TriggerEnterMessage
+{
+    public Entity a;
+    public Entity b;
+}
+
+public struct TriggerExitMessage
+{
+    public Entity a;
+    public Entity b;
+}
+
 [ExecuteBefore(typeof(CalculateTransformSystem))]
 [ExecuteBefore(typeof(PhysicsCleanupSystem))]
 public class PhysicsSystem : PraxisSystem
@@ -213,13 +237,15 @@ public class PhysicsSystem : PraxisSystem
         public bool AllowTest(CollidableReference collidable)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public bool AllowTest(CollidableReference collidable, int childIndex)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public void OnRayHit(in RayData ray, ref float maximumT, float t, System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
@@ -254,13 +280,15 @@ public class PhysicsSystem : PraxisSystem
         public bool AllowTest(CollidableReference collidable)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public bool AllowTest(CollidableReference collidable, int childIndex)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public void OnRayHit(in RayData ray, ref float maximumT, float t, System.Numerics.Vector3 normal, CollidableReference collidable, int childIndex)
@@ -300,13 +328,15 @@ public class PhysicsSystem : PraxisSystem
         public bool AllowTest(CollidableReference collidable)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public bool AllowTest(CollidableReference collidable, int childIndex)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public void OnHit(ref float maximumT, float t, System.Numerics.Vector3 hitLocation, System.Numerics.Vector3 hitNormal, CollidableReference collidable)
@@ -350,13 +380,15 @@ public class PhysicsSystem : PraxisSystem
         public bool AllowTest(CollidableReference collidable)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public bool AllowTest(CollidableReference collidable, int childIndex)
         {
             uint mask = collidable.Mobility == CollidableMobility.Static ? uint.MaxValue : _system._bodyMasks[collidable.BodyHandle];
-            return (_mask & mask) != 0;
+            bool isTrigger = collidable.Mobility != CollidableMobility.Static && _system._triggerSet.Contains(collidable.BodyHandle);
+            return (_mask & mask) != 0 && !isTrigger;
         }
 
         public void OnHit(ref float maximumT, float t, System.Numerics.Vector3 hitLocation, System.Numerics.Vector3 hitNormal, CollidableReference collidable)
@@ -401,23 +433,61 @@ public class PhysicsSystem : PraxisSystem
 
     struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
     {
+        private struct ContactPair : IEquatable<ContactPair>
+        {
+            public bool isTriggerA;
+            public bool isTriggerB;
+            public Entity a;
+            public Entity b;
+
+            public readonly bool Equals(ContactPair other)
+            {
+                return (a == other.a || a == other.b) && (b == other.a || b == other.b);
+            }
+
+            public override bool Equals(object? obj)
+            {
+                return obj is ContactPair pair && Equals(pair);
+            }
+
+            public override readonly int GetHashCode()
+            {
+                // note: we want to return a hash that's stable regardless of which order a and b are in
+                int hashA = (int)a.ID;
+                int hashB = (int)b.ID;
+                if (hashA < hashB) return HashCode.Combine(a, b);
+                else return HashCode.Combine(b, a);
+            }
+        }
+
         public PhysicsSystem system;
+
+        private readonly IndexableSet<ContactPair> contacts = new IndexableSet<ContactPair>();
+        private readonly IndexableSet<ContactPair> prevContacts = new IndexableSet<ContactPair>();
+
+        private int _flushTimer = 0;
 
         public NarrowPhaseCallbacks(PhysicsSystem system)
         {
             this.system = system;
+            system._endFrameCallbacks += FlushContacts;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
         {
-            if (a.Mobility != CollidableMobility.Dynamic && b.Mobility != CollidableMobility.Dynamic)
+            // don't generate contacts between static bodies
+            if (a.Mobility == CollidableMobility.Static && b.Mobility == CollidableMobility.Static)
                 return false;
 
             uint maskA = a.Mobility == CollidableMobility.Static ? uint.MaxValue : system._bodyMasks[a.BodyHandle];
             uint maskB = b.Mobility == CollidableMobility.Static ? uint.MaxValue : system._bodyMasks[b.BodyHandle];
 
-            return (maskA & maskB) != 0;
+            // don't generate contacts between triggers
+            bool triggerA = a.Mobility != CollidableMobility.Static && system._triggerSet.Contains(a.BodyHandle);
+            bool triggerB = b.Mobility != CollidableMobility.Static && system._triggerSet.Contains(b.BodyHandle);
+
+            return (maskA & maskB) != 0 && (!triggerA || !triggerB);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -429,17 +499,70 @@ public class PhysicsSystem : PraxisSystem
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool ConfigureContactManifold<TManifold>(int workerIndex, CollidablePair pair, ref TManifold manifold, out PairMaterialProperties pairMaterial) where TManifold : unmanaged, IContactManifold<TManifold>
         {
-            var matA = pair.A.Mobility == CollidableMobility.Static ? PhysicsMaterial.Default : system._bodyMaterials[pair.A.BodyHandle];
-            var matB = pair.B.Mobility == CollidableMobility.Static ? PhysicsMaterial.Default : system._bodyMaterials[pair.B.BodyHandle];
+            bool triggerA = pair.A.Mobility != CollidableMobility.Static && system._triggerSet.Contains(pair.A.BodyHandle);
+            bool triggerB = pair.B.Mobility != CollidableMobility.Static && system._triggerSet.Contains(pair.B.BodyHandle);
 
-            var freq = MathF.Max(matA.bounceFrequency, matB.bounceFrequency);
-            var damp = MathF.Min(matA.bounceDamping, matB.bounceDamping);
+            float depth = -1f;
 
-            pairMaterial.FrictionCoefficient = matA.friction * matB.friction;
-            pairMaterial.MaximumRecoveryVelocity = MathF.Max(matA.maxRecoveryVelocity, matB.maxRecoveryVelocity);
-            pairMaterial.SpringSettings = new SpringSettings(freq, damp);
-            
-            return true;
+            for (int i = 0; i < manifold.Count; i++)
+            {
+                depth = MathF.Max(depth, manifold.GetDepth(i));
+            }
+
+            // ignore speculative contacts, only generate events for contacts that have actually happened
+            if (depth >= 0f)
+            {
+                var entA = pair.A.Mobility == CollidableMobility.Static ? system._staticHandleToEntity[pair.A.StaticHandle] : system._bodyHandleToEntity[pair.A.BodyHandle];
+                var entB = pair.B.Mobility == CollidableMobility.Static ? system._staticHandleToEntity[pair.B.StaticHandle] : system._bodyHandleToEntity[pair.B.BodyHandle];
+
+                var cpair = new ContactPair
+                {
+                    a = entA,
+                    b = entB,
+                    isTriggerA = triggerA,
+                    isTriggerB = triggerB
+                };
+
+                if(contacts.Add(cpair))
+                {
+                    if (!prevContacts.Remove(cpair))
+                    {
+                        if (!triggerA && !triggerB)
+                        {
+                            system.CreateContact(cpair.a, cpair.b);
+                        }
+                        else if (triggerA)
+                        {
+                            system.CreateTriggerContact(cpair.a, cpair.b);
+                        }
+                        else if (triggerB)
+                        {
+                            system.CreateTriggerContact(cpair.b, cpair.a);
+                        }
+                    }
+                }
+            }
+
+            // only generate constraints if these aren't triggers and at least one of them is dynamic
+            if (!triggerA && !triggerB && (pair.A.Mobility == CollidableMobility.Dynamic || pair.B.Mobility == CollidableMobility.Dynamic))
+            {
+                var matA = pair.A.Mobility == CollidableMobility.Static ? PhysicsMaterial.Default : system._bodyMaterials[pair.A.BodyHandle];
+                var matB = pair.B.Mobility == CollidableMobility.Static ? PhysicsMaterial.Default : system._bodyMaterials[pair.B.BodyHandle];
+
+                var freq = MathF.Max(matA.bounceFrequency, matB.bounceFrequency);
+                var damp = MathF.Min(matA.bounceDamping, matB.bounceDamping);
+
+                pairMaterial.FrictionCoefficient = matA.friction * matB.friction;
+                pairMaterial.MaximumRecoveryVelocity = MathF.Max(matA.maxRecoveryVelocity, matB.maxRecoveryVelocity);
+                pairMaterial.SpringSettings = new SpringSettings(freq, damp);
+                
+                return true;
+            }
+            else
+            {
+                pairMaterial = new PairMaterialProperties();
+                return false;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -454,6 +577,45 @@ public class PhysicsSystem : PraxisSystem
 
         public void Initialize(Simulation simulation)
         {
+        }
+
+        public void FlushContacts()
+        {
+            // there's some kind of weird behavior where for a single frame every so often BEPU just reports no contacts at all,
+            // despite shapes very clearly intersecting. I'm hacking around it by just collecting contacts over two frames and *then*
+            // reporting them
+
+            _flushTimer++;
+
+            if (_flushTimer == 2)
+            {
+                _flushTimer = 0;
+
+                // if there are any pairs remaining in prevContacts, report each contact as ended
+                foreach (var contact in prevContacts.AsSpan)
+                {
+                    if (contact.isTriggerA)
+                    {
+                        system.RemoveTriggerContact(contact.a, contact.b);
+                    }
+                    else if (contact.isTriggerB)
+                    {
+                        system.RemoveTriggerContact(contact.b, contact.a);
+                    }
+                    else
+                    {
+                        system.RemoveContact(contact.a, contact.b);
+                    }
+                }
+
+                // move contacts from current frame to previous frame
+                prevContacts.Clear();
+                foreach (var contact in contacts.AsSpan)
+                {
+                    prevContacts.Add(contact);
+                }
+                contacts.Clear();
+            }
         }
     }
 
@@ -495,9 +657,12 @@ public class PhysicsSystem : PraxisSystem
     private IThreadDispatcher _threadDispatcher = new ThreadDispatcher(Environment.ProcessorCount);
     private Simulation _sim;
 
+    private event Action? _endFrameCallbacks;
+
     private Dictionary<BodyHandle, Entity> _bodyHandleToEntity = new Dictionary<BodyHandle, Entity>();
     private Dictionary<StaticHandle, Entity> _staticHandleToEntity = new Dictionary<StaticHandle, Entity>();
     private Dictionary<BodyHandle, PhysicsMaterial> _bodyMaterials = new Dictionary<BodyHandle, PhysicsMaterial>();
+    private HashSet<BodyHandle> _triggerSet = new HashSet<BodyHandle>();
     private Dictionary<BodyHandle, uint> _bodyMasks = new Dictionary<BodyHandle, uint>();
     private Dictionary<BodyHandle, Entity> _incomingConstraints = new Dictionary<BodyHandle, Entity>();
 
@@ -512,6 +677,11 @@ public class PhysicsSystem : PraxisSystem
     private Filter _initConstraintFilter;
     private Filter _updateBodyFilter;
     private Filter _updateConstraintFilter;
+
+    private Queue<CollisionEnterMessage> _collisionEnter = new Queue<CollisionEnterMessage>();
+    private Queue<CollisionExitMessage> _collisionExit = new Queue<CollisionExitMessage>();
+    private Queue<TriggerEnterMessage> _triggerEnter = new Queue<TriggerEnterMessage>();
+    private Queue<TriggerExitMessage> _triggerExit = new Queue<TriggerExitMessage>();
 
     public PhysicsSystem(WorldContext context) : base(context)
     {
@@ -605,6 +775,42 @@ public class PhysicsSystem : PraxisSystem
         foreach (var entity in _updateConstraintFilter.Entities)
         {
             UpdateConstraint(entity);
+        }
+
+        // end frame callbacks
+        _endFrameCallbacks?.Invoke();
+
+        // process queued collision messages
+        lock (_collisionEnter)
+        {
+            while(_collisionEnter.Count > 0)
+            {
+                World.Send(_collisionEnter.Dequeue());
+            }
+        }
+
+        lock (_collisionExit)
+        {
+            while(_collisionExit.Count > 0)
+            {
+                World.Send(_collisionExit.Dequeue());
+            }
+        }
+
+        lock (_triggerEnter)
+        {
+            while(_triggerEnter.Count > 0)
+            {
+                World.Send(_triggerEnter.Dequeue());
+            }
+        }
+
+        lock (_triggerExit)
+        {
+            while(_triggerExit.Count > 0)
+            {
+                World.Send(_triggerExit.Dequeue());
+            }
         }
     }
 
@@ -704,8 +910,13 @@ public class PhysicsSystem : PraxisSystem
         _bodyMasks[handle] = collisionMask;
     }
 
-    public void RegisterBody(in BodyHandle handle, in Entity owner, uint collisionMask, in PhysicsMaterial material)
+    public void RegisterBody(in BodyHandle handle, in Entity owner, uint collisionMask, bool isTrigger, in PhysicsMaterial material)
     {
+        if (isTrigger)
+        {
+            _triggerSet.Add(handle);
+        }
+
         _bodyHandleToEntity.Add(handle, owner);
         _bodyMaterials[handle] = material;
         _bodyMasks[handle] = collisionMask;
@@ -713,6 +924,7 @@ public class PhysicsSystem : PraxisSystem
 
     public void UnregisterBody(in BodyHandle handle)
     {
+        _triggerSet.Remove(handle);
         _bodyHandleToEntity.Remove(handle);
         _bodyMaterials.Remove(handle);
         _bodyMasks.Remove(handle);
@@ -792,6 +1004,11 @@ public class PhysicsSystem : PraxisSystem
             }
 
             body = _sim.Bodies.Add(BodyDescription.CreateDynamic(pose, inertia, shape, _sleepThreshold));
+        }
+
+        if (rigidbody.isTrigger)
+        {
+            _triggerSet.Add(body);
         }
 
         _bodyHandleToEntity.Add(body, entity);
@@ -926,6 +1143,7 @@ public class PhysicsSystem : PraxisSystem
 
     private void RemoveBody(BodyHandle body)
     {
+        _triggerSet.Remove(body);
         _bodyHandleToEntity.Remove(body);
         _bodyMaterials.Remove(body);
         _bodyMasks.Remove(body);
@@ -941,5 +1159,53 @@ public class PhysicsSystem : PraxisSystem
         }
 
         _sim.Bodies.Remove(body);
+    }
+
+    private void CreateTriggerContact(Entity a, Entity b)
+    {
+        lock (_triggerEnter)
+        {
+            _triggerEnter.Enqueue(new TriggerEnterMessage
+            {
+                a = a,
+                b = b
+            });
+        }
+    }
+
+    private void RemoveTriggerContact(Entity a, Entity b)
+    {
+        lock (_triggerExit)
+        {
+            _triggerExit.Enqueue(new TriggerExitMessage
+            {
+                a = a,
+                b = b
+            });
+        }
+    }
+
+    private void CreateContact(Entity a, Entity b)
+    {
+        lock (_collisionEnter)
+        {
+            _collisionEnter.Enqueue(new CollisionEnterMessage
+            {
+                a = a,
+                b = b
+            });
+        }
+    }
+
+    private void RemoveContact(Entity a, Entity b)
+    {
+        lock (_collisionExit)
+        {
+            _collisionExit.Enqueue(new CollisionExitMessage
+            {
+                a = a,
+                b = b
+            });
+        }
     }
 }
