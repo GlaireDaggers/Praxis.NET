@@ -1,11 +1,7 @@
 ﻿namespace Praxis.Core;
 
-using System.Runtime.CompilerServices;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using SharpGLTF.Schema2;
-
-using PrimitiveType = Microsoft.Xna.Framework.Graphics.PrimitiveType;
 
 /// <summary>
 /// Represents a hierarchy for skeletal animation

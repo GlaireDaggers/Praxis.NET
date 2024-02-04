@@ -9,10 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="SharpGLTF.Core" Version="1.0.0-alpha0030" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="ImGui/" />
   </ItemGroup>
 
