@@ -1,4 +1,5 @@
 ﻿using FontStashSharp.RichText;
+using Microsoft.Xna.Framework;
 using Praxis.Core;
 
 namespace PlatformerSample;
@@ -15,12 +16,16 @@ public class HudSystem : PraxisSystem
 
     public HudSystem(WorldContext context) : base(context)
     {
-        _uiCanvas = new Canvas();
+        _uiCanvas = new Canvas(Game);
         
         _score = new TextWidget
         {
-            top = Dimension.Pixels(8),
-            width = Dimension.Percent(1.0f),
+            id = "score",
+            anchorMin = new Vector2(0.5f, 0f),
+            anchorMax = new Vector2(0.5f, 0f),
+            anchoredPosition = new Vector2(0f, 8f),
+            sizeDelta = new Vector2(256f, 32f),
+            pivot = new Vector2(0.5f, 0f),
             wordWrap = false,
             font = Game.Resources.Load<Font>("content/font/RussoOne-Regular.ttf"),
             Text = "/esScore: /c[yellow]0",
