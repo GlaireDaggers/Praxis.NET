@@ -19,8 +19,8 @@ public class HudSystem : PraxisSystem
         
         _score = new TextWidget
         {
-            top = Unit.Pixels(8),
-            width = Unit.Percent(1.0f),
+            top = Dimension.Pixels(8),
+            width = Dimension.Percent(1.0f),
             wordWrap = false,
             font = Game.Resources.Load<Font>("content/font/RussoOne-Regular.ttf"),
             Text = "/esScore: /c[yellow]0",

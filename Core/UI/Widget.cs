@@ -12,12 +12,12 @@ public class Widget
 
     public bool clipChildren;
 
-    public Unit left;
-    public Unit top;
-    public Unit width;
-    public Unit height;
-    public Unit pivotX = Unit.Percent(0.5f);
-    public Unit pivotY = Unit.Percent(0.5f);
+    public Dimension left;
+    public Dimension top;
+    public Dimension width;
+    public Dimension height;
+    public Dimension pivotX = Dimension.Percent(0.5f);
+    public Dimension pivotY = Dimension.Percent(0.5f);
     public float rotation;
 
     public ReadOnlyCollection<Widget> Children => _childrenReadOnly;

@@ -7,10 +7,10 @@ public class Canvas : Widget
 {
     public Canvas() : base()
     {
-        left = Unit.Pixels(0);
-        top = Unit.Pixels(0);
-        width = Unit.Percent(1f);
-        height = Unit.Percent(1f);
+        left = Dimension.Pixels(0);
+        top = Dimension.Pixels(0);
+        width = Dimension.Percent(1f);
+        height = Dimension.Percent(1f);
     }
 
     public void DrawUI(UIRenderer renderer)
