@@ -5,6 +5,14 @@
 /// </summary>
 public class Canvas : Widget
 {
+    public Canvas() : base()
+    {
+        left = Unit.Pixels(0);
+        top = Unit.Pixels(0);
+        width = Unit.Percent(1f);
+        height = Unit.Percent(1f);
+    }
+
     public void DrawUI(UIRenderer renderer)
     {
         renderer.Begin();

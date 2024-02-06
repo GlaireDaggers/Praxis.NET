@@ -1,4 +1,5 @@
-﻿using Praxis.Core;
+﻿using FontStashSharp.RichText;
+using Praxis.Core;
 
 namespace PlatformerSample;
 
@@ -18,11 +19,13 @@ public class HudSystem : PraxisSystem
         
         _score = new TextWidget
         {
-            left = Unit.Pixels(8),
             top = Unit.Pixels(8),
+            width = Unit.Percent(1.0f),
+            wordWrap = false,
             font = Game.Resources.Load<Font>("content/font/RussoOne-Regular.ttf"),
-            text = "Score: 0",
+            Text = "/esScore: /c[yellow]0",
             size = 32,
+            alignment = TextHorizontalAlignment.Center
         };
         _uiCanvas.AddWidget(_score);
         _uiRenderer = new UIRenderer(Game.GraphicsDevice);
@@ -35,7 +38,7 @@ public class HudSystem : PraxisSystem
         foreach (var _ in World.GetMessages<PickupMessage>())
         {
             var stats = World.GetSingleton<PlayerStats>();
-            _score.text = $"Score: {stats.score}";
+            _score.Text = $"/esScore: /c[yellow]{stats.score}";
         }
 
         _uiCanvas.UpdateLayout(_uiRenderer);

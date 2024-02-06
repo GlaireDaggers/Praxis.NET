@@ -1,4 +1,5 @@
 ﻿using FontStashSharp;
+using FontStashSharp.RichText;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -144,12 +145,9 @@ public class UIRenderer : IDisposable
         _sb.Draw(texture, destRect, sourceRect, tint);
     }
 
-    public void DrawString(Font font, int fontSize, string text, Vector2 position, Color tint,
-        float characterSpacing = 0f, float lineSpacing = 0f, TextStyle textStyle = TextStyle.None,
-        FontSystemEffect effect = FontSystemEffect.None, int effectAmount = 0)
+    public void DrawString(RichTextLayout rtl, Vector2 position, Color tint, TextHorizontalAlignment alignment = TextHorizontalAlignment.Left)
     {
-        _sb.DrawString(font.GetFont(fontSize), text, position, tint, 0f, Vector2.Zero, null, 0f, characterSpacing,
-            lineSpacing, textStyle, effect, effectAmount);
+        rtl.Draw(_sb, position, tint, 0f, default, null, 0f, alignment);
     }
 
     public void Dispose()

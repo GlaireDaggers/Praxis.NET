@@ -15,6 +15,7 @@ using Microsoft.Xna.Framework.Input;
 using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework.Audio;
 using System.Runtime.CompilerServices;
+using FontStashSharp.RichText;
 
 /// <summary>
 /// Base class for a game running on the Praxis engine
@@ -290,6 +291,23 @@ public class PraxisGame : Game
             }
             return new Font(fontBytes);
         }, true);
+
+        // set up resolvers for rich text commands
+        RichTextDefaults.FontResolver = p =>
+        {
+            // Parse font name and size
+            var args = p.Split(',');
+            var fontName = args[0].Trim();
+            var fontSize = int.Parse(args[1].Trim());
+
+            var font = Resources.Load<Font>($"content/font/{fontName}");
+            return font.Value.GetFont(fontSize);
+        };
+
+        RichTextDefaults.ImageResolver = p =>
+        {
+            return new TextureFragment(Resources.Load<Texture2D>(p).Value);
+        };
 
         RegisterResourceType<Effect>();
         RegisterResourceType<Texture2D>();

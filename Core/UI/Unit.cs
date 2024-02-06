@@ -23,23 +23,24 @@ public struct Unit
 {
     public UnitType type;
     public float value;
+    public float offset;
 
     public static Unit Pixels(int pixels)
     {
         return new Unit { value = pixels, type = UnitType.Pixels };
     }
 
-    public static Unit Percent(float percent)
+    public static Unit Percent(float percent, int offsetPixels = 0)
     {
-        return new Unit { value = percent, type = UnitType.Percent };
+        return new Unit { value = percent, offset = offsetPixels, type = UnitType.Percent };
     }
 
     public readonly float Calculate(float relativeTo)
     {
         return type switch
         {
-            UnitType.Pixels => value,
-            UnitType.Percent => value * relativeTo,
+            UnitType.Pixels => value + offset,
+            UnitType.Percent => (value * relativeTo) + offset,
             _ => 0f,
         };
     }
