@@ -1,4 +1,5 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using OWB;
 using Praxis.Core;
 using Praxis.Core.ECS;
@@ -37,6 +38,7 @@ public class DefaultGameState : GameState, IGenericEntityHandler
         new SimpleCharacterMovementSystem(_context);
         new AnimationStateSystem(_context);
         new CameraFollowSystem(_context);
+        new HudSystem(_context);
 
         _scene = Game.LoadScene("content/levels/TestLevel.owblevel", _context.World, this);
 

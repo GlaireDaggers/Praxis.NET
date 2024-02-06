@@ -280,6 +280,17 @@ public class PraxisGame : Game
             return EntityTemplate.Deserialize(this, stream);
         }, false);
 
+        // font loader
+        Resources.RegisterFactory((stream) => {
+            byte[] fontBytes;
+            using (var memStream = new MemoryStream())
+            {
+                stream.CopyTo(memStream);
+                fontBytes = memStream.ToArray();
+            }
+            return new Font(fontBytes);
+        }, true);
+
         RegisterResourceType<Effect>();
         RegisterResourceType<Texture2D>();
         RegisterResourceType<TextureCube>();

@@ -6,6 +6,7 @@
     <ProjectReference Include="..\deps\ResourceCache\src\ResourceCache.FNA.Core\ResourceCache.FNA.Core.csproj" />
     <ProjectReference Include="..\deps\bepuphysicsv2\BepuPhysics\BepuPhysics.csproj" />
     <ProjectReference Include="..\deps\ImGui.NET\src\ImGui.NET\ImGui.NET.csproj" />
+    <ProjectReference Include="..\deps\FontStashSharp\src\XNA\FontStashSharp.FNA.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

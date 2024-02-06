@@ -3,6 +3,10 @@ using Praxis.Core.ECS;
 
 namespace PlatformerSample;
 
+public struct PickupMessage
+{
+}
+
 [ExecuteAfter(typeof(PhysicsSystem))]
 public class PickupSystem : PraxisSystem
 {
@@ -42,6 +46,7 @@ public class PickupSystem : PraxisSystem
                 {
                     entity = msg.a
                 });
+                World.Send(new PickupMessage());
             }
         }
     }

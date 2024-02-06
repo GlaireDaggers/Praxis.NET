@@ -16,3 +16,6 @@
 [submodule "deps/Open-World-Builder"]
 	path = deps/Open-World-Builder
 	url = git@github.com:GlaireDaggers/Open-World-Builder.git
+[submodule "deps/FontStashSharp"]
+	path = deps/FontStashSharp
+	url = git@github.com:FontStashSharp/FontStashSharp.git

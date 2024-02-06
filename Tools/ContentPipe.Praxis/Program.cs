@@ -36,6 +36,7 @@ public static class Program
         builder.AddRule("*.yaml", new CopyProcessor());
         builder.AddRule("*.json", new CopyProcessor());
         builder.AddRule("*.xml", new CopyProcessor());
+        builder.AddRule("*.ttf", new CopyProcessor());
         builder.AddRule("*.owbproject", new CopyProcessor());
         builder.AddRule("*.owblevel", new CopyProcessor());
 
