@@ -1,3 +1,4 @@
 <Canvas stylesheet="content/ui/styles.ss">
 	<TextWidget id="scoretext" anchorMin="0.5, 0" anchorMax="0.5, 0" anchoredPosition="0, 8" sizeDelta="256, 32" pivot="0.5, 0" text="/esScore: /c[yellow]0"/>
+	<ButtonWidget text="Click me!" anchoredPosition="8, 8" sizeDelta="180, 64"/>
 </Canvas>

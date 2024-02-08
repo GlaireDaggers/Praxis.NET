@@ -3,7 +3,7 @@
 	size: 32;
 }
 
-#scoretext {;
+#scoretext {
     wordWrap: false;
     horizontalAlign: center;
 }
