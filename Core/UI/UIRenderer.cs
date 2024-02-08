@@ -14,6 +14,9 @@ public class UIRenderer : IDisposable
 
     public readonly GraphicsDevice GraphicsDevice;
 
+    public int ScreenWidth => GraphicsDevice.PresentationParameters.BackBufferWidth;
+    public int ScreenHeight => GraphicsDevice.PresentationParameters.BackBufferHeight;
+
     private SpriteBatch _sb;
     private Matrix _activeMatrix = Matrix.Identity;
     private Stack<Matrix> _transformStack = new Stack<Matrix>();

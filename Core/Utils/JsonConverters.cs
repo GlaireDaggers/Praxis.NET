@@ -51,14 +51,18 @@ public class JsonRuntimeResourceConverter<T> : JsonConverter<RuntimeResource<T>>
 
 public class JsonVector2Converter : JsonConverter<Vector2>
 {
-    public override Vector2 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public static Vector2 Parse(string data)
     {
-        string data = reader.GetString()!;
         string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
         return new Vector2(
             float.Parse(v[0], CultureInfo.InvariantCulture),
             float.Parse(v[1], CultureInfo.InvariantCulture)
         );
+    }
+
+    public override Vector2 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
     }
 
     public override void Write(Utf8JsonWriter writer, Vector2 value, JsonSerializerOptions options)
@@ -69,15 +73,19 @@ public class JsonVector2Converter : JsonConverter<Vector2>
 
 public class JsonVector3Converter : JsonConverter<Vector3>
 {
-    public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public static Vector3 Parse(string data)
     {
-        string data = reader.GetString()!;
         string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
         return new Vector3(
             float.Parse(v[0], CultureInfo.InvariantCulture),
             float.Parse(v[1], CultureInfo.InvariantCulture),
             float.Parse(v[2], CultureInfo.InvariantCulture)
         );
+    }
+
+    public override Vector3 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
     }
 
     public override void Write(Utf8JsonWriter writer, Vector3 value, JsonSerializerOptions options)
@@ -88,9 +96,8 @@ public class JsonVector3Converter : JsonConverter<Vector3>
 
 public class JsonVector4Converter : JsonConverter<Vector4>
 {
-    public override Vector4 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public static Vector4 Parse(string data)
     {
-        string data = reader.GetString()!;
         string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
         return new Vector4(
             float.Parse(v[0], CultureInfo.InvariantCulture),
@@ -98,6 +105,11 @@ public class JsonVector4Converter : JsonConverter<Vector4>
             float.Parse(v[2], CultureInfo.InvariantCulture),
             float.Parse(v[3], CultureInfo.InvariantCulture)
         );
+    }
+    
+    public override Vector4 Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
     }
 
     public override void Write(Utf8JsonWriter writer, Vector4 value, JsonSerializerOptions options)
@@ -108,9 +120,8 @@ public class JsonVector4Converter : JsonConverter<Vector4>
 
 public class JsonQuaternionConverter : JsonConverter<Quaternion>
 {
-    public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public static Quaternion Parse(string data)
     {
-        string data = reader.GetString()!;
         string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
         return new Quaternion(
             float.Parse(v[0], CultureInfo.InvariantCulture),
@@ -118,6 +129,11 @@ public class JsonQuaternionConverter : JsonConverter<Quaternion>
             float.Parse(v[2], CultureInfo.InvariantCulture),
             float.Parse(v[3], CultureInfo.InvariantCulture)
         );
+    }
+
+    public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
     }
 
     public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
@@ -128,14 +144,18 @@ public class JsonQuaternionConverter : JsonConverter<Quaternion>
 
 public class JsonEulerConverter : JsonConverter<Quaternion>
 {
-    public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public static Quaternion Parse(string data)
     {
-        string data = reader.GetString()!;
         string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
         float x = float.Parse(v[0]);
         float y = float.Parse(v[1]);
         float z = float.Parse(v[2]);
         return Quaternion.CreateFromYawPitchRoll(MathHelper.ToRadians(y), MathHelper.ToRadians(x), MathHelper.ToRadians(z));
+    }
+
+    public override Quaternion Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
     }
 
     public override void Write(Utf8JsonWriter writer, Quaternion value, JsonSerializerOptions options)
@@ -146,9 +166,8 @@ public class JsonEulerConverter : JsonConverter<Quaternion>
 
 public class JsonColorConverter : JsonConverter<Color>
 {
-    public override Color Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public static Color Parse(string data)
     {
-        string data = reader.GetString()!;
         string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
         if (v.Length == 3)
         {
@@ -173,7 +192,62 @@ public class JsonColorConverter : JsonConverter<Color>
         }
     }
 
+    public override Color Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
+    }
+
     public override void Write(Utf8JsonWriter writer, Color value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class JsonRectConverter : JsonConverter<Rectangle>
+{
+    public static Rectangle Parse(string data)
+    {
+        string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
+        
+        return new Rectangle(
+            int.Parse(v[0], CultureInfo.InvariantCulture),
+            int.Parse(v[1], CultureInfo.InvariantCulture),
+            int.Parse(v[2], CultureInfo.InvariantCulture),
+            int.Parse(v[3], CultureInfo.InvariantCulture)
+        );
+    }
+
+    public override Rectangle Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
+    }
+
+    public override void Write(Utf8JsonWriter writer, Rectangle value, JsonSerializerOptions options)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class JsonMarginConverter : JsonConverter<Margins>
+{
+    public static Margins Parse(string data)
+    {
+        string[] v = data.Split(CultureInfo.InvariantCulture.TextInfo.ListSeparator.ToCharArray());
+        
+        return new Margins(
+            int.Parse(v[0], CultureInfo.InvariantCulture),
+            int.Parse(v[1], CultureInfo.InvariantCulture),
+            int.Parse(v[2], CultureInfo.InvariantCulture),
+            int.Parse(v[3], CultureInfo.InvariantCulture)
+        );
+    }
+    
+    public override Margins Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        return Parse(reader.GetString()!);
+    }
+
+    public override void Write(Utf8JsonWriter writer, Margins value, JsonSerializerOptions options)
     {
         throw new NotImplementedException();
     }

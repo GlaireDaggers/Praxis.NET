@@ -1,4 +1,4 @@
-﻿using ImGuiNET;
+﻿using System.Xml;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
@@ -7,18 +7,44 @@ namespace Praxis.Core;
 /// <summary>
 /// Root container of widgets to be drawn to the screen
 /// </summary>
-public class Canvas : Widget
+public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : Widget()
 {
-    public readonly PraxisGame Game;
+    public static Canvas Load(PraxisGame game, XmlDocument xml)
+    {
+        if (xml.ChildNodes.Count != 1)
+        {
+            throw new FormatException("UI document has invalid number of root nodes (expected 1)");
+        }
+
+        var root = xml.FirstChild!;
+
+        if (root.Name != "Canvas")
+        {
+            throw new FormatException("UI document has invalid root node (expected Canvas)");
+        }
+
+        string stylesheetPath = root.Attributes!["stylesheet"]!.Value;
+
+        Canvas canvas = new(game, game.Resources.Load<Stylesheet>(stylesheetPath));
+        canvas.Deserialize(game, root);
+
+        foreach (var child in root.ChildNodes.Cast<XmlNode>())
+        {
+            if (child.Name == "#comment") continue;
+                
+            Widget childWidget = Load(game, child);
+            canvas.AddWidget(childWidget);
+        }
+
+        return canvas;
+    }
+
+    public readonly PraxisGame Game = game;
+    public readonly RuntimeResource<Stylesheet> Styles = stylesheet;
 
     private Widget? _currentHover = null;
     private Widget? _mouseDown = null;
     private Widget? _focusedWidget = null;
-
-    public Canvas(PraxisGame game) : base()
-    {
-        Game = game;
-    }
 
     public void DrawUI(UIRenderer renderer)
     {
@@ -29,8 +55,8 @@ public class Canvas : Widget
 
     public override void UpdateLayout(UIRenderer renderer)
     {
-        int screenWidth = renderer.GraphicsDevice.PresentationParameters.BackBufferWidth;
-        int screenHeight = renderer.GraphicsDevice.PresentationParameters.BackBufferHeight;
+        int screenWidth = renderer.ScreenWidth;
+        int screenHeight = renderer.ScreenHeight;
 
         // calculate dimensions (Canvas does not respect anchor settings)
         _cachedRect.X = 0;
@@ -67,7 +93,7 @@ public class Canvas : Widget
         }
         else if (Game.CurrentMouseState.LeftButton == ButtonState.Released && Game.PreviousMouseState.LeftButton == ButtonState.Pressed)
         {
-            _mouseDown?.HandleMouseDown();
+            _mouseDown?.HandleMouseUp();
             if (_mouseDown == _currentHover)
             {
                 _mouseDown?.HandleClick();

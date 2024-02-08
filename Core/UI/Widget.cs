@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Xml;
 using Microsoft.Xna.Framework;
 
 namespace Praxis.Core;
@@ -12,14 +13,72 @@ public delegate void FocusGainedHandler();
 public delegate void FocusLostHandler();
 
 /// <summary>
+/// Enumeration of visual states for a widget
+/// </summary>
+public enum WidgetState
+{
+    Default,
+    Hovered,
+    Pressed,
+    Focused
+}
+
+/// <summary>
 /// Base class for all UI widgets
 /// </summary>
 public class Widget
 {
-    public string? id;
+    private static Dictionary<string, Type> _widgetTypes = [];
 
-    public Widget? Root { get; private set; }
+    static Widget()
+    {
+        // build a list of types derived from Widget
+        foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            foreach (var type in asm.GetTypes())
+            {
+                if (type.IsAssignableTo(typeof(Widget)))
+                {
+                    _widgetTypes.Add(type.Name, type);
+                }
+            }
+        }
+    }
+
+    public static Widget Load(PraxisGame game, XmlNode node)
+    {
+        if (node.Name == "Template")
+        {
+            string src = node.Attributes!["src"]!.Value;
+            Widget widget = Load(game, game.Resources.Load<XmlDocument>(src).Value.FirstChild!);
+            widget.Deserialize(game, node);
+            return widget;
+        }
+        else
+        {
+            Type widgetType = _widgetTypes[node.Name];
+            Widget widget = (Activator.CreateInstance(widgetType) as Widget)!;
+            widget.Deserialize(game, node);
+            foreach (var child in node.ChildNodes.Cast<XmlNode>())
+            {
+                if (child.Name == "#comment") continue;
+                
+                Widget childWidget = Load(game, child);
+                widget.AddWidget(childWidget);
+            }
+            return widget;
+        }
+    }
+
+    public string? id;
+    public HashSet<string> tags = [];
+
+    public Canvas? Root { get; private set; }
     public Widget? Parent { get; private set; }
+
+    public WidgetState VisualState { get; private set; } = WidgetState.Default;
+
+    public readonly Style WidgetStyle = new();
 
     public event MouseEnterHandler? OnMouseEnter;
     public event MouseExitHandler? OnMouseExit;
@@ -43,6 +102,10 @@ public class Widget
 
     public ReadOnlyCollection<Widget> Children => _childrenReadOnly;
 
+    private bool _isHover = false;
+    private bool _isFocus = false;
+    private bool _isPress = false;
+
     internal Rectangle _cachedRect;
     private List<Widget> _children = new List<Widget>();
     private ReadOnlyCollection<Widget> _childrenReadOnly;
@@ -50,6 +113,96 @@ public class Widget
     public Widget()
     {
         _childrenReadOnly = _children.AsReadOnly();
+    }
+
+    public Widget? FindById(string id)
+    {
+        if (this.id == id) return this;
+
+        foreach (var child in Children)
+        {
+            return child.FindById(id);
+        }
+
+        return null;
+    }
+
+    public Widget? FindWithTag(string tag)
+    {
+        if (tags.Contains(tag)) return this;
+
+        foreach (var child in Children)
+        {
+            return child.FindWithTag(tag);
+        }
+
+        return null;
+    }
+
+    public void FindAllWithTag(string tag, List<Widget> results)
+    {
+        if (tags.Contains(tag)) results.Add(this);
+
+        foreach (var child in Children)
+        {
+            child.FindAllWithTag(tag, results);
+        }
+    }
+
+    public virtual void Deserialize(PraxisGame game, XmlNode node)
+    {
+        if (node.Attributes?["id"] is XmlAttribute id)
+        {
+            this.id = id.Value;
+        }
+
+        if (node.Attributes?["tags"] is XmlAttribute tags)
+        {
+            foreach (var tag in tags.Value.Split(','))
+            {
+                this.tags.Add(tag);
+            }
+        }
+
+        if (node.Attributes?["anchorMin"] is XmlAttribute anchorMin)
+        {
+            this.anchorMin = JsonVector2Converter.Parse(anchorMin.Value);
+        }
+
+        if (node.Attributes?["anchorMax"] is XmlAttribute anchorMax)
+        {
+            this.anchorMax = JsonVector2Converter.Parse(anchorMax.Value);
+        }
+
+        if (node.Attributes?["anchoredPosition"] is XmlAttribute anchoredPosition)
+        {
+            this.anchoredPosition = JsonVector2Converter.Parse(anchoredPosition.Value);
+        }
+
+        if (node.Attributes?["sizeDelta"] is XmlAttribute sizeDelta)
+        {
+            this.sizeDelta = JsonVector2Converter.Parse(sizeDelta.Value);
+        }
+
+        if (node.Attributes?["offsetMin"] is XmlAttribute offsetMin)
+        {
+            this.offsetMin = JsonVector2Converter.Parse(offsetMin.Value);
+        }
+
+        if (node.Attributes?["offsetMax"] is XmlAttribute offsetMax)
+        {
+            this.offsetMax = JsonVector2Converter.Parse(offsetMax.Value);
+        }
+
+        if (node.Attributes?["pivot"] is XmlAttribute pivot)
+        {
+            this.pivot = JsonVector2Converter.Parse(pivot.Value);
+        }
+
+        if (node.Attributes?["rotation"] is XmlAttribute rotation)
+        {
+            this.rotation = float.Parse(rotation.Value);
+        }
     }
 
     public virtual void UpdateLayout(UIRenderer renderer)
@@ -78,6 +231,12 @@ public class Widget
         {
             child.UpdateLayout(renderer);
         }
+    }
+
+    private void UpdateStyle(Stylesheet sheet)
+    {
+        sheet.Apply(this);
+        OnStyleUpdated();
     }
 
     protected virtual void Draw(UIRenderer renderer, Rectangle rect)
@@ -125,7 +284,7 @@ public class Widget
 
         _children.Add(widget);
         widget.Parent = this;
-        widget.Root = GetRoot();
+        widget.UpdateRoot();
     }
 
     public void RemoveWidget(Widget widget)
@@ -134,7 +293,7 @@ public class Widget
 
         _children.Remove(widget);
         widget.Parent = null;
-        widget.Root = null;
+        widget.UpdateRoot();
     }
 
     public Widget? GetWidgetAtPos(Vector2 pos)
@@ -142,39 +301,89 @@ public class Widget
         return GetWidgetAtPosInternal(pos, GetParentTransform());
     }
 
-    public void HandleMouseEnter()
+    public virtual void HandleMouseEnter()
     {
+        _isHover = true;
+        UpdateState();
         OnMouseEnter?.Invoke();
     }
 
-    public void HandleMouseExit()
+    public virtual void HandleMouseExit()
     {
+        _isHover = false;
+        UpdateState();
         OnMouseExit?.Invoke();
     }
 
-    public void HandleMouseDown()
+    public virtual void HandleMouseDown()
     {
+        _isPress = true;
+        UpdateState();
         OnMouseDown?.Invoke();
     }
 
-    public void HandleMouseUp()
+    public virtual void HandleMouseUp()
     {
+        _isPress = false;
+        UpdateState();
         OnMouseUp?.Invoke();
     }
 
-    public void HandleClick()
+    public virtual void HandleClick()
     {
         OnClick?.Invoke();
     }
 
-    public void HandleFocusGained()
+    public virtual void HandleFocusGained()
     {
+        _isFocus = true;
+        UpdateState();
         OnFocusGained?.Invoke();
     }
 
-    public void HandleFocusLost()
+    public virtual void HandleFocusLost()
     {
+        _isFocus = false;
+        UpdateState();
         OnFocusLost?.Invoke();
+    }
+
+    protected virtual void OnStyleUpdated()
+    {
+    }
+
+    private void UpdateState()
+    {
+        if (_isPress)
+        {
+            VisualState = WidgetState.Pressed;
+        }
+        else if (_isHover)
+        {
+            VisualState = WidgetState.Hovered;
+        }
+        else if (_isFocus)
+        {
+            VisualState = WidgetState.Focused;
+        }
+        else
+        {
+            VisualState = WidgetState.Default;
+        }
+        UpdateStyle(Root!.Styles.Value);
+    }
+
+    private void UpdateRoot()
+    {
+        Root = GetRoot() as Canvas;
+        if (Root != null)
+        {
+            UpdateStyle(Root.Styles.Value);
+        }
+        foreach (var child in Children)
+        {
+            child.UpdateRoot();
+        }
     }
 
     private Widget GetRoot()
@@ -240,7 +449,7 @@ public class Widget
         }
 
         // if cursor doesn't reside within any children, but lies within our bounds, return self
-        if (testSelf)
+        if (testSelf && interactive)
         {
             atPos ??= this;
         }

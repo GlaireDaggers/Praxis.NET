@@ -16,6 +16,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Xna.Framework.Audio;
 using System.Runtime.CompilerServices;
 using FontStashSharp.RichText;
+using System.Xml;
 
 /// <summary>
 /// Base class for a game running on the Praxis engine
@@ -281,6 +282,18 @@ public class PraxisGame : Game
             return EntityTemplate.Deserialize(this, stream);
         }, false);
 
+        // stylesheet loader
+        Resources.RegisterFactory((stream) => {
+            using (var reader = new StreamReader(stream))
+            {
+                string css = reader.ReadToEnd();
+                Stylesheet styles = new Stylesheet();
+                styles.Read(this, css);
+
+                return styles;
+            }
+        }, false);
+
         // font loader
         Resources.RegisterFactory((stream) => {
             byte[] fontBytes;
@@ -290,6 +303,13 @@ public class PraxisGame : Game
                 fontBytes = memStream.ToArray();
             }
             return new Font(fontBytes);
+        }, true);
+
+        // xml loader
+        Resources.RegisterFactory((stream) => {
+            XmlDocument doc = new();
+            doc.Load(stream);
+            return doc;
         }, true);
 
         // set up resolvers for rich text commands
@@ -316,6 +336,9 @@ public class PraxisGame : Game
         RegisterResourceType<Material>();
         RegisterResourceType<Model>();
         RegisterResourceType<EntityTemplate>();
+        RegisterResourceType<Stylesheet>();
+        RegisterResourceType<Font>();
+        RegisterResourceType<XmlDocument>();
 
         // let subclasses perform initialization
         Init();
