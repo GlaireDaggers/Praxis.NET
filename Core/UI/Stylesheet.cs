@@ -76,9 +76,6 @@ public partial class Stylesheet
                                 {
                                     switch (selector.Value)
                                     {
-                                        case ":default":
-                                            subSelectors.Add(new StateSelector(WidgetState.Default));
-                                            break;
                                         case ":hover":
                                             subSelectors.Add(new StateSelector(WidgetState.Hovered));
                                             break;
@@ -87,6 +84,9 @@ public partial class Stylesheet
                                             break;
                                         case ":focus":
                                             subSelectors.Add(new StateSelector(WidgetState.Focused));
+                                            break;
+                                        case ":checked":
+                                            subSelectors.Add(new StateSelector(WidgetState.Checked));
                                             break;
                                         default:
                                             Console.WriteLine("Unrecognized state selector: " + selector.Value);

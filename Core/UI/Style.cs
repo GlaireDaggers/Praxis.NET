@@ -21,6 +21,21 @@ public class Style
     public Rectangle? SourceRectangle { get; set; }
     public Margins? Slices { get; set; }
 
+    public void Clear()
+    {
+        Padding = null;
+        ImageColor = null;
+        TextColor = null;
+        Font = null;
+        Size = null;
+        WordWrap = null;
+        HorizontalAlign = null;
+        VerticalAlign = null;
+        Image = null;
+        SourceRectangle = null;
+        Slices = null;
+    }
+
     public void Apply(Style other)
     {
         Padding = other.Padding ?? Padding;

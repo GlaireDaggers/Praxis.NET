@@ -90,7 +90,7 @@ public class StateSelector : IStyleSelector
 
     public bool MatchWidget(Widget widget)
     {
-        return widget.VisualState == state;
+        return widget.VisualState.HasFlag(state);
     }
 }
 

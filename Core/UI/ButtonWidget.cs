@@ -7,32 +7,18 @@ public class ButtonWidget : Widget
 {
     public string Text
     {
-        get => _text.Text;
+        get => _textElement.Text;
         set
         {
-            _text.Text = value;
+            _textElement.Text = value;
         }
     }
 
-    private TextWidget _text;
-    private ImageWidget _image;
+    private readonly TextElement _textElement = new();
+    private readonly ImageElement _imageElement = new();
 
     public ButtonWidget() : base()
     {
-        _text = new TextWidget()
-        {
-            anchorMin = Vector2.Zero,
-            anchorMax = Vector2.One
-        };
-        _image = new ImageWidget()
-        {
-            anchorMin = Vector2.Zero,
-            anchorMax = Vector2.One
-        };
-
-        AddWidget(_image);
-        AddWidget(_text);
-
         interactive = true;
     }
 
@@ -46,10 +32,10 @@ public class ButtonWidget : Widget
         }
     }
 
-    protected override void OnStyleUpdated()
+    protected override void Draw(UIRenderer renderer, Rectangle rect)
     {
-        base.OnStyleUpdated();
-        _text.WidgetStyle.Apply(WidgetStyle);
-        _image.WidgetStyle.Apply(WidgetStyle);
+        base.Draw(renderer, rect);
+        _imageElement.Draw(WidgetStyle, renderer, rect);
+        _textElement.Draw(WidgetStyle, renderer, rect);
     }
 }

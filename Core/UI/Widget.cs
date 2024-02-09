@@ -15,12 +15,14 @@ public delegate void FocusLostHandler();
 /// <summary>
 /// Enumeration of visual states for a widget
 /// </summary>
+[Flags]
 public enum WidgetState
 {
-    Default,
-    Hovered,
-    Pressed,
-    Focused
+    Default = 0,
+    Hovered = 1,
+    Pressed = 2,
+    Focused = 4,
+    Checked = 8,
 }
 
 /// <summary>
@@ -62,7 +64,7 @@ public class Widget
             foreach (var child in node.ChildNodes.Cast<XmlNode>())
             {
                 if (child.Name == "#comment") continue;
-                
+
                 Widget childWidget = Load(game, child);
                 widget.AddWidget(childWidget);
             }
@@ -76,7 +78,18 @@ public class Widget
     public Canvas? Root { get; private set; }
     public Widget? Parent { get; private set; }
 
-    public WidgetState VisualState { get; private set; } = WidgetState.Default;
+    public virtual WidgetState VisualState
+    {
+        get
+        {
+            WidgetState state = WidgetState.Default;
+            if (_isPress) state |= WidgetState.Pressed;
+            if (_isHover) state |= WidgetState.Hovered;
+            if (_isFocus) state |= WidgetState.Focused;
+
+            return state;
+        }
+    }
 
     public readonly Style WidgetStyle = new();
 
@@ -235,6 +248,7 @@ public class Widget
 
     private void UpdateStyle(Stylesheet sheet)
     {
+        WidgetStyle.Clear();
         sheet.Apply(this);
         OnStyleUpdated();
     }
@@ -304,28 +318,28 @@ public class Widget
     public virtual void HandleMouseEnter()
     {
         _isHover = true;
-        UpdateState();
+        UpdateStyle();
         OnMouseEnter?.Invoke();
     }
 
     public virtual void HandleMouseExit()
     {
         _isHover = false;
-        UpdateState();
+        UpdateStyle();
         OnMouseExit?.Invoke();
     }
 
     public virtual void HandleMouseDown()
     {
         _isPress = true;
-        UpdateState();
+        UpdateStyle();
         OnMouseDown?.Invoke();
     }
 
     public virtual void HandleMouseUp()
     {
         _isPress = false;
-        UpdateState();
+        UpdateStyle();
         OnMouseUp?.Invoke();
     }
 
@@ -337,40 +351,24 @@ public class Widget
     public virtual void HandleFocusGained()
     {
         _isFocus = true;
-        UpdateState();
+        UpdateStyle();
         OnFocusGained?.Invoke();
     }
 
     public virtual void HandleFocusLost()
     {
         _isFocus = false;
-        UpdateState();
+        UpdateStyle();
         OnFocusLost?.Invoke();
+    }
+
+    public void UpdateStyle()
+    {
+        UpdateStyle(Root!.Styles.Value);
     }
 
     protected virtual void OnStyleUpdated()
     {
-    }
-
-    private void UpdateState()
-    {
-        if (_isPress)
-        {
-            VisualState = WidgetState.Pressed;
-        }
-        else if (_isHover)
-        {
-            VisualState = WidgetState.Hovered;
-        }
-        else if (_isFocus)
-        {
-            VisualState = WidgetState.Focused;
-        }
-        else
-        {
-            VisualState = WidgetState.Default;
-        }
-        UpdateStyle(Root!.Styles.Value);
     }
 
     private void UpdateRoot()
