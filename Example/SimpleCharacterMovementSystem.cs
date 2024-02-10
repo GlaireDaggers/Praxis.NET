@@ -143,7 +143,7 @@ public class SimpleCharacterMovementSystem : PraxisSystem
             var flags = stateComp.characterController.Move(stateComp.velocity, deltaTime);
             transformComp.position = stateComp.characterController.Position;
 
-            if (flags.HasFlag(CharacterCollisionFlags.CollideBelow) && stateComp.velocity.Y < 0f)
+            if (flags.HasFlags(CharacterCollisionFlags.CollideBelow) && stateComp.velocity.Y < 0f)
             {
                 stateComp.velocity.Y = -1f;
             }

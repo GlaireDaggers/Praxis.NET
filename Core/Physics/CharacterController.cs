@@ -15,6 +15,14 @@ public enum CharacterCollisionFlags
     CollideBelow = 4
 }
 
+public static class CharacterCollisionFlagsExt
+{
+    public static bool HasFlags(this CharacterCollisionFlags self, CharacterCollisionFlags flags)
+    {
+        return ((int)self & (int)flags) != 0;
+    }
+}
+
 /// <summary>
 /// Instance of a CharacterController which can perform collide-and-slide collision
 /// </summary>
