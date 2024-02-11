@@ -74,14 +74,17 @@ public class Widget
 
     public string? id;
     public HashSet<string> tags = [];
+    public bool inheritVisualState = false;
 
     public Canvas? Root { get; private set; }
     public Widget? Parent { get; private set; }
 
-    public virtual WidgetState VisualState
+    public WidgetState VisualState
     {
         get
         {
+            if (inheritVisualState && Parent != null) return Parent.VisualState;
+
             WidgetState state = WidgetState.Default;
             if (_isPress) state |= WidgetState.Pressed;
             if (_isHover) state |= WidgetState.Hovered;
@@ -255,6 +258,21 @@ public class Widget
 
     protected virtual void Draw(UIRenderer renderer, Rectangle rect)
     {
+        if (clipChildren)
+        {
+            renderer.PushClipRect(rect);
+        }
+
+        // draw children
+        foreach (var child in _children)
+        {
+            child.DrawInternal(renderer);
+        }
+
+        if (clipChildren)
+        {
+            renderer.PopClipRect();
+        }
     }
 
     internal void DrawInternal(UIRenderer renderer)
@@ -271,22 +289,6 @@ public class Widget
 
         // draw self
         Draw(renderer, drawRect);
-
-        if (clipChildren)
-        {
-            renderer.PushClipRect(drawRect);
-        }
-
-        // draw children
-        foreach (var child in _children)
-        {
-            child.DrawInternal(renderer);
-        }
-
-        if (clipChildren)
-        {
-            renderer.PopClipRect();
-        }
 
         // pop transform
         renderer.PopMatrix();
@@ -374,13 +376,13 @@ public class Widget
     private void UpdateRoot()
     {
         Root = GetRoot() as Canvas;
-        if (Root != null)
-        {
-            UpdateStyle(Root.Styles.Value);
-        }
         foreach (var child in Children)
         {
             child.UpdateRoot();
+        }
+        if (Root != null)
+        {
+            UpdateStyle(Root.Styles.Value);
         }
     }
 
@@ -443,7 +445,7 @@ public class Widget
         Widget? atPos = null;
         foreach (var child in _children)
         {
-            atPos ??= child.GetWidgetAtPosInternal(pos, curTransform);
+            atPos = child.GetWidgetAtPosInternal(pos, curTransform) ?? atPos;
         }
 
         // if cursor doesn't reside within any children, but lies within our bounds, return self

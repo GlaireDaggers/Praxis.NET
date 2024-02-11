@@ -23,24 +23,6 @@ public class EverythingSelector : IStyleSelector
 }
 
 /// <summary>
-/// A selector which matches on widget type
-/// </summary>
-public class TypeSelector : IStyleSelector
-{
-    public string type;
-
-    public TypeSelector(string type)
-    {
-        this.type = type;
-    }
-
-    public bool MatchWidget(Widget widget)
-    {
-        return widget.GetType().Name == type;
-    }
-}
-
-/// <summary>
 /// A selector which matches on widget ID
 /// </summary>
 public class IdSelector : IStyleSelector
@@ -90,7 +72,9 @@ public class StateSelector : IStyleSelector
 
     public bool MatchWidget(Widget widget)
     {
-        return widget.VisualState.HasFlag(state);
+        // return widget.VisualState.HasFlag(state);
+        // Enum.HasFlag boxes. go figure.
+        return ((int)widget.VisualState & (int)state) != 0;
     }
 }
 

@@ -8,7 +8,7 @@
     horizontalAlign: center;
 }
 
-ButtonWidget {
+.button {
     image: content/image/blue_panel.dds;
     slices: 10, 10, 10, 10;
     imageColor: 190, 190, 190, 255;
@@ -17,11 +17,21 @@ ButtonWidget {
     verticalAlign: center;
 }
 
-ButtonWidget:hover {
+.button:hover {
     imageColor: 255, 255, 255, 255;
     textColor: 255, 255, 0, 255;
 }
 
-ButtonWidget:press {
+.button:press {
     imageColor: 128, 128, 128, 255;
+}
+
+.input {
+    image: content/image/blue_panel.dds;
+    slices: 10, 10, 10, 10;
+    verticalAlign: center;
+}
+
+.input-text {
+    padding: 8, 4, 8, 4;
 }

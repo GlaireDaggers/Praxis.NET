@@ -7,18 +7,32 @@ public class ButtonWidget : Widget
 {
     public string Text
     {
-        get => _textElement.Text;
+        get => _textWidget.Text;
         set
         {
-            _textElement.Text = value;
+            _textWidget.Text = value;
         }
     }
 
-    private readonly TextElement _textElement = new();
-    private readonly ImageElement _imageElement = new();
+    private readonly TextWidget _textWidget = new()
+    {
+        inheritVisualState = true,
+        tags = [ "button", "button-text" ],
+        anchorMax = Vector2.One
+    };
+
+    private readonly ImageWidget _imageWidget = new()
+    {
+        inheritVisualState = true,
+        tags = [ "button", "button-bg" ],
+        anchorMax = Vector2.One
+    };
 
     public ButtonWidget() : base()
     {
+        tags = [ "input" ];
+        AddWidget(_imageWidget);
+        AddWidget(_textWidget);
         interactive = true;
     }
 
@@ -32,10 +46,10 @@ public class ButtonWidget : Widget
         }
     }
 
-    protected override void Draw(UIRenderer renderer, Rectangle rect)
+    protected override void OnStyleUpdated()
     {
-        base.Draw(renderer, rect);
-        _imageElement.Draw(WidgetStyle, renderer, rect);
-        _textElement.Draw(WidgetStyle, renderer, rect);
+        base.OnStyleUpdated();
+        _textWidget.UpdateStyle();
+        _imageWidget.UpdateStyle();
     }
 }

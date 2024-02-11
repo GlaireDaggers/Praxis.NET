@@ -27,12 +27,17 @@ public class UIRenderer : IDisposable
     private DepthStencilState[] _childDsState;
 
     private Texture2D _dummy;
+    private Texture2D _dummy2;
 
     public UIRenderer(GraphicsDevice graphicsDevice)
     {
         _sb = new SpriteBatch(graphicsDevice);
+        
         _dummy = new Texture2D(graphicsDevice, 1, 1);
         _dummy.SetData([new Color(0, 0, 0, 0)]);
+
+        _dummy2 = new Texture2D(graphicsDevice, 1, 1);
+        _dummy2.SetData([new Color(255, 255, 255, 255)]);
 
         GraphicsDevice = graphicsDevice;
 
@@ -141,6 +146,11 @@ public class UIRenderer : IDisposable
         _currentDsState = _childDsState[_activeClipLevel];
         _sb.End();
         BeginBatch();
+    }
+
+    public void DrawRect(Rectangle destRect, Color tint)
+    {
+        _sb.Draw(_dummy2, destRect, tint);
     }
 
     public void Draw(Texture2D texture, Rectangle destRect, Rectangle? sourceRect, Color tint)

@@ -95,7 +95,7 @@ public partial class Stylesheet
                                 }
                                 else
                                 {
-                                    subSelectors.Add(new TypeSelector(selector.Value));
+                                    Console.WriteLine("Unrecognized selector syntax: " + selector.Value);
                                 }
                             }
                         }
