@@ -45,6 +45,8 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
     public readonly PraxisGame Game = game;
     public readonly RuntimeResource<Stylesheet> Styles = stylesheet;
 
+    public Widget? FocusedWidget => _focusedWidget;
+
     private Widget? _currentHover = null;
     private Widget? _mouseDown = null;
     private Widget? _focusedWidget = null;

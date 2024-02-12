@@ -104,6 +104,13 @@ public class SimpleCharacterMovementSystem : PraxisSystem
     {
         base.Update(deltaTime);
 
+        bool inputEnabled = true;
+
+        if (World.HasSingleton<GuiInfo>())
+        {
+            inputEnabled = World.GetSingleton<GuiInfo>().inputEnabled;
+        }
+
         // initialize characters
         foreach (var entity in _initFilter.Entities)
         {
@@ -148,34 +155,37 @@ public class SimpleCharacterMovementSystem : PraxisSystem
                 stateComp.characterController.MaxSlope = characterComp.maxSlope;
             }
 
-            Vector3 inputDir;
+            Vector3 inputDir = Vector3.Zero;
 
-            if (_cameraFilter.Count > 0)
+            if (inputEnabled)
             {
-                var camera = _cameraFilter.FirstEntity;
-                var camTransform = World.Get<TransformComponent>(camera);
-                var rotMatrix = Matrix.CreateFromQuaternion(camTransform.rotation);
-                var fwd = Vector3.TransformNormal(-Vector3.UnitZ, rotMatrix);
-                fwd.Y = 0f;
-                fwd = Vector3.Normalize(fwd);
-                var right = Vector3.TransformNormal(Vector3.UnitX, rotMatrix);
-                right.Y = 0f;
-                right = Vector3.Normalize(right);
+                if (_cameraFilter.Count > 0)
+                {
+                    var camera = _cameraFilter.FirstEntity;
+                    var camTransform = World.Get<TransformComponent>(camera);
+                    var rotMatrix = Matrix.CreateFromQuaternion(camTransform.rotation);
+                    var fwd = Vector3.TransformNormal(-Vector3.UnitZ, rotMatrix);
+                    fwd.Y = 0f;
+                    fwd = Vector3.Normalize(fwd);
+                    var right = Vector3.TransformNormal(Vector3.UnitX, rotMatrix);
+                    right.Y = 0f;
+                    right = Vector3.Normalize(right);
 
-                inputDir = (fwd * Game.Input.GetAxis("Move Y")) + (right * Game.Input.GetAxis("Move X"));
-            }
-            else
-            {
-                inputDir = new Vector3(Game.Input.GetAxis("Move X"), 0f, -Game.Input.GetAxis("Move Y"));
+                    inputDir = (fwd * Game.Input.GetAxis("Move Y")) + (right * Game.Input.GetAxis("Move X"));
+                }
+                else
+                {
+                    inputDir = new Vector3(Game.Input.GetAxis("Move X"), 0f, -Game.Input.GetAxis("Move Y"));
+                }
+                
+                if (stateComp.grounded && Game.Input.GetButton("Jump") == ButtonPhase.Pressed)
+                {
+                    stateComp.velocity.Y = characterComp.jumpForce;
+                }
             }
 
             stateComp.velocity.X = inputDir.X * characterComp.moveSpeed;
             stateComp.velocity.Z = inputDir.Z * characterComp.moveSpeed;
-
-            if (stateComp.grounded && Game.Input.GetButton("Jump") == ButtonPhase.Pressed)
-            {
-                stateComp.velocity.Y = characterComp.jumpForce;
-            }
 
             // move character
             var flags = stateComp.characterController.Move(stateComp.velocity, deltaTime);

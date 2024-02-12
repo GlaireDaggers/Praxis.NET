@@ -22,6 +22,11 @@ public class HudSystem : PraxisSystem
         _score = (TextWidget)_uiCanvas.FindById("scoretext")!;
 
         _uiRenderer = new UIRenderer(Game.GraphicsDevice);
+        
+        World.SetSingleton(new GuiInfo
+        {
+            inputEnabled = true
+        });
     }
 
     public override void Update(float deltaTime)
@@ -36,5 +41,10 @@ public class HudSystem : PraxisSystem
 
         _uiCanvas.Update(_uiRenderer, deltaTime);
         _uiCanvas.DrawUI(_uiRenderer);
+        
+        World.SetSingleton(new GuiInfo
+        {
+            inputEnabled = _uiCanvas.FocusedWidget == null
+        });
     }
 }
