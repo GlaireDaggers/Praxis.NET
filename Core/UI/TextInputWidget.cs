@@ -1,20 +1,50 @@
-﻿using System.Xml;
+﻿using System.Text;
+using System.Xml;
 using FontStashSharp.RichText;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using SDL2;
 
 namespace Praxis.Core;
 
 public class TextInputWidget : Widget
 {
+    public event SubmitHandler? OnSubmit;
+
+    public bool IsPassword
+    {
+        get => _isPassword;
+        set
+        {
+            _isPassword = value;
+
+            if (_isPassword)
+            {
+                SetPasswordText();
+            }
+            else
+            {
+                _textWidget.Text = _text;
+            }
+        }
+    }
+    
     public string Text
     {
-        get => _textWidget.Text;
+        get => _text;
         set
         {
             if (value.Contains('\n'))
             {
-                _textWidget.Text = value.ReplaceLineEndings("");
+                value = value.ReplaceLineEndings("");
+            }
+
+            _promptWidget.visible = string.IsNullOrEmpty(value);
+            _text = value;
+            
+            if (_isPassword)
+            {
+                SetPasswordText();
             }
             else
             {
@@ -22,9 +52,28 @@ public class TextInputWidget : Widget
             }
         }
     }
+    
+    public string Prompt
+    {
+        get => _promptWidget.Text;
+        set
+        {
+            _promptWidget.Text = value;
+        }
+    }
 
     private readonly TextWidget _textWidget = new()
     {
+        inheritVisualState = true,
+        tags = [ "input", "input-text" ],
+        anchorMax = Vector2.One,
+        RichTextEnabled = false,
+    };
+
+    private readonly TextWidget _promptWidget = new()
+    {
+        tint = new Color(255, 255, 255, 128),
+        visible = false,
         inheritVisualState = true,
         tags = [ "input", "input-text" ],
         anchorMax = Vector2.One,
@@ -44,11 +93,17 @@ public class TextInputWidget : Widget
 
     private int _scrollOffset = 0;
 
+    private string _text = "";
+    private bool _isPassword = false;
+
+    private StringBuilder _passwordBuilder = new StringBuilder();
+
     public TextInputWidget() : base()
     {
         tags = [ "input" ];
         AddWidget(_imageWidget);
         AddWidget(_textWidget);
+        AddWidget(_promptWidget);
         interactive = true;
 
         _textWidget.Rtl.CalculateGlyphs = true;
@@ -57,10 +112,24 @@ public class TextInputWidget : Widget
     public override void Deserialize(PraxisGame game, XmlNode node)
     {
         base.Deserialize(game, node);
-
+        
+        if (node.Attributes?["password"] is XmlAttribute password)
+        {
+            IsPassword = bool.Parse(password.Value);
+        }
+        
         if (node.Attributes?["text"] is XmlAttribute text)
         {
             Text = text.Value;
+        }
+        else
+        {
+            Text = "";
+        }
+        
+        if (node.Attributes?["prompt"] is XmlAttribute prompt)
+        {
+            Prompt = prompt.Value;
         }
     }
 
@@ -68,6 +137,7 @@ public class TextInputWidget : Widget
     {
         base.OnStyleUpdated();
         _textWidget.UpdateStyle();
+        _promptWidget.UpdateStyle();
         _imageWidget.UpdateStyle();
     }
 
@@ -94,19 +164,24 @@ public class TextInputWidget : Widget
     {
         if (VisualState.HasFlags(WidgetState.Focused))
         {
-            if (direction == NavigationDirection.Left)
+            switch (direction)
             {
-                _cursorPos--;
-                if (_cursorPos <= 0) _cursorPos = 0;
+                case NavigationDirection.Left:
+                {
+                    _cursorPos--;
+                    if (_cursorPos <= 0) _cursorPos = 0;
 
-                _blinkTimer = 0f;
-            }
-            else if (direction == NavigationDirection.Right)
-            {
-                _cursorPos++;
-                if (_cursorPos > Text.Length) _cursorPos = Text.Length;
+                    _blinkTimer = 0f;
+                    break;
+                }
+                case NavigationDirection.Right:
+                {
+                    _cursorPos++;
+                    if (_cursorPos > Text.Length) _cursorPos = Text.Length;
 
-                _blinkTimer = 0f;
+                    _blinkTimer = 0f;
+                    break;
+                }
             }
 
             if (!Root!.Game.CurrentKeyboardState.IsKeyDown(Keys.LeftShift))
@@ -127,6 +202,56 @@ public class TextInputWidget : Widget
         if (_blinkTimer >= 1f)
         {
             _blinkTimer = 0f;
+        }
+
+        if (VisualState.HasFlags(WidgetState.Focused))
+        {
+            if (Root!.Game.CurrentKeyboardState.IsKeyDown(Keys.LeftControl))
+            {
+                int selectionStart = Math.Min(_cursorPos, _selectionAnchor);
+                int selectionEnd = Math.Max(_cursorPos, _selectionAnchor);
+                int selectionLength = selectionEnd - selectionStart;
+                
+                if (Root.Game.CurrentKeyboardState.IsKeyDown(Keys.C) && Root.Game.PreviousKeyboardState.IsKeyUp(Keys.C))
+                {
+                    // copy
+                    if (selectionLength > 0)
+                    {
+                        SDL.SDL_SetClipboardText(Text.Substring(selectionStart, selectionLength));
+                    }
+                }
+                else if (Root.Game.CurrentKeyboardState.IsKeyDown(Keys.X) && Root.Game.PreviousKeyboardState.IsKeyUp(Keys.X))
+                {
+                    // cut
+                    if (selectionLength > 0)
+                    {
+                        SDL.SDL_SetClipboardText(Text.Substring(selectionStart, selectionLength));
+                        Text = string.Concat(Text.AsSpan(0, selectionStart), Text.AsSpan(selectionEnd));
+                        _cursorPos = selectionStart;
+                        _selectionAnchor = _cursorPos;
+                    }
+                }
+                else if (Root.Game.CurrentKeyboardState.IsKeyDown(Keys.V) && Root.Game.PreviousKeyboardState.IsKeyUp(Keys.V))
+                {
+                    // paste
+                    if (selectionLength > 0)
+                    {
+                        Text = string.Concat(Text.AsSpan(0, selectionStart), Text.AsSpan(selectionEnd));
+                        _cursorPos = selectionStart;
+                    }
+
+                    string insert = SDL.SDL_GetClipboardText();
+                    Text = Text.Insert(selectionStart, insert);
+                    _cursorPos = selectionStart + insert.Length;
+                    _selectionAnchor = _cursorPos;
+                }
+                else if (Root.Game.CurrentKeyboardState.IsKeyDown(Keys.A) && Root.Game.PreviousKeyboardState.IsKeyUp(Keys.A))
+                {
+                    // select all
+                    _selectionAnchor = 0;
+                    _cursorPos = _text.Length;
+                }
+            }
         }
     }
 
@@ -157,7 +282,7 @@ public class TextInputWidget : Widget
             {
                 if (selectionStart <= _textWidget.Rtl.Lines[0].Count && selectionStart > 0)
                 {
-                    if (_textWidget.Rtl.Lines[0].GetGlyphInfoByIndex(selectionStart - 1) is TextChunkGlyph glyph)
+                    if (_textWidget.Rtl.Lines[0].GetGlyphInfoByIndex(CharIndexToGlyphIndex(selectionStart - 1)) is TextChunkGlyph glyph)
                     {
                         startPos = glyph.Bounds.Left + glyph.XAdvance;
                     }
@@ -165,7 +290,7 @@ public class TextInputWidget : Widget
 
                 if (selectionEnd <= _textWidget.Rtl.Lines[0].Count && selectionEnd > 0)
                 {
-                    if (_textWidget.Rtl.Lines[0].GetGlyphInfoByIndex(selectionEnd - 1) is TextChunkGlyph glyph)
+                    if (_textWidget.Rtl.Lines[0].GetGlyphInfoByIndex(CharIndexToGlyphIndex(selectionEnd - 1)) is TextChunkGlyph glyph)
                     {
                         endPos = glyph.Bounds.Left + glyph.XAdvance;
                     }
@@ -186,7 +311,7 @@ public class TextInputWidget : Widget
 
             if (_textWidget.Rtl.Lines.Count > 0 && _cursorPos <= _textWidget.Rtl.Lines[0].Count && _cursorPos > 0)
             {
-                if (_textWidget.Rtl.Lines[0].GetGlyphInfoByIndex(_cursorPos - 1) is TextChunkGlyph glyph)
+                if (_textWidget.Rtl.Lines[0].GetGlyphInfoByIndex(CharIndexToGlyphIndex(_cursorPos - 1)) is TextChunkGlyph glyph)
                 {
                     cursorRect.X += glyph.Bounds.Left + glyph.XAdvance;
                 }
@@ -225,12 +350,26 @@ public class TextInputWidget : Widget
         }
 
         _textWidget.DrawInternal(renderer);
+        _promptWidget.DrawInternal(renderer);
         
         renderer.PopClipRect();
     }
 
+    private int CharIndexToGlyphIndex(int index)
+    {
+        int count = 0;
+        for (int i = 0; i < index; i += char.IsSurrogatePair(_text, i) ? 2 : 1)
+        {
+            count++;
+        }
+
+        return count;
+    }
+
     private void OnTextInput(char input)
     {
+        if (Root!.Game.CurrentKeyboardState.IsKeyDown(Keys.LeftControl)) return;
+        
         int selectionStart = Math.Min(_cursorPos, _selectionAnchor);
         int selectionEnd = Math.Max(_cursorPos, _selectionAnchor);
         int selectionLength = selectionEnd - selectionStart;
@@ -258,7 +397,7 @@ public class TextInputWidget : Widget
         }
         else if (input == '\r' || input == '\n')
         {
-            // todo: OnSubmit
+            OnSubmit?.Invoke();
             Root?.SetFocus(null);
         }
         else
@@ -276,5 +415,17 @@ public class TextInputWidget : Widget
         Text = composition;
         _selectionAnchor = cursor;
         _cursorPos = cursor + length;
+    }
+
+    private void SetPasswordText()
+    {
+        _passwordBuilder.Clear();
+
+        for (int i = 0; i < _text.Length; i++)
+        {
+            _passwordBuilder.Append('•');
+        }
+
+        _textWidget.Text = _passwordBuilder.ToString();
     }
 }

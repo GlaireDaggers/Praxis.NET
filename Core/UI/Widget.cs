@@ -11,6 +11,7 @@ public delegate void MouseUpHandler();
 public delegate void ClickHandler();
 public delegate void FocusGainedHandler();
 public delegate void FocusLostHandler();
+public delegate void SubmitHandler();
 public delegate void NavigationHandler(NavigationDirection dir);
 
 public enum NavigationDirection
@@ -129,7 +130,8 @@ public class Widget
 
     public bool clipChildren;
     public bool interactive;
-    
+    public bool visible = true;
+
     public Vector2 anchorMin;
     public Vector2 anchorMax;
     public Vector2 anchoredPosition;
@@ -300,6 +302,8 @@ public class Widget
 
     internal void DrawInternal(UIRenderer renderer)
     {
+        if (!visible) return;
+        
         // calculate transform
         Matrix transform = CreateTransform();
 
