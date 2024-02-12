@@ -24,6 +24,15 @@ public class TextWidget : Widget
         }
     }
 
+    public bool RichTextEnabled
+    {
+        get => Rtl.SupportsCommands;
+        set
+        {
+            Rtl.SupportsCommands = value;
+        }
+    }
+
     public readonly RichTextLayout Rtl = new();
 
     protected override void Draw(UIRenderer renderer, Rectangle rect)

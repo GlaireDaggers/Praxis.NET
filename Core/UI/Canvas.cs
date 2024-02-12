@@ -9,6 +9,9 @@ namespace Praxis.Core;
 /// </summary>
 public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : Widget()
 {
+    private const float REPEAT_DELAY = 0.5f;
+    private const float REPEAT_INTERVAL = 0.05f;
+
     public static Canvas Load(PraxisGame game, XmlDocument xml)
     {
         if (xml.ChildNodes.Count != 1)
@@ -46,6 +49,9 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
     private Widget? _mouseDown = null;
     private Widget? _focusedWidget = null;
 
+    private float _navRepeatTimer = 0f;
+    private bool _navPressed = false;
+
     public void DrawUI(UIRenderer renderer)
     {
         renderer.Begin();
@@ -53,7 +59,7 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
         renderer.End();
     }
 
-    public override void UpdateLayout(UIRenderer renderer)
+    public override void Update(UIRenderer renderer, float deltaTime)
     {
         int screenWidth = renderer.ScreenWidth;
         int screenHeight = renderer.ScreenHeight;
@@ -66,24 +72,23 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
 
         foreach (var child in Children)
         {
-            child.UpdateLayout(renderer);
+            child.Update(renderer, deltaTime);
         }
 
         // now that layouts have been updated, we can also handle input
         Vector2 mousePos = new Vector2(Game.CurrentMouseState.X, Game.CurrentMouseState.Y);
-        if (GetWidgetAtPos(mousePos) is Widget widget)
+        Vector2 prevMousePos = new Vector2(Game.PreviousMouseState.X, Game.PreviousMouseState.Y);
+
+        if (Vector2.DistanceSquared(mousePos, prevMousePos) >= 1f)
         {
-            if (widget != _currentHover)
+            if (GetWidgetAtPos(mousePos) is Widget widget)
             {
-                _currentHover?.HandleMouseExit();
-                widget?.HandleMouseEnter();
-                _currentHover = widget;
+                SetHover(widget);
             }
-        }
-        else
-        {
-            _currentHover?.HandleMouseExit();
-            _currentHover = null;
+            else
+            {
+                SetHover(null);
+            }
         }
 
         if (Game.CurrentMouseState.LeftButton == ButtonState.Pressed && Game.PreviousMouseState.LeftButton == ButtonState.Released)
@@ -105,6 +110,37 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
             }
             _mouseDown = null;
         }
+
+        // don't send input events if there's a screen keyboard open
+        if (!TextInputEXT.IsScreenKeyboardShown(Game.Window.Handle))
+        {
+            if (Game.CurrentKeyboardState.IsKeyDown(Keys.Up) || Game.Input.GetButtonDown(PlayerIndex.One, Buttons.DPadUp))
+            {
+                HandleNav(NavigationDirection.Up, deltaTime);
+            }
+            else if (Game.CurrentKeyboardState.IsKeyDown(Keys.Down) || Game.Input.GetButtonDown(PlayerIndex.One, Buttons.DPadDown))
+            {
+                HandleNav(NavigationDirection.Down, deltaTime);
+            }
+            else if (Game.CurrentKeyboardState.IsKeyDown(Keys.Left) || Game.Input.GetButtonDown(PlayerIndex.One, Buttons.DPadLeft))
+            {
+                HandleNav(NavigationDirection.Left, deltaTime);
+            }
+            else if (Game.CurrentKeyboardState.IsKeyDown(Keys.Right) || Game.Input.GetButtonDown(PlayerIndex.One, Buttons.DPadRight))
+            {
+                HandleNav(NavigationDirection.Right, deltaTime);
+            }
+            else
+            {
+                _navPressed = false;
+                _navRepeatTimer = 0f;
+            }
+        }
+        else
+        {
+            _navPressed = false;
+            _navRepeatTimer = 0f;
+        }
     }
 
     public void SetFocus(Widget? newFocus)
@@ -114,6 +150,35 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
             _focusedWidget?.HandleFocusLost();
             _focusedWidget = newFocus;
             _focusedWidget?.HandleFocusGained();
+        }
+    }
+
+    public void SetHover(Widget? newHover)
+    {
+        if (newHover != _currentHover)
+        {
+            _currentHover?.HandleMouseExit();
+            newHover?.HandleMouseEnter();
+            _currentHover = newHover;
+        }
+    }
+
+    private void HandleNav(NavigationDirection dir, float deltaTime)
+    {
+        if (!_navPressed)
+        {
+            _navPressed = true;
+            _focusedWidget?.HandleNavigation(dir);
+            _navRepeatTimer = REPEAT_DELAY;
+        }
+        else
+        {
+            _navRepeatTimer -= deltaTime;
+            if (_navRepeatTimer <= 0f)
+            {
+                _focusedWidget?.HandleNavigation(dir);
+                _navRepeatTimer = REPEAT_INTERVAL;
+            }
         }
     }
 }

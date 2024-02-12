@@ -18,7 +18,8 @@ public class ButtonWidget : Widget
     {
         inheritVisualState = true,
         tags = [ "button", "button-text" ],
-        anchorMax = Vector2.One
+        anchorMax = Vector2.One,
+        RichTextEnabled = false
     };
 
     private readonly ImageWidget _imageWidget = new()

@@ -18,4 +18,4 @@
 	url = git@github.com:GlaireDaggers/Open-World-Builder.git
 [submodule "deps/FontStashSharp"]
 	path = deps/FontStashSharp
-	url = git@github.com:FontStashSharp/FontStashSharp.git
+	url = git@github.com:GlaireDaggers/FontStashSharp.git

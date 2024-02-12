@@ -34,7 +34,7 @@ public class HudSystem : PraxisSystem
             _score.Text = $"/esScore: /c[yellow]{stats.score}";
         }
 
-        _uiCanvas.UpdateLayout(_uiRenderer);
+        _uiCanvas.Update(_uiRenderer, deltaTime);
         _uiCanvas.DrawUI(_uiRenderer);
     }
 }

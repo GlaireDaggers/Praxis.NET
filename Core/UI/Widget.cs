@@ -11,6 +11,15 @@ public delegate void MouseUpHandler();
 public delegate void ClickHandler();
 public delegate void FocusGainedHandler();
 public delegate void FocusLostHandler();
+public delegate void NavigationHandler(NavigationDirection dir);
+
+public enum NavigationDirection
+{
+    Up,
+    Down,
+    Left,
+    Right
+}
 
 /// <summary>
 /// Enumeration of visual states for a widget
@@ -23,6 +32,14 @@ public enum WidgetState
     Pressed = 2,
     Focused = 4,
     Checked = 8,
+}
+
+public static class WidgetStateExtensions
+{
+    public static bool HasFlags(this WidgetState state, WidgetState flags)
+    {
+        return ((int)state & (int)flags) != 0;
+    }
 }
 
 /// <summary>
@@ -103,6 +120,12 @@ public class Widget
     public event ClickHandler? OnClick;
     public event FocusGainedHandler? OnFocusGained;
     public event FocusLostHandler? OnFocusLost;
+    public event NavigationHandler? OnNavigate;
+
+    public Widget? NavigateUp;
+    public Widget? NavigateDown;
+    public Widget? NavigateLeft;
+    public Widget? NavigateRight;
 
     public bool clipChildren;
     public bool interactive;
@@ -221,7 +244,7 @@ public class Widget
         }
     }
 
-    public virtual void UpdateLayout(UIRenderer renderer)
+    public virtual void Update(UIRenderer renderer, float deltaTime)
     {
         if (Parent == null) throw new InvalidOperationException();
 
@@ -245,7 +268,7 @@ public class Widget
 
         foreach (var child in _children)
         {
-            child.UpdateLayout(renderer);
+            child.Update(renderer, deltaTime);
         }
     }
 
@@ -362,6 +385,39 @@ public class Widget
         _isFocus = false;
         UpdateStyle();
         OnFocusLost?.Invoke();
+    }
+
+    public virtual void HandleNavigation(NavigationDirection direction)
+    {
+        switch (direction)
+        {
+            case NavigationDirection.Up:
+                if (NavigateUp != null)
+                {
+                    Root?.SetFocus(NavigateUp);
+                }
+                break;
+            case NavigationDirection.Down:
+                if (NavigateDown != null)
+                {
+                    Root?.SetFocus(NavigateDown);
+                }
+                break;
+            case NavigationDirection.Left:
+                if (NavigateLeft != null)
+                {
+                    Root?.SetFocus(NavigateLeft);
+                }
+                break;
+            case NavigationDirection.Right:
+                if (NavigateRight != null)
+                {
+                    Root?.SetFocus(NavigateRight);
+                }
+                break;
+        }
+
+        OnNavigate?.Invoke(direction);
     }
 
     public void UpdateStyle()

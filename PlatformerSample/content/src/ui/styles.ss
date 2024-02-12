@@ -34,4 +34,5 @@
 
 .input-text {
     padding: 8, 4, 8, 4;
+    wordWrap: false;
 }
