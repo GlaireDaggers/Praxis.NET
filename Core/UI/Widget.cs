@@ -12,6 +12,11 @@ public delegate void ClickHandler();
 public delegate void FocusGainedHandler();
 public delegate void FocusLostHandler();
 public delegate void SubmitHandler();
+public delegate void DragStartHandler();
+public delegate void DragEndHandler(bool accepted);
+public delegate void DragEnterHandler(object data);
+public delegate void DragExitHandler();
+public delegate void DragDropHandler(object data);
 public delegate void NavigationHandler(NavigationDirection dir);
 
 public enum NavigationDirection
@@ -122,6 +127,11 @@ public class Widget
     public event FocusGainedHandler? OnFocusGained;
     public event FocusLostHandler? OnFocusLost;
     public event NavigationHandler? OnNavigate;
+    public event DragStartHandler? OnDragStart;
+    public event DragEndHandler? OnDragEnd;
+    public event DragEnterHandler? OnDragEnter;
+    public event DragExitHandler? OnDragExit;
+    public event DragDropHandler? OnDragDrop;
 
     public Widget? NavigateUp;
     public Widget? NavigateDown;
@@ -162,7 +172,10 @@ public class Widget
 
         foreach (var child in Children)
         {
-            return child.FindById(id);
+            if (child.FindById(id) is Widget w)
+            {
+                return w;
+            }
         }
 
         return null;
@@ -201,7 +214,7 @@ public class Widget
         {
             foreach (var tag in tags.Value.Split(','))
             {
-                this.tags.Add(tag);
+                this.tags.Add(tag.Trim());
             }
         }
 
@@ -389,6 +402,31 @@ public class Widget
         _isFocus = false;
         UpdateStyle();
         OnFocusLost?.Invoke();
+    }
+
+    public virtual void HandleDragStart()
+    {
+        OnDragStart?.Invoke();
+    }
+    
+    public virtual void HandleDragEnd(bool accepted)
+    {
+        OnDragEnd?.Invoke(accepted);
+    }
+    
+    public virtual void HandleDragEnter(object data)
+    {
+        OnDragEnter?.Invoke(data);
+    }
+    
+    public virtual void HandleDragExit()
+    {
+        OnDragExit?.Invoke();
+    }
+    
+    public virtual void HandleDragDrop(object data)
+    {
+        OnDragDrop?.Invoke(data);
     }
 
     public virtual void HandleNavigation(NavigationDirection direction)

@@ -12,6 +12,9 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
     private const float REPEAT_DELAY = 0.5f;
     private const float REPEAT_INTERVAL = 0.05f;
 
+    private const int DRAG_THRESHOLD = 4;
+    private const int DRAG_THRESHOLD2 = DRAG_THRESHOLD * DRAG_THRESHOLD;
+
     public static Canvas Load(PraxisGame game, XmlDocument xml)
     {
         if (xml.ChildNodes.Count != 1)
@@ -47,12 +50,18 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
 
     public Widget? FocusedWidget => _focusedWidget;
 
+    private Vector2 _mouseDownPos = Vector2.Zero;
+    private bool _isDragging = false;
+    
     private Widget? _currentHover = null;
     private Widget? _mouseDown = null;
     private Widget? _focusedWidget = null;
 
     private float _navRepeatTimer = 0f;
     private bool _navPressed = false;
+
+    private Widget? _dragSource = null;
+    private object? _dragData = null;
 
     public void DrawUI(UIRenderer renderer)
     {
@@ -97,9 +106,20 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
         {
             _currentHover?.HandleMouseDown();
             _mouseDown = _currentHover;
+            _mouseDownPos = mousePos;
         }
         else if (Game.CurrentMouseState.LeftButton == ButtonState.Released && Game.PreviousMouseState.LeftButton == ButtonState.Pressed)
         {
+            if (_dragData != null)
+            {
+                _currentHover?.HandleDragDrop(_dragData);
+            }
+            
+            _dragSource?.HandleDragEnd(_dragData == null);
+            _dragSource = null;
+            _isDragging = false;
+            _dragData = null;
+
             _mouseDown?.HandleMouseUp();
             if (_mouseDown == _currentHover)
             {
@@ -111,6 +131,15 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
                 SetFocus(null);
             }
             _mouseDown = null;
+        }
+
+        if (_mouseDown != null)
+        {
+            if (!_isDragging && Vector2.DistanceSquared(_mouseDownPos, mousePos) >= DRAG_THRESHOLD2)
+            {
+                _mouseDown.HandleDragStart();
+                _isDragging = true;
+            }
         }
 
         // don't send input events if there's a screen keyboard open
@@ -161,8 +190,26 @@ public class Canvas(PraxisGame game, RuntimeResource<Stylesheet> stylesheet) : W
         {
             _currentHover?.HandleMouseExit();
             newHover?.HandleMouseEnter();
+            
+            if (_dragData != null)
+            {
+                _currentHover?.HandleDragExit();
+                newHover?.HandleDragEnter(_dragData);
+            }
+            
             _currentHover = newHover;
         }
+    }
+
+    public void BeginDrag(Widget source, object dragData)
+    {
+        _dragSource = source;
+        _dragData = dragData;
+    }
+
+    public void AcceptDrag()
+    {
+        _dragData = null;
     }
 
     private void HandleNav(NavigationDirection dir, float deltaTime)

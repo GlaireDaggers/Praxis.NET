@@ -21,6 +21,31 @@ public class HudSystem : PraxisSystem
         _uiCanvas = Canvas.Load(Game, Game.Resources.Load<XmlDocument>("content/ui/hud.xml").Value);
         _score = (TextWidget)_uiCanvas.FindById("scoretext")!;
 
+        var button = _uiCanvas.FindById("testbtn")!;
+        button.OnDragStart += () =>
+        {
+            _uiCanvas.BeginDrag(button, new object());
+        };
+        button.OnDragEnd += (accepted) =>
+        {
+            Console.WriteLine($"Drag accepted: {accepted}");
+        };
+
+        var input = _uiCanvas.FindById("testinput")!;
+        input.OnDragEnter += (data) =>
+        {
+            Console.WriteLine("Drag enter");
+        };
+        input.OnDragExit += () =>
+        {
+            Console.WriteLine("Drag exit");
+        };
+        input.OnDragDrop += (data) =>
+        {
+            Console.WriteLine("Drag drop");
+            _uiCanvas.AcceptDrag();
+        };
+
         _uiRenderer = new UIRenderer(Game.GraphicsDevice);
         
         World.SetSingleton(new GuiInfo
